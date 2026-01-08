@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && cd dashboard && npm install && npm run build",
-    "build:backend": "tsc",
+    "build": "npx tsc && cd dashboard && npm install && npm run build",
+    "build:backend": "npx tsc",
     "build:frontend": "cd dashboard && npm run build",
     "vercel-build": "npm run build",
     "start": "node dist/src/server.js",
