@@ -43,3 +43,6 @@ Thumbs.db
 supabase/.branches
 supabase/.temp
 supabase/functions/*/deno.lock
+
+# Private Documentation
+docs/PROJECT_HISTORY.md
