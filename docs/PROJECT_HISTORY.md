@@ -26,6 +26,34 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ### v2.3 - UI/UX Overhaul & Simulator (Latest)
 ### v2.4 - Rebranding & Security Hardening (Latest)
+### v2.5 - Gas-Inclusive Fee Engine & Debt Aggregation (Latest)
+- **[BREAKING] Smart Contract Upgrade - Dynamic Fee System**:
+    - Modified `PaymentHandler.pay()` to accept `platformFee` parameter (was hardcoded 1%).
+    - All fee calculations moved off-chain (0 gas cost for computation).
+    - On-chain contract now only validates and stores (minimal ~50k gas).
+    - 20% safety cap prevents excessive fees even if backend compromised.
+- **[FEATURE] Gas-Inclusive Fee Calculator**:
+    - **Formula**: `platformFee = estimatedGas + (netProfit × marginRate)`
+    - Margin calculated on NET profit (payment - gas), not gross payment.
+    - Grade-based margin rates: A=0.2%, B=0.3%, C=0.5%, D=0.75%, E/F=1%.
+    - Gas estimation with 20% safety buffer to prevent underestimation.
+    - Platform NEVER loses money (gas cost always covered + margin).
+- **[OPTIMIZATION] Debt Aggregation & Batch Settlement**:
+    - **Grade A**: $5.00 CRO debt threshold (up to 500 calls batched, 90% gas savings).
+    - **Grade B-C**: $1.00 CRO debt threshold (up to 100 calls batched).
+    - **Grade D-E-F**: $0 threshold (immediate payment, no credit).
+    - Settlement only triggered when threshold reached → massive gas savings.
+    - Example: 10 API calls = 1 gas fee instead of 10 (90% reduction).
+- **[API] Manual Flush Endpoint**:
+    - `POST /api/flush` with `X-Agent-ID` header.
+    - Allows providers/agents to force settlement before threshold.
+    - Use case: Provider wants immediate payout regardless of debt level.
+- **[DOCS] README Cleanup**:
+    - Removed PROJECT_HISTORY.md from `.gitignore` (transparency).
+    - Streamlined README from 214 to ~110 lines.
+    - Moved detailed technical info to PROJECT_HISTORY.md.
+    - All references updated to reflect new dynamic fee system.
+
 - **[REBRAND] HighStation**: Complete project rebrand from "X402 Gatekeeper" to **HighStation**.
     - Updated all documentation, UI components, and branding assets.
     - New identity: "HighStation - The next-generation agent payment gateway"
