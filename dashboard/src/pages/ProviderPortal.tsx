@@ -84,16 +84,17 @@ function ProviderPortal() {
             const slug = `demo-${Math.random().toString(36).substring(7)}`;
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
 
-            const { error } = await supabase.from('services').insert({
+            const { data, error } = await supabase.from('services').insert({
                 provider_id: user.id,
                 name: 'Demo Echo Service',
                 slug: slug,
                 upstream_url: `${apiOrigin}/api/demo/echo`,
                 price_wei: '10000000000000000', // 0.01 CRO
                 min_grade: 'F'
-            });
+            }).select();
 
             if (error) throw error;
+            console.log('Demo Service Created:', data);
 
             alert('Demo Service Deployed!');
             fetchServices();
@@ -106,89 +107,104 @@ function ProviderPortal() {
 
     const ServicesTab = () => (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '2rem' }}>
-            {/* CREATE SERVICE FORM */}
-            <div className="data-section" style={{ padding: '1.5rem' }}>
-                <h2 style={{ marginTop: 0, fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Register New Service</h2>
-                <form onSubmit={handleCreateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                    <div>
-                        <label className="metric-label">Service Name</label>
-                        <input
-                            type="text"
-                            value={newService.name}
-                            onChange={e => setNewService({ ...newService, name: e.target.value })}
-                            placeholder="My Weather API"
-                            required
-                            className="form-control"
-                        />
-                    </div>
-                    <div>
-                        <label className="metric-label">URL Slug</label>
-                        <input
-                            type="text"
-                            value={newService.slug}
-                            onChange={e => setNewService({ ...newService, slug: e.target.value })}
-                            placeholder="weather-api"
-                            required
-                            className="form-control"
-                        />
-                        <small className="cell-endpoint">Endpoint: /gatekeeper/{newService.slug || '...'}/resource</small>
-                    </div>
-                    <div>
-                        <label className="metric-label">Upstream Target</label>
-                        <input
-                            type="text"
-                            value={newService.upstream_url}
-                            onChange={e => setNewService({ ...newService, upstream_url: e.target.value })}
-                            placeholder="https://api.myapp.com"
-                            required
-                            className="form-control"
-                        />
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                            <label className="metric-label">Price (CRO)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="data-section" style={{ padding: '1.5rem' }}>
+                    <h2 style={{ marginTop: 0, fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Register New Service</h2>
+                    <form onSubmit={handleCreateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                        <div>
+                            <label className="metric-label">Service Name</label>
                             <input
-                                type="number"
-                                step="any"
-                                value={newService.price_wei === '0' ? '' : Number(newService.price_wei) / 1e18}
-                                onChange={e => {
-                                    const val = parseFloat(e.target.value);
-                                    if (!isNaN(val)) {
-                                        setNewService({ ...newService, price_wei: (val * 1e18).toLocaleString('fullwide', { useGrouping: false }) });
-                                    } else {
-                                        setNewService({ ...newService, price_wei: '0' });
-                                    }
-                                }}
-                                placeholder="0.05"
+                                type="text"
+                                value={newService.name}
+                                onChange={e => setNewService({ ...newService, name: e.target.value })}
+                                placeholder="My Weather API"
                                 required
                                 className="form-control"
                             />
-                            <p className="help-text">≈ ${(Number(newService.price_wei) / 1e18 * 0.08).toFixed(4)} USD (1 CRO ≈ $0.08)</p>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label className="metric-label">Min Grade</label>
-                            <select
-                                value={newService.min_grade}
-                                onChange={e => setNewService({ ...newService, min_grade: e.target.value })}
+                        <div>
+                            <label className="metric-label">URL Slug</label>
+                            <input
+                                type="text"
+                                value={newService.slug}
+                                onChange={e => setNewService({ ...newService, slug: e.target.value })}
+                                placeholder="weather-api"
+                                required
                                 className="form-control"
-                            >
-                                <option value="A">A (Verified Only)</option>
-                                <option value="B">B (Trusted)</option>
-                                <option value="C">C (Standard)</option>
-                                <option value="D">D (Limited)</option>
-                                <option value="F">F (Allow All)</option>
-                            </select>
+                            />
+                            <small className="cell-endpoint">Endpoint: /gatekeeper/{newService.slug || '...'}/resource</small>
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontWeight: 600, flex: 1 }}>
+                        <div>
+                            <label className="metric-label">Upstream Target</label>
+                            <input
+                                type="text"
+                                value={newService.upstream_url}
+                                onChange={e => setNewService({ ...newService, upstream_url: e.target.value })}
+                                placeholder="https://api.myapp.com"
+                                required
+                                className="form-control"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label className="metric-label">Price (CRO)</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={newService.price_wei === '0' ? '' : Number(newService.price_wei) / 1e18}
+                                    onChange={e => {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val)) {
+                                            setNewService({ ...newService, price_wei: (val * 1e18).toLocaleString('fullwide', { useGrouping: false }) });
+                                        } else {
+                                            setNewService({ ...newService, price_wei: '0' });
+                                        }
+                                    }}
+                                    placeholder="0.05"
+                                    required
+                                    className="form-control"
+                                />
+                                <p className="help-text">≈ ${(Number(newService.price_wei) / 1e18 * 0.08).toFixed(4)} USD (1 CRO ≈ $0.08)</p>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label className="metric-label">Min Grade</label>
+                                <select
+                                    value={newService.min_grade}
+                                    onChange={e => setNewService({ ...newService, min_grade: e.target.value })}
+                                    className="form-control"
+                                >
+                                    <option value="A">A (Verified Only)</option>
+                                    <option value="B">B (Trusted)</option>
+                                    <option value="C">C (Standard)</option>
+                                    <option value="D">D (Limited)</option>
+                                    <option value="F">F (Allow All)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontWeight: 600 }}>
                             REGISTER SERVICE
                         </button>
-                        <button type="button" onClick={createDemoService} className="btn-secondary" style={{ padding: '0.75rem', fontWeight: 600, flex: 1 }}>
-                            DEPLOY DEMO ECHO API
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+
+                <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Don't have an API?</p>
+                    <button
+                        type="button"
+                        onClick={createDemoService}
+                        className="btn-secondary"
+                        style={{
+                            padding: '0.5rem 1rem',
+                            fontWeight: 500,
+                            fontSize: '0.85rem',
+                            background: 'transparent',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)'
+                        }}
+                    >
+                        + Deploy Demo Echo API
+                    </button>
+                </div>
             </div>
 
             {/* SERVICE LIST */}
