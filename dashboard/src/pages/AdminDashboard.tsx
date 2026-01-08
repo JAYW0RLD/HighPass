@@ -182,7 +182,7 @@ function AdminDashboard() {
 
     return (
         <div className="dashboard">
-            <Header title="x402 Gatekeeper" />
+            <Header title="HighStation" />
 
             {/* Notifications */}
             <div className="notifications">

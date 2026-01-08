@@ -100,7 +100,7 @@ router.post('/:id/verify', async (req, res) => {
             const response = await fetch(verificationUrl, {
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'x402-gatekeeper-bot/1.0'
+                    'User-Agent': 'highstation-bot/1.0'
                 }
             });
 

@@ -130,7 +130,7 @@ app.all('/gatekeeper/:serviceSlug/resource',
             });
 
             // Add gatekeeper metadata header
-            forwardHeaders['x-forwarded-by'] = 'x402-gatekeeper';
+            forwardHeaders['x-forwarded-by'] = 'highstation';
             forwardHeaders['x-service-name'] = config.name;
 
             // Forward the request

@@ -658,7 +658,7 @@ const data = await res.json();`}
                 <span>•</span>
                 <span>Role: Service Provider</span>
                 <span>•</span>
-                <span>x402 Gatekeeper v2.3</span>
+                <span>HighStation v2.3</span>
             </footer>
         </div>
     );

@@ -30,7 +30,7 @@ export default function Header({ title }: HeaderProps) {
                         fontWeight: 'bold',
                         fontSize: '16px'
                     }}>X</div>
-                    <h1 style={{ color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>{title || 'x402 Gatekeeper'}</h1>
+                    <h1 style={{ color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>{title || 'HighStation'}</h1>
                 </div>
             </div>
 

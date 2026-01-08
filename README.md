@@ -1,6 +1,6 @@
-# 🚀 X402-Identity-Gatekeeper | Cronos zkEVM Edition
+# 🚀 HighStation | Agent Payment Gateway
 
-> **Trustless Payments Meet Agent Identity** - A production-ready API gateway enabling secure, low-cost agent-to-agent payments on Cronos zkEVM.
+> **Trustless Payments Meet Agent Identity** - A production-ready API gateway enabling secure, low-cost agent-to-agent payments on Cronos zkEVM using X402 protocol.
 
 [![Cronos zkEVM](https://img.shields.io/badge/Cronos-zkEVM-blue)](https://zkevm.cronos.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,7 +11,7 @@
 
 ## 📖 Overview
 
-X402-Identity-Gatekeeper is a **next-generation API gateway** designed for the **autonomous agent economy**. It combines:
+HighStation is a **next-generation API gateway** designed for the **autonomous agent economy**. It combines:
 
 - **ERC-8004 Identity Verification** - On-chain reputation ensures only trusted agents access resources
 - **Dynamic Pricing via Pyth Oracle** - Real-time CRO/USD price feeds for fair, transparent payments
@@ -99,8 +99,8 @@ sequenceDiagram
 
 ### Installation
 ```bash
-git clone https://github.com/yourname/x402-gatekeeper
-cd x402-gatekeeper
+git clone https://github.com/yourname/highstation
+cd highstation
 npm install
 forge install
 ```
@@ -168,7 +168,7 @@ SUCCESS: 200 OK
 - **Monthly Revenue**: $50
 
 ### Competitive Advantage
-| Feature | X402-Gatekeeper | Traditional API Keys | OAuth |
+| Feature | HighStation | Traditional API Keys | OAuth |
 |---------|----------------|---------------------|-------|
 | **Agent-Native** | ✅ | ❌ | ❌ |
 | **On-Chain Trust** | ✅ | ❌ | ❌ |
