@@ -1,27 +1,28 @@
 {
     "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "dashboard/package.json",
-            "use": "@vercel/vite"
+            "source": "/api/(.*)",
+            "destination": "src/server.ts"
         },
         {
-            "src": "package.json",
-            "use": "@vercel/node"
+            "source": "/gatekeeper/(.*)",
+            "destination": "src/server.ts"
+        },
+        {
+            "source": "/health",
+            "destination": "src/server.ts"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/dashboard/$1"
         }
     ],
-    "routes": [
+    "redirects": [
         {
-            "src": "/api/(.*)",
-            "dest": "/src/server.ts"
-        },
-        {
-            "src": "/gatekeeper/(.*)",
-            "dest": "/src/server.ts"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/dashboard/$1"
+            "source": "/dashboard",
+            "destination": "/",
+            "permanent": true
         }
     ]
 }
