@@ -117,9 +117,9 @@ body {
 }
 
 .nav-item.active {
-  font-weight: 600;
-  background-color: #0f0f0f;
-  color: #ffffff;
+  font-weight: 600 !important;
+  background-color: #0f0f0f !important;
+  color: #ffffff !important;
 }
 
 .nav-item.active::before {
@@ -739,6 +739,7 @@ h1 {
   font-weight: 400 !important;
   cursor: pointer;
 }
+
 /* YouTube Chips Navigation */
 .chip-nav {
   display: flex;

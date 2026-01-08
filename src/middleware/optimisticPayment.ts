@@ -3,6 +3,7 @@ import { PriceService } from '../services/PriceService';
 import { IdentityService } from '../services/IdentityService';
 import { getDebt, addDebt, clearDebt, isTxHashUsed, logRequest } from '../database/db';
 import { ServiceConfig } from './serviceResolver';
+import { createClient } from '@supabase/supabase-js';
 
 export const optimisticPaymentCheck = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
@@ -46,6 +47,44 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             console.error("Failed to get dynamic price", e);
             res.status(500).json({ error: "Oracle Error: Cannot determine price" });
             return;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // PROVIDER SELF-TEST BYPASS (SECURE)
+    // ---------------------------------------------------------
+    // Provider가 자기 서비스를 테스트하는 경우 무료 통과
+    // 보안: x-user-id 헤더는 위조 가능하므로, Supabase JWT를 검증해야 함
+    const bearerToken = req.headers['x-provider-token'] as string;
+
+    if (bearerToken && serviceConfig) {
+        try {
+            // Initialize Supabase client for JWT verification
+            const supabaseUrl = process.env.SUPABASE_URL;
+            const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+            if (!supabaseUrl || !supabaseKey) {
+                console.warn('[Security] Supabase credentials missing - cannot verify provider token');
+            } else {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+
+                // Verify JWT and extract user
+                const { data: { user }, error } = await supabase.auth.getUser(bearerToken);
+
+                if (!error && user && user.id === serviceConfig.provider_id) {
+                    console.log(`[Test Mode] ✅ Provider ${user.id} verified via JWT - testing own service ${serviceConfig.slug} - bypassing payment`);
+                    res.locals.paymentAmount = '0';
+                    res.locals.isProviderTest = true;
+                    next();
+                    return;
+                } else if (error) {
+                    console.warn(`[Security] ⚠️ Invalid provider token: ${error.message}`);
+                } else if (user && user.id !== serviceConfig.provider_id) {
+                    console.warn(`[Security] 🚨 ATTACK DETECTED: User ${user.id} tried to impersonate provider ${serviceConfig.provider_id}`);
+                }
+            }
+        } catch (err) {
+            console.error('[Security] Provider token verification failed:', err);
         }
     }
 

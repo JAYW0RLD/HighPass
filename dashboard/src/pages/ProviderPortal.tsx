@@ -151,6 +151,7 @@ function ProviderPortal() {
         setTestResult(null);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
 
             // Build headers
@@ -160,6 +161,11 @@ function ProviderPortal() {
                 'X-Auth-Timestamp': Date.now().toString(),
                 ...testHeaders
             };
+
+            // Add Provider JWT for secure free testing (NOT user-id!)
+            if (session?.access_token) {
+                headers['x-provider-token'] = session.access_token;
+            }
 
             // Add content-type for POST/PUT requests
             if (['POST', 'PUT'].includes(testMethod) && testBody) {
