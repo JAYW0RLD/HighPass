@@ -34,6 +34,7 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 - **[REFACTOR] Global Navigation**: Unified Header component across all pages for consistent UX.
 - **[UX] Polishing**: Added USD approximation for CRO prices and improved background contrast for large screens.
 - **[FEATURE] Demo Service**: Added "Deploy Demo Echo API" button for one-click testing without external infrastructure.
+- **[FIX] Settings Navigation**: Implemented functional sidebar tabs (General, Billing, API Keys) in Settings Page.
 
 ### v2.2 - Vercel Deployment & Security
 - **[OPS] Vercel Support**: Full compatibility with Vercel Serverless Functions (`api/index.ts`).
