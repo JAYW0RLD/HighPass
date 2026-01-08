@@ -33,7 +33,9 @@ function ProviderPortal() {
         slug: '',
         upstream_url: '',
         price_wei: '0',
-        min_grade: 'F'
+        min_grade: 'F',
+        trust_seed_enabled: false,
+        initial_debt_limit: 0.1
     });
 
     // Edit Modal State
@@ -206,7 +208,7 @@ function ProviderPortal() {
             if (error) throw error;
 
             alert('Service Created!');
-            setNewService({ name: '', slug: '', upstream_url: '', price_wei: '0', min_grade: 'F' });
+            setNewService({ name: '', slug: '', upstream_url: '', price_wei: '0', min_grade: 'F', trust_seed_enabled: false, initial_debt_limit: 0.1 });
             fetchServices();
         } catch (err: any) {
             alert(`Error: ${err.message}`);
@@ -225,7 +227,9 @@ function ProviderPortal() {
                     slug: editingService.slug,
                     upstream_url: editingService.upstream_url,
                     price_wei: editingService.price_wei,
-                    min_grade: editingService.min_grade
+                    min_grade: editingService.min_grade,
+                    trust_seed_enabled: (editingService as any).trust_seed_enabled,
+                    initial_debt_limit: (editingService as any).initial_debt_limit
                 })
                 .eq('id', editingService.id);
 
@@ -371,6 +375,31 @@ function ProviderPortal() {
                                     <option value="F">F (Allow All)</option>
                                 </select>
                             </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', alignItems: 'center', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ flex: 1 }}>
+                                <label className="metric-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={(newService as any).trust_seed_enabled || false}
+                                        onChange={e => setNewService({ ...newService, trust_seed_enabled: e.target.checked } as any)}
+                                    />
+                                    Enable Trust Seed (Optimistic Entry)
+                                </label>
+                                <p className="help-text">Allow new users to accrue debt up to a limit before paying.</p>
+                            </div>
+                            {(newService as any).trust_seed_enabled && (
+                                <div style={{ flex: 1 }}>
+                                    <label className="metric-label">Initial Debt Limit (USD)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={(newService as any).initial_debt_limit || 0.1}
+                                        onChange={e => setNewService({ ...newService, initial_debt_limit: parseFloat(e.target.value) } as any)}
+                                        className="form-control"
+                                    />
+                                </div>
+                            )}
                         </div>
                         <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontWeight: 600 }}>
                             REGISTER SERVICE
@@ -668,6 +697,29 @@ const data = await res.json();`}
                         <input type="text" value={editingService.slug} onChange={e => setEditingService({ ...editingService, slug: e.target.value })} placeholder="Slug" className="form-control" required />
                         <input type="text" value={editingService.upstream_url} onChange={e => setEditingService({ ...editingService, upstream_url: e.target.value })} placeholder="Target URL" className="form-control" required disabled={isDemo} />
                         <input type="number" step="any" value={Number(editingService.price_wei) / 1e18} onChange={e => setEditingService({ ...editingService, price_wei: (parseFloat(e.target.value) * 1e18).toLocaleString('fullwide', { useGrouping: false }) })} placeholder="Price (CRO)" className="form-control" required />
+
+                        <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                            <label className="metric-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={(editingService as any).trust_seed_enabled || false}
+                                    onChange={e => setEditingService({ ...editingService, trust_seed_enabled: e.target.checked } as any)}
+                                />
+                                Enable Trust Seed
+                            </label>
+                            {(editingService as any).trust_seed_enabled && (
+                                <div>
+                                    <label className="metric-label">Debt Limit (USD)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={(editingService as any).initial_debt_limit || 0.1}
+                                        onChange={e => setEditingService({ ...editingService, initial_debt_limit: parseFloat(e.target.value) } as any)}
+                                        className="form-control"
+                                    />
+                                </div>
+                            )}
+                        </div>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button type="submit" className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
                             <button type="button" onClick={handleDeleteService} className="btn-secondary" style={{ flex: 0.5, color: 'red' }}>Delete</button>

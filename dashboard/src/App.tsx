@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import AuthPage from './pages/AuthPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProviderPortal from './pages/ProviderPortal';
+import DeveloperPortal from './pages/DeveloperPortal';
 import SettingsPage from './pages/SettingsPage';
 import './App.css';
 
@@ -112,6 +113,12 @@ function App() {
         <Route path="/settings" element={
           <ProtectedRoute requiredRole="provider">
             <SettingsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/developer" element={
+          <ProtectedRoute>
+            <DeveloperPortal />
           </ProtectedRoute>
         } />
 

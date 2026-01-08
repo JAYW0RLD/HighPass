@@ -55,6 +55,13 @@ export class PriceService {
      * @returns Amount in WEI (BigInt)
      */
     async getPaymentAmountWei(asset: keyof typeof PRICE_FEEDS, targetUsdValue: number = 0.01): Promise<bigint> {
+        if (!PRICE_FEEDS[asset]) {
+            throw new Error(`Invalid asset: ${asset}`);
+        }
+        if (targetUsdValue <= 0) {
+            throw new Error("Target USD value must be positive");
+        }
+
         const priceUsd = await this.getPrice(asset);
 
         // targetUsdValue / priceUsd = tokens needed

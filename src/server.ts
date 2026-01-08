@@ -106,12 +106,14 @@ app.get('/api/demo/echo', (req, res) => {
 
 import { serviceResolver } from './middleware/serviceResolver';
 import { creditGuard } from './middleware/creditGuard';
+import { accessControlEngine } from './middleware/AccessControlEngine';
 
 // Dynamic Service Route (RBAC / Multi-Provider)
 // Route: /gatekeeper/:serviceSlug/resource
 app.all('/gatekeeper/:serviceSlug/resource',
     serviceResolver,
     creditGuard,
+    accessControlEngine,
     optimisticPaymentCheck,
     async (req, res) => {
         const isOptimistic = res.locals.isOptimistic;

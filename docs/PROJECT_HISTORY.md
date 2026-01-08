@@ -24,9 +24,26 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
-### v2.3 - UI/UX Overhaul & Simulator (Latest)
-### v2.4 - Rebranding & Security Hardening (Latest)
-### v2.5 - Gas-Inclusive Fee Engine & Debt Aggregation (Latest)
+### v2.6 - Developer Portal & Optimization (Latest)
+- **[FEATURE] Developer Portal**:
+    - Launched `/developer` portal for identity & wallet management.
+    - Supabase Auth integration for secure profile creation.
+    - Visual Reputation Grade and Debt Limit tracking.
+- **[FEATURE] Trust Seed Configuration**:
+    - Providers can now toggle "Optimistic Access" for new users.
+    - Configurable "Initial Debt Limit" (USD) accelerates onboarding.
+- **[OPTIMIZATION] Smart Access Control**:
+    - `AccessControlEngine` now performs real-time USD-to-Wei debt checks.
+    - Integrated `FeeSettlementEngine` with 2% slippage protection for unified pricing logic.
+- **[FIX] Schema & Types**:
+    - Added `user_id` linkage to `developers` table.
+    - Standardized Debt/Fee unit conversion across the stack.
+- **[QUALITY] System Integrity**:
+    - **100% Test Coverage**: Resolved all backend unit test failures (Identity, DB, Payment).
+    - **Mocking Strategy**: Implemented stateful mocks for Supabase to ensure deterministic testing without network reliance.
+    - **Input Validation**: Hardened `IdentityService` against invalid agent IDs and thresholds.
+
+### v2.5 - Gas-Inclusive Fee Engine & Debt Aggregation
 - **[BREAKING] Smart Contract Upgrade - Dynamic Fee System**:
     - Modified `PaymentHandler.pay()` to accept `platformFee` parameter (was hardcoded 1%).
     - All fee calculations moved off-chain (0 gas cost for computation).

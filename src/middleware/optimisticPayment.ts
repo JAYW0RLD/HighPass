@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PriceService } from '../services/PriceService';
 import { IdentityService } from '../services/IdentityService';
+import { FeeSettlementEngine } from '../services/FeeSettlementEngine';
 import { getDebt, addDebt, clearDebt, isTxHashUsed, logRequest } from '../database/db';
 import { ServiceConfig } from './serviceResolver';
 import { createClient } from '@supabase/supabase-js';
@@ -23,6 +24,8 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
     // Dynamic Price Calculation
     const priceService = new PriceService();
     const identityService = new IdentityService();
+    // Use FeeSettlementEngine for final fee calculation
+    const feeEngine = new FeeSettlementEngine();
 
     // ---------------------------------------------------------
     // DYNAMIC SERVICE CONFIGURATION
@@ -31,24 +34,38 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
     let requiredWei = BigInt(0);
     let minOptimisticGrade = 'F'; // Default
 
+    // Base Service Price (Wei or USD converted)
+    let basePriceWei = BigInt(0);
+
     if (serviceConfig) {
         // Use Provider-defined settings
-        requiredWei = BigInt(serviceConfig.price_wei || '0');
+        basePriceWei = BigInt(serviceConfig.price_wei || '0');
         minOptimisticGrade = serviceConfig.min_grade || 'F';
     } else {
-        // Fallback for legacy routes (or if resolver failed/skipped)
-        // Default to Oracle price and Grade A/B rule?
-        // Let's keep logic compatible with old demo if accessing /gatekeeper/resource directly
-        // But arguably we should force dynamic setup now.
+        // Fallback or Oracle Pricing for legacy routes
         try {
-            requiredWei = await priceService.getPaymentAmountWei('CRO', 0.01);
-            minOptimisticGrade = 'B'; // Default legacy policy (A, B allowed)
+            basePriceWei = await priceService.getPaymentAmountWei('CRO', 0.01);
+            minOptimisticGrade = 'B';
         } catch (e) {
             console.error("Failed to get dynamic price", e);
             res.status(500).json({ error: "Oracle Error: Cannot determine price" });
             return;
         }
     }
+
+    // Calculate Final Fee (Gas + Margin + Base Price)
+    // Dynamic Fee: Gas Fee (estimateGas) + Margin (0.2~0.5%)
+    // Slippage Protection: 2% buffer applied inside calculateFee or usdToWei if needed.
+    // Here we wrap basePriceWei with Fee Engine.
+    const feeResult = await feeEngine.calculateFee({
+        servicePriceWei: basePriceWei,
+        marginPercent: 0.005 // 0.5% Margin
+    });
+
+    requiredWei = feeResult.totalWei;
+
+    // Store breakdown for debugging/headers?
+    res.locals.feeBreakdown = feeResult.breakdown;
 
     // ---------------------------------------------------------
     // PROVIDER SELF-TEST BYPASS (SECURE)
@@ -134,6 +151,18 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         }
 
         // Case 2: Check Optimistic Policy (Dynamic)
+        // Dual-Track Logic (Track 2 = Verified Developer)
+        if (res.locals.track === 'TRACK_2') {
+            // Already verified by AccessControlEngine (including Max Debt Limit)
+            // Still respected Case 1 (Settlement Threshold) above.
+            console.log(`[Dual-Track] Agent ${agentId} is Verified (Track 2). Allowing optimistic payment.`);
+            await addDebt(agentId, requiredWei);
+            res.locals.paymentAmount = requiredWei.toString();
+            res.locals.isOptimistic = true;
+            next();
+            return;
+        }
+
         // Condition: Grade is "Better or Equal" to Min Grade.
         // Since Grade A < Grade B (lexicographically), we check if agentGrade <= minGrade
         // e.g. Agent=A, Min=B -> 'A' <= 'B' (True) -> Allowed

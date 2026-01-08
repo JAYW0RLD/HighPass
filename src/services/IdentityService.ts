@@ -48,6 +48,8 @@ export class IdentityService {
     }
 
     async getReputation(agentId: string): Promise<number> {
+        if (!agentId) throw new Error("Agent ID cannot be empty");
+
         // DEMO OVERRIDES FOR ACCESSIBILITY / SIMULATOR
         if (agentId === 'prime-agent') return 95; // Grade A
         if (agentId === 'trusted-agent') return 85; // Grade B
@@ -58,7 +60,7 @@ export class IdentityService {
         try {
             idVal = BigInt(agentId);
         } catch {
-            idVal = BigInt(0);
+            throw new Error("Invalid Agent ID format");
         }
 
         const contractAddr = process.env.IDENTITY_CONTRACT_ADDRESS as Address;
@@ -107,6 +109,7 @@ export class IdentityService {
     }
 
     async isTrusted(agentId: string, threshold: number = 70): Promise<boolean> {
+        if (threshold < 0) throw new Error("Threshold cannot be negative");
         const score = await this.getReputation(agentId);
         return score >= threshold;
     }

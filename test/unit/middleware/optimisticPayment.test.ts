@@ -7,12 +7,24 @@ import * as db from '../../../src/database/db';
 jest.mock('../../../src/database/db');
 jest.mock('../../../src/services/IdentityService');
 jest.mock('../../../src/services/PriceService');
+jest.mock('../../../src/services/FeeSettlementEngine');
 
 describe('Optimistic Payment Middleware', () => {
     let app: express.Application;
 
     beforeEach(() => {
         app = express();
+
+        // Middleware to simulate CreditGuard & AccessControlEngine results
+        app.use((req, res, next) => {
+            // Default mock values
+            res.locals.creditGrade = req.header('X-Mock-Grade') || 'A';
+            if (req.header('X-Mock-Track')) {
+                res.locals.track = req.header('X-Mock-Track');
+            }
+            next();
+        });
+
         app.get('/test', optimisticPaymentCheck, (req, res) => {
             res.status(200).json({ success: true });
         });
@@ -38,6 +50,15 @@ describe('Optimistic Payment Middleware', () => {
         const { PriceService } = require('../../../src/services/PriceService');
         PriceService.mockImplementation(() => ({
             getPaymentAmountWei: jest.fn().mockResolvedValue(BigInt(100000000000000000)),
+        }));
+
+        // Mock FeeSettlementEngine
+        const { FeeSettlementEngine } = require('../../../src/services/FeeSettlementEngine');
+        FeeSettlementEngine.mockImplementation(() => ({
+            calculateFee: jest.fn().mockResolvedValue({
+                totalWei: BigInt(100000000000000000),
+                breakdown: {}
+            })
         }));
     });
 
@@ -80,10 +101,11 @@ describe('Optimistic Payment Middleware', () => {
 
             const response = await request(app)
                 .get('/test')
-                .set('X-Agent-ID', 'debtor-agent');
+                .set('X-Agent-ID', 'debtor-agent')
+                .set('X-Mock-Grade', 'F'); // Force low threshold
 
             expect(response.status).toBe(402);
-            expect(response.body.error).toContain('Payment Required');
+            expect(response.body.error).toContain('Settlement Required');
         });
 
         it('should require upfront payment for low reputation agent', async () => {
@@ -94,9 +116,22 @@ describe('Optimistic Payment Middleware', () => {
 
             const response = await request(app)
                 .get('/test')
-                .set('X-Agent-ID', 'low-rep-agent');
+                .set('X-Agent-ID', 'low-rep-agent')
+                .set('X-Mock-Grade', 'F');
 
             expect(response.status).toBe(402);
+        });
+
+        it('should allow Track 2 (Verified) agent regardless of grade', async () => {
+            // Mock low reputation (usually blocked) BUT set Track 2
+            const response = await request(app)
+                .get('/test')
+                .set('X-Agent-ID', 'verified-agent')
+                .set('X-Mock-Grade', 'F') // Should fail normally
+                .set('X-Mock-Track', 'TRACK_2'); // Should pass
+
+            expect(response.status).toBe(200);
+            expect(db.addDebt).toHaveBeenCalled();
         });
     });
 

@@ -63,8 +63,44 @@ CREATE TABLE IF NOT EXISTS services (
     status text default 'pending',   -- pending | verified | rejected
     verification_token text,         -- Random token for domain verification
     verified_at timestamptz,         -- When domain was verified
+    trust_seed_enabled boolean default false, -- For simplified provider onboarding
+    initial_debt_limit numeric default 0,     -- Initial debt limit for this service
     created_at timestamptz default now()
 );
+
+-- ==============================================================================
+-- DUAL-TRACK GATEWAY SCHEMA (TRUST LAYER)
+-- ==============================================================================
+
+-- Developers (Verified Identities)
+CREATE TABLE IF NOT EXISTS developers (
+    id uuid default gen_random_uuid() primary key,
+    user_id uuid references auth.users(id), -- Link to Supabase Auth
+    github_id text unique,
+    global_debt_limit numeric default 0.1, -- USD
+    total_reputation text default 'Grade C',
+    created_at timestamptz default now()
+);
+
+-- Wallets (Linked to Developers)
+CREATE TABLE IF NOT EXISTS wallets (
+    address text primary key,
+    developer_id uuid references developers(id) on delete set null,
+    current_debt numeric default 0,
+    status text default 'Active', -- Active | Banned
+    created_at timestamptz default now()
+);
+
+-- RLS Policies for New Tables
+ALTER TABLE developers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read for wallets to check verify status (Gatekeeper needs this)
+CREATE POLICY "Public read wallets" ON wallets FOR SELECT USING (true);
+-- Developers table might be sensitive, restrict to owner or admin? 
+-- For now, let's allow read for auth users (internal tools)
+CREATE POLICY "Auth read developers" ON developers FOR SELECT TO authenticated USING (true);
+
 
 -- 3. Row Level Security (RLS) Policies
 

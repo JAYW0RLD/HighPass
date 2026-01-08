@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: 9/10](https://img.shields.io/badge/Security-9%2F10-brightgreen)](docs/audit/EXECUTIVE_SUMMARY.md)
 [![Red Team: Audited](https://img.shields.io/badge/Red%20Team-Audited-success)](docs/audit/RED_TEAM_REPORT.md)
-[![Version: 2.0.3](https://img.shields.io/badge/Version-2.0.3-blue)](docs/PROJECT_HISTORY.md)
+[![Version: 2.6.0](https://img.shields.io/badge/Version-2.6.0-blue)](docs/PROJECT_HISTORY.md)
 
 
 ## 📖 Overview
@@ -14,6 +14,7 @@
 HighStation is a **next-generation API gateway** designed for the **autonomous agent economy**. It combines:
 
 - **Multi-Provider Platform** - Self-service portal for API providers to monetize services
+- **Dual-Track Access Control** - Validates both Anonymous (Track 1) and Verified (Track 2) agents
 - **Dynamic Pricing** - Real-time CRO/USD price feeds via Pyth Oracle
 - **1% Protocol Fee** - Sustainable revenue model via `PaymentHandler` smart contract
 - **HTTP 402 Standard** - Native web protocol for machine-to-machine payments
@@ -23,6 +24,7 @@ HighStation is a **next-generation API gateway** designed for the **autonomous a
 ## 🎯 Key Features
 
 - ✅ **Provider Portal** - Register APIs, set pricing, view analytics
+- ✅ **Developer Portal** - Manage agent identity, wallet linkage, and view reputation
 - ✅ **Test Console** - Built-in API testing with response inspection
 - ✅ **JWT Security** - Provider authentication with zero-trust verification
 - ✅ **Automated Settlements** - Configure auto-withdrawal thresholds

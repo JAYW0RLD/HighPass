@@ -7,6 +7,8 @@ jest.mock('viem', () => ({
     })),
     http: jest.fn(),
     defineChain: jest.fn((config: any) => config),
+    parseAbi: jest.fn(),
+    verifyMessage: jest.fn().mockResolvedValue(true),
 }));
 
 describe('IdentityService', () => {
