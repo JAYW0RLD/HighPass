@@ -38,7 +38,12 @@ export async function logRequest(data: {
     txHash?: string,
     endpoint: string,
     error?: string,
-    creditGrade?: string
+    creditGrade?: string,
+    latencyMs?: number,
+    responseSizeBytes?: number,
+    gasUsed?: string,
+    contentType?: string,
+    integrityCheck?: boolean
 }) {
     if (!db) await initDB();
     if (!db) return; // Fail silently if no DB
@@ -54,7 +59,12 @@ export async function logRequest(data: {
             tx_hash: data.txHash || null,
             endpoint: data.endpoint,
             error: data.error || null,
-            credit_grade: data.creditGrade || null
+            credit_grade: data.creditGrade || null,
+            latency_ms: data.latencyMs || 0,
+            response_size_bytes: data.responseSizeBytes || 0,
+            gas_used: data.gasUsed || null,
+            content_type: data.contentType || null,
+            integrity_check: data.integrityCheck !== undefined ? data.integrityCheck : false
         };
 
         // Insert or update based on tx_hash if provided

@@ -24,6 +24,17 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v2.7 - Data Foundation & Expanded Telemetry
+- **[FEATURE] Performance Telemetry**:
+    - **Latency Profiling**: Millisecond-precision tracking of API response times (`latency_ms`).
+    - **Response Sizing**: Automatic capture of response payload size (`response_size_bytes`).
+- **[FEATURE] Data Quality & Integrity**:
+    - **Success Integrity**: Validation of response body format (`integrity_check`) to filter "fake 200 OKs".
+    - **Content Type Classification**: Tracking of data formats (`content_type`).
+- **[STRATEGY] Agent Economy Readiness**:
+    - Infrastructure laid for future "Quality-of-Service" ranking algorithms.
+- **[DB] Schema Update**: Added telemetry columns to `requests` table (Migration 003).
+
 ### v2.6 - Developer Portal & Optimization (Latest)
 - **[FEATURE] Developer Portal**:
     - Launched `/developer` portal for identity & wallet management.

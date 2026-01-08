@@ -26,7 +26,12 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
             agentId: agentId,
             txHash: txHash,
             amount: res.locals.paymentAmount || '0',
-            creditGrade: res.locals.creditGrade
+            creditGrade: res.locals.creditGrade,
+            latencyMs: res.locals.telemetry?.latencyMs,
+            responseSizeBytes: res.locals.telemetry?.responseSizeBytes,
+            gasUsed: res.locals.telemetry?.gasUsed,
+            contentType: res.locals.telemetry?.contentType,
+            integrityCheck: res.locals.telemetry?.integrityCheck
         }).catch(err => console.error("Logging failed", err));
     });
 
