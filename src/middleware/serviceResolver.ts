@@ -54,6 +54,11 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
             return res.status(404).json({ error: 'Service Not Found', message: `Service '${serviceSlug}' does not exist.` });
         }
 
+        // DOMAIN VERIFICATION CHECK
+        if (data.status !== 'verified') {
+            return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
+        }
+
         // Attach config to locals
         res.locals.serviceConfig = data as ServiceConfig;
 

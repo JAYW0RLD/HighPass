@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS services (
     upstream_url text not null,      -- e.g. https://api.weather.com
     price_wei text default '0',      -- Price per call in Wei
     min_grade text default 'F',      -- A, B, C, D, E, F
+    status text default 'pending',   -- pending | verified | rejected
+    verification_token text,         -- Random token for domain verification
+    verified_at timestamptz,         -- When domain was verified
     created_at timestamptz default now()
 );
 
