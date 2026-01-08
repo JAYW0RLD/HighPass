@@ -84,6 +84,20 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Demo Echo Service for User Testing
+app.get('/api/demo/echo', (req, res) => {
+    const randomWords = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
+    const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+
+    res.json({
+        service: "Demo Echo API",
+        status: "alive",
+        random_word: randomWord,
+        timestamp: new Date().toISOString(),
+        your_query: req.query
+    });
+});
+
 import { serviceResolver } from './middleware/serviceResolver';
 import { creditGuard } from './middleware/creditGuard';
 

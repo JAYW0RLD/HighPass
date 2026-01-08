@@ -74,6 +74,34 @@ function ProviderPortal() {
         }
     };
 
+    const createDemoService = async () => {
+        if (!confirm('Deploy a Demo Echo Service for testing?')) return;
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const slug = `demo-${Math.random().toString(36).substring(7)}`;
+            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+
+            const { error } = await supabase.from('services').insert({
+                provider_id: user.id,
+                name: 'Demo Echo Service',
+                slug: slug,
+                upstream_url: `${apiOrigin}/api/demo/echo`,
+                price_wei: '10000000000000000', // 0.01 CRO
+                min_grade: 'F'
+            });
+
+            if (error) throw error;
+
+            alert('Demo Service Deployed!');
+            fetchServices();
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
     // --- Components for Tabs ---
 
     const ServicesTab = () => (
@@ -152,9 +180,14 @@ function ProviderPortal() {
                             </select>
                         </div>
                     </div>
-                    <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontWeight: 600 }}>
-                        REGISTER SERVICE
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontWeight: 600, flex: 1 }}>
+                            REGISTER SERVICE
+                        </button>
+                        <button type="button" onClick={createDemoService} className="btn-secondary" style={{ padding: '0.75rem', fontWeight: 600, flex: 1 }}>
+                            DEPLOY DEMO ECHO API
+                        </button>
+                    </div>
                 </form>
             </div>
 

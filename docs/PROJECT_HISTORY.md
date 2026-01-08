@@ -33,6 +33,7 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 - **[UX] Login Page**: Redesigned AuthPage to match GitHub's login aesthetics.
 - **[REFACTOR] Global Navigation**: Unified Header component across all pages for consistent UX.
 - **[UX] Polishing**: Added USD approximation for CRO prices and improved background contrast for large screens.
+- **[FEATURE] Demo Service**: Added "Deploy Demo Echo API" button for one-click testing without external infrastructure.
 
 ### v2.2 - Vercel Deployment & Security
 - **[OPS] Vercel Support**: Full compatibility with Vercel Serverless Functions (`api/index.ts`).
