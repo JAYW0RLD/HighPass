@@ -75,8 +75,6 @@ function ProviderPortal() {
     };
 
     const createDemoService = async () => {
-        if (!confirm('Deploy a Demo Echo Service for testing?')) return;
-
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
