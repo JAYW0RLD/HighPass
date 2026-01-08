@@ -1,0 +1,27 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "dashboard/package.json",
+            "use": "@vercel/vite"
+        },
+        {
+            "src": "package.json",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/src/server.ts"
+        },
+        {
+            "src": "/gatekeeper/(.*)",
+            "dest": "/src/server.ts"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/dashboard/$1"
+        }
+    ]
+}
