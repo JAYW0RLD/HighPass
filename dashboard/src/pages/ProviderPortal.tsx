@@ -419,7 +419,7 @@ function ProviderPortal() {
                                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                     <span>Target: {svc.upstream_url}</span>
                                     <span>•</span>
-                                    <span>Price: {svc.price_wei} wei</span>
+                                    <span>Price: {(Number(svc.price_wei) / 1e18).toFixed(4)} CRO</span>
                                 </div>
                             </div>
                         ))}
