@@ -577,6 +577,8 @@ const data = await res.json();`}
                                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Response</h3>
                                     <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Clear</button>
                                 </div>
+
+                                {/* Status Badge */}
                                 <div style={{
                                     background: testResult.status === 200 ? '#f0fff4' : '#fff5f5',
                                     border: `1px solid ${testResult.status === 200 ? '#38a169' : '#e53e3e'}`,
@@ -588,10 +590,41 @@ const data = await res.json();`}
                                         HTTP {testResult.status} {testResult.statusText || ''}
                                     </div>
                                 </div>
-                                <div style={{ background: '#161b22', padding: '1rem', borderRadius: 'var(--radius-md)', maxHeight: '300px', overflowY: 'auto' }}>
-                                    <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                        {JSON.stringify(testResult.body, null, 2)}
-                                    </pre>
+
+                                {/* Response Headers */}
+                                {testResult.headers && Object.keys(testResult.headers).length > 0 && (
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Response Headers</h4>
+                                        <div style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 'var(--radius-md)',
+                                            padding: '0.75rem',
+                                            maxHeight: '150px',
+                                            overflowY: 'auto'
+                                        }}>
+                                            {Object.entries(testResult.headers).map(([key, value]) => (
+                                                <div key={key} style={{
+                                                    fontSize: '0.8rem',
+                                                    marginBottom: '0.25rem',
+                                                    fontFamily: 'monospace',
+                                                    color: 'var(--text-secondary)'
+                                                }}>
+                                                    <span style={{ color: 'var(--accent-blue)', fontWeight: '600' }}>{key}:</span> {String(value)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Response Body */}
+                                <div>
+                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Response Body</h4>
+                                    <div style={{ background: '#161b22', padding: '1rem', borderRadius: 'var(--radius-md)', maxHeight: '300px', overflowY: 'auto' }}>
+                                        <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                            {JSON.stringify(testResult.body, null, 2)}
+                                        </pre>
+                                    </div>
                                 </div>
                             </div>
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
