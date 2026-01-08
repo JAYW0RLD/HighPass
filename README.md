@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: 9/10](https://img.shields.io/badge/Security-9%2F10-brightgreen)](docs/audit/EXECUTIVE_SUMMARY.md)
 [![Red Team: Audited](https://img.shields.io/badge/Red%20Team-Audited-success)](docs/audit/RED_TEAM_REPORT.md)
-[![Version: 2.7.0](https://img.shields.io/badge/Version-2.7.0-blue)](docs/PROJECT_HISTORY.md)
+[![Version: 2.7.1](https://img.shields.io/badge/Version-2.7.1-blue)](docs/PROJECT_HISTORY.md)
 
 
 ## 📖 Overview
@@ -24,7 +24,7 @@ HighStation is a **next-generation API gateway** designed for the **autonomous a
 ## 🎯 Key Features
 
 - ✅ **Provider Portal** - Register APIs, set pricing, view analytics
-- ✅ **Developer Portal** - Manage agent identity, wallet linkage, and view reputation
+- ✅ **Developer Portal** - One-click GitHub Onboarding, wallet linkage, and reputation tracking
 - ✅ **Test Console** - Built-in API testing with response inspection
 - ✅ **JWT Security** - Provider authentication with zero-trust verification
 - ✅ **Automated Settlements** - Configure auto-withdrawal thresholds

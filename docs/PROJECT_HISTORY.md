@@ -24,6 +24,17 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v2.7.1 - Identity & UX Refinement (Hotfix)
+- **[AUTH] GitHub-Only Login**:
+    - Removed email/password authentication to prevent spam accounts.
+    - Implemented "Sign in with GitHub" as the sole entry point.
+- **[UX] Portal Switcher**:
+    - Added a YouTube Studio-style "Switch View" dropdown in the Header.
+    - Seamless toggle between "Provider Portal" (Selling APIs) and "Developer Portal" (Buying APIs/Identity).
+- **[FIX] Developer Onboarding**:
+    - **Auto-Detection**: Developer Portal now automatically detects GitHub username from session metadata.
+    - **Missing Tables**: Created `migrations/004_add_developers.sql` to fix missing `developers` and `wallets` tables.
+
 ### v2.7 - Data Foundation & Expanded Telemetry
 - **[FEATURE] Performance Telemetry**:
     - **Latency Profiling**: Millisecond-precision tracking of API response times (`latency_ms`).
