@@ -1,20 +1,26 @@
 :root {
-  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.5;
   font-weight: 400;
 
-  --bg-primary: #0a0e14;
-  --bg-secondary: #141922;
-  --bg-elevated: #1a1f2e;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
+  /* GitHub Light Theme Variables */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-elevated: #ffffff;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
   --text-tertiary: #6e7681;
-  --border: #30363d;
-  --accent-blue: #58a6ff;
-  --accent-green: #3fb950;
-  --accent-orange: #f0883e;
-  --accent-red: #f85149;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --border: #d0d7de;
+  --border-secondary: #d8dee4;
+
+  --accent-blue: #0969da;
+  --accent-green: #1a7f37;
+  --accent-orange: #9a6700;
+  --accent-red: #cf222e;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-elevated: 0 8px 24px rgba(140, 149, 159, 0.2);
 }
 
 * {
@@ -39,9 +45,14 @@ body {
 
 /* Header */
 header {
-  margin-bottom: 3rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
+  background-color: var(--bg-secondary);
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding: 1.5rem 2rem;
+  margin-top: -2rem;
 }
 
 .header-content {
@@ -115,8 +126,8 @@ h1 {
   gap: 0.75rem;
   font-size: 0.9rem;
   font-weight: 500;
-  box-shadow: var(--shadow);
-  animation: slideIn 0.3s ease-out;
+  box-shadow: var(--shadow-elevated);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideIn {
@@ -159,28 +170,33 @@ h1 {
 }
 
 .metric-card {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 1.5rem;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  box-shadow: var(--shadow-card);
 }
 
 .metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--accent-blue);
 }
 
 .metric-card.primary {
-  border-left: 3px solid var(--accent-blue);
+  border-top: 4px solid var(--accent-blue);
+  border-left: 1px solid var(--border);
 }
 
 .metric-card.success {
-  border-left: 3px solid var(--accent-green);
+  border-top: 4px solid var(--accent-green);
+  border-left: 1px solid var(--border);
 }
 
 .metric-card.warning {
-  border-left: 3px solid var(--accent-orange);
+  border-top: 4px solid var(--accent-orange);
+  border-left: 1px solid var(--border);
 }
 
 .metric-label {
@@ -206,18 +222,22 @@ h1 {
 
 /* Data Section */
 .data-section {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2rem;
+  border-radius: 6px;
+  padding: 0;
   margin-bottom: 2rem;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
 }
 
 .section-header h2 {
@@ -271,11 +291,12 @@ h1 {
   display: grid;
   grid-template-columns: 120px 80px 120px 140px 1fr 180px;
   gap: 1rem;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--text-secondary);
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
 }
 
@@ -288,14 +309,19 @@ h1 {
   display: grid;
   grid-template-columns: 120px 80px 120px 140px 1fr 180px;
   gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s ease;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border-secondary);
+  transition: background 0.1s ease;
   font-variant-numeric: tabular-nums;
+  align-items: center;
 }
 
 .table-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background-color: var(--bg-secondary);
+}
+
+.table-row:last-child {
+  border-bottom: none;
 }
 
 .cell-time {
