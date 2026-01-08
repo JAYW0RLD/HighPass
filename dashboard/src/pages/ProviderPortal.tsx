@@ -275,7 +275,9 @@ function ProviderPortal() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>{svc.name}</h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span className="status-badge verified">{svc.min_grade}+ Only</span>
+                                        <span className={`status-badge ${svc.upstream_url.includes('/api/demo/echo') ? 'verified' : 'pending'}`}>
+                                            {svc.upstream_url.includes('/api/demo/echo') ? 'Verified' : 'Pending Verification'}
+                                        </span>
                                         <button
                                             onClick={() => setEditingService(svc)}
                                             className="btn-secondary"

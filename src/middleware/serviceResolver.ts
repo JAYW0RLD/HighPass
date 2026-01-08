@@ -55,7 +55,10 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
         }
 
         // DOMAIN VERIFICATION CHECK
-        if (data.status !== 'verified') {
+        const apiOrigin = process.env.VITE_API_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
+        const isInternalDemo = data.upstream_url.includes('/api/demo/echo');
+
+        if (data.status !== 'verified' && !isInternalDemo) {
             return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
         }
 
