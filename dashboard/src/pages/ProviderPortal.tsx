@@ -20,6 +20,12 @@ function ProviderPortal() {
     const [activeTab, setActiveTab] = useState<'services' | 'integration' | 'revenue'>('services');
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
+    const [providerStats, setProviderStats] = useState<{
+        totalCalls: number;
+        totalRevenueWei: string;
+        netRevenueWei: string;
+        protocolFeeWei: string;
+    } | null>(null);
 
     // Form State
     const [newService, setNewService] = useState({
@@ -57,9 +63,29 @@ function ProviderPortal() {
             if (error) throw error;
             setServices(data || []);
             setLoading(false);
+
+            // Fetch provider stats
+            fetchProviderStats(user.id);
         } catch (err) {
             console.error('Error fetching services:', err);
             setLoading(false);
+        }
+    };
+
+    const fetchProviderStats = async (userId: string) => {
+        try {
+            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+            const res = await fetch(`${apiOrigin}/api/provider/stats`, {
+                headers: {
+                    'x-user-id': userId
+                }
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch stats');
+            const data = await res.json();
+            setProviderStats(data);
+        } catch (err) {
+            console.error('Error fetching provider stats:', err);
         }
     };
 
@@ -360,16 +386,18 @@ function ProviderPortal() {
                                             onClick={() => setTestingService(svc)}
                                             className="btn"
                                             style={{
-                                                padding: '0.4rem 1rem',
-                                                fontSize: '0.75rem',
-                                                backgroundColor: 'var(--accent-blue)',
-                                                color: 'white',
-                                                border: 'none'
+                                                padding: '8px 20px',
+                                                fontSize: '13px',
+                                                backgroundColor: '#065fd4', /* YouTube Blue */
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                fontWeight: 'bold',
+                                                zIndex: 10
                                             }}
                                         >
                                             Test API
                                         </button>
-                                        <button onClick={() => setEditingService(svc)} className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}>Manage</button>
+                                        <button onClick={() => setEditingService(svc)} className="btn-secondary" style={{ padding: '8px 20px', fontSize: '13px' }}>Manage</button>
                                     </div>
                                 </div>
                                 <code style={{ display: 'block', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>/gatekeeper/{svc.slug}/resource</code>
@@ -417,21 +445,34 @@ const data = await res.json();`}
         );
     };
 
-    const RevenueTab = () => (
-        <div className="data-section" style={{ padding: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Revenue & Analytics</h2>
-            <div className="metrics-grid">
-                <div className="metric-card primary">
-                    <div className="metric-label">Total Calls</div>
-                    <div className="metric-value">{services.length * 125}</div>
+    const RevenueTab = () => {
+        const totalCalls = providerStats?.totalCalls || 0;
+        const netRevenueCRO = providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000';
+        const protocolFeeCRO = providerStats ? (Number(providerStats.protocolFeeWei) / 1e18).toFixed(4) : '0.0000';
+
+        return (
+            <div className="data-section" style={{ padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Revenue & Analytics</h2>
+                <div className="metrics-grid">
+                    <div className="metric-card primary">
+                        <div className="metric-label">Total API Calls</div>
+                        <div className="metric-value">{totalCalls}</div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Active Services: {services.length}</p>
+                    </div>
+                    <div className="metric-card success">
+                        <div className="metric-label">Net Earnings (CRO)</div>
+                        <div className="metric-value">{netRevenueCRO}</div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Protocol Fee: {protocolFeeCRO} CRO</p>
+                    </div>
                 </div>
-                <div className="metric-card success">
-                    <div className="metric-label">Net Earnings (CRO)</div>
-                    <div className="metric-value">{(services.length * 0.05 * 1000 * 0.995).toFixed(2)}</div>
-                </div>
+                {totalCalls === 0 && (
+                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No API calls recorded yet. Use the Test API button to simulate a request!</p>
+                    </div>
+                )}
             </div>
-        </div>
-    );
+        );
+    };
 
     const TestModal = () => {
         if (!testingService) return null;
