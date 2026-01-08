@@ -118,14 +118,24 @@ function ProviderPortal() {
                     </div>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <div style={{ flex: 1 }}>
-                            <label className="metric-label">Price (Wei)</label>
+                            <label className="metric-label">Price (CRO)</label>
                             <input
                                 type="number"
-                                value={newService.price_wei}
-                                onChange={e => setNewService({ ...newService, price_wei: e.target.value })}
+                                step="any"
+                                value={newService.price_wei === '0' ? '' : Number(newService.price_wei) / 1e18}
+                                onChange={e => {
+                                    const val = parseFloat(e.target.value);
+                                    if (!isNaN(val)) {
+                                        setNewService({ ...newService, price_wei: (val * 1e18).toLocaleString('fullwide', { useGrouping: false }) });
+                                    } else {
+                                        setNewService({ ...newService, price_wei: '0' });
+                                    }
+                                }}
+                                placeholder="0.05"
                                 required
                                 className="form-control"
                             />
+                            <p className="help-text">≈ ${(Number(newService.price_wei) / 1e18 * 0.08).toFixed(4)} USD (1 CRO ≈ $0.08)</p>
                         </div>
                         <div style={{ flex: 1 }}>
                             <label className="metric-label">Min Grade</label>
@@ -137,6 +147,7 @@ function ProviderPortal() {
                                 <option value="A">A (Verified Only)</option>
                                 <option value="B">B (Trusted)</option>
                                 <option value="C">C (Standard)</option>
+                                <option value="D">D (Limited)</option>
                                 <option value="F">F (Allow All)</option>
                             </select>
                         </div>
@@ -242,10 +253,10 @@ callService();
         const netEarnings = grossRevenue - protocolFee;
 
         return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                <div className="data-section" style={{ padding: '1.5rem', gridColumn: '1 / -1' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+                <div className="data-section" style={{ padding: '1.5rem' }}>
                     <h2 style={{ fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Financial Overview</h2>
-                    <div className="metrics-grid" style={{ marginTop: '1.5rem', marginBottom: 0 }}>
+                    <div className="metrics-grid" style={{ marginTop: '1.5rem', marginBottom: 2 }}>
                         <div className="metric-card primary">
                             <div className="metric-label">Total Calls</div>
                             <div className="metric-value">{totalCalls}</div>
@@ -261,6 +272,35 @@ callService();
                         <div className="metric-card primary">
                             <div className="metric-label">Net Earnings (CRO)</div>
                             <div className="metric-value" style={{ color: 'var(--accent-blue)' }}>{netEarnings.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="data-section" style={{ padding: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Service Breakdown</h2>
+                    <div className="data-table" style={{ marginTop: '1rem' }}>
+                        <div className="table-header" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+                            <span>SERVICE NAME</span>
+                            <span>TOTAL CALLS</span>
+                            <span>PRICE (CRO)</span>
+                            <span>EARNINGS (CRO)</span>
+                        </div>
+                        <div className="table-body">
+                            {services.map(svc => {
+                                // Mock logic for breakdown
+                                const calls = 125;
+                                const priceCro = Number(svc.price_wei) / 1e18;
+                                const earnings = calls * priceCro * 0.995;
+                                return (
+                                    <div key={svc.id} className="table-row" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+                                        <span style={{ fontWeight: 600 }}>{svc.name}</span>
+                                        <span>{calls}</span>
+                                        <span>{priceCro.toFixed(4)}</span>
+                                        <span style={{ color: 'var(--accent-green)' }}>{earnings.toFixed(4)}</span>
+                                    </div>
+                                );
+                            })}
+                            {services.length === 0 && <p style={{ padding: '1rem', color: 'var(--text-secondary)' }}>No services available.</p>}
                         </div>
                     </div>
                 </div>
