@@ -34,7 +34,7 @@ function AuthPage() {
             backgroundColor: 'var(--bg-secondary)'
         }}>
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '24px', fontWeight: '300', letterSpacing: '-0.5px' }}>Sign in to X402</h1>
+                <h1 style={{ fontSize: '24px', fontWeight: '300', letterSpacing: '-0.5px' }}>Sign in with GitHub</h1>
             </div>
 
             <div className="data-section" style={{ width: '100%', maxWidth: '340px', padding: '24px', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)', border: 'none' }}>
@@ -61,7 +61,8 @@ function AuthPage() {
                             }
                         }
                     }}
-                    providers={[]}
+                    providers={['github']}
+                    onlyThirdPartyProviders
                 />
             </div>
         </div>

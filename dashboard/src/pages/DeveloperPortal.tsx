@@ -36,6 +36,12 @@ function DeveloperPortal() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
+            // Auto-detect GitHub ID from metadata
+            const detectedGithub = user.user_metadata.preferred_username || user.user_metadata.user_name;
+            if (detectedGithub) {
+                setGithubIdInput(detectedGithub);
+            }
+
             // Fetch Developer Profile linked to this user
             const { data: devAuthData, error: devAuthError } = await supabase
                 .from('developers')
@@ -125,17 +131,29 @@ function DeveloperPortal() {
                 <div className="data-section" style={{ maxWidth: '500px', margin: '2rem auto', textAlign: 'center' }}>
                     <h2>Become a Verified Developer</h2>
                     <p>Link your GitHub account to access Track 2 (Optimistic Payments) and higher rate limits.</p>
-                    <form onSubmit={handleCreateProfile} style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <input
-                            type="text"
-                            placeholder="GitHub Username"
-                            value={githubIdInput}
-                            onChange={e => setGithubIdInput(e.target.value)}
-                            className="form-control"
-                            required
-                        />
-                        <button type="submit" className="btn-primary">Create Developer Profile</button>
-                    </form>
+
+                    {githubIdInput ? (
+                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Detected GitHub Identity</span>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                                    @{githubIdInput}
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleCreateProfile}
+                                className="btn-primary"
+                                disabled={loading}
+                                style={{ width: '100%', padding: '1rem' }}
+                            >
+                                {loading ? 'Verifying...' : 'Confirm & Create Profile'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div style={{ marginTop: '2rem', color: 'var(--accent-orange)' }}>
+                            <p>Could not detect GitHub account. Please sign in with GitHub.</p>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
