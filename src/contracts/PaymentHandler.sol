@@ -75,23 +75,27 @@ contract PaymentHandler {
         emit AdminChanged(previousAdmin, newAdmin);
     }
 
-    /// @notice Pay for service (1% protocol fee)
-    /// @dev SECURITY: Minimum payment prevents precision loss
-    function pay(uint256 serviceId) external payable nonReentrant whenNotPaused {
+    /// @notice Pay for service with dynamic fee (gas + margin)
+    /// @dev platformFee is calculated off-chain: estimatedGas + (amount * marginRate)
+    /// @param serviceId Service identifier
+    /// @param platformFee Expected platform fee (gas cost + margin)
+    function pay(uint256 serviceId, uint256 platformFee) external payable nonReentrant whenNotPaused {
         require(msg.value >= MIN_PAYMENT, "Payment too small (min 10000 wei)");
-
-        uint256 fee = (msg.value * 100) / 10000; // 1% (100 basis points)
+        require(platformFee > 0, "Platform fee must be positive");
+        require(platformFee < msg.value, "Fee cannot exceed payment");
         
-        // Fee will be at least 10 wei due to MIN_PAYMENT requirement
-        assert(fee > 0);
+        // SECURITY: Enforce maximum fee cap (20% ceiling)
+        // Protects users from excessive fees even if backend is compromised
+        uint256 maxAllowedFee = (msg.value * 2000) / 10000; // 20%
+        require(platformFee <= maxAllowedFee, "Fee exceeds 20% safety cap");
 
         // Effects: Update state before external calls
-        totalAdminFees += fee;
+        totalAdminFees += platformFee;
 
-        // Emit event
-        emit PaymentProcessed(msg.sender, serviceId, msg.value, fee);
+        // Emit event with breakdown
+        emit PaymentProcessed(msg.sender, serviceId, msg.value, platformFee);
         
-        // Note: Remaining balance stays in contract for service provider
+        // Note: Remaining balance (msg.value - platformFee) stays for service provider
     }
     
     /// @notice Admin withdraws accumulated fees
