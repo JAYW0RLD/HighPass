@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx tsc && cd dashboard && npm install && npm run build",
-    "build:backend": "npx tsc",
+    "build": "./node_modules/.bin/tsc && cd dashboard && npm install && npm run build",
+    "build:backend": "./node_modules/.bin/tsc",
     "build:frontend": "cd dashboard && npm run build",
     "vercel-build": "npm run build",
     "start": "node dist/src/server.js",
@@ -45,8 +45,7 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "ts-jest": "^29.4.6",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "ts-node": "^10.9.2"
   },
   "dependencies": {
     "@coinbase/x402": "^2.1.0",
@@ -60,6 +59,7 @@
     "helmet": "^8.1.0",
     "morgan": "^1.10.1",
     "permissionless": "^0.3.2",
+    "typescript": "^5.9.3",
     "viem": "^2.43.5"
   }
 }
