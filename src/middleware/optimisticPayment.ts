@@ -102,17 +102,33 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS || "0x0000000000000000000000000000000000000000";
         const commonHeaders = `receiver="${paymentHandlerAddress}", asset="CRO", chainId="240", datetime="${new Date().toISOString()}"`;
 
-        // Case 1: Outstanding Debt - Must pay before proceeding
-        if (currentDebt > 0) {
-            console.log(`[X402] Agent ${agentId} has debt: ${currentDebt} wei`);
-            res.locals.paymentAmount = requiredWei.toString();
+        // Case 1: Outstanding Debt - Check Settlement Threshold
+        // Grade-based debt aggregation for gas optimization
+        const DEBT_THRESHOLDS = {
+            'A': BigInt('5000000000000000000'), // $5.00 @ $0.10/CRO = 50 CRO
+            'B': BigInt('1000000000000000000'), // $1.00 = 10 CRO
+            'C': BigInt('1000000000000000000'), // $1.00 = 10 CRO
+            'D': BigInt(0), // Immediate payment
+            'E': BigInt(0), // Immediate payment
+            'F': BigInt(0)  // Immediate payment
+        };
+
+        const debtThreshold = DEBT_THRESHOLDS[grade as keyof typeof DEBT_THRESHOLDS] || BigInt(0);
+        const newDebt = currentDebt + requiredWei;
+
+        if (currentDebt > 0 && newDebt >= debtThreshold) {
+            // Debt exceeded threshold - demand settlement
+            console.log(`[Batch Settlement] Agent ${agentId} (Grade ${grade}): Debt ${currentDebt} + ${requiredWei} >= ${debtThreshold} - triggering settlement`);
+            res.locals.paymentAmount = currentDebt.toString();
             res.status(402).set(
                 'WWW-Authenticate',
-                `Token realm="X402-Debt", ${commonHeaders}, amount="${currentDebt.toString()}", debt="${currentDebt.toString()}"`
+                `Token realm=\"X402-Settlement\", ${commonHeaders}, amount=\"${currentDebt.toString()}\", debt=\"${currentDebt.toString()}\", threshold=\"${debtThreshold.toString()}\"`
             ).json({
-                error: "Payment Required",
-                message: `Outstanding debt detected. Please settle ${currentDebt.toString()} wei first.`,
-                debtAmount: currentDebt.toString()
+                error: "Settlement Required",
+                message: `Debt threshold reached. Please settle outstanding balance.`,
+                debtAmount: currentDebt.toString(),
+                threshold: debtThreshold.toString(),
+                grade: grade
             });
             return;
         }
@@ -125,7 +141,8 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         const isOptimisticEligible = grade && grade <= minOptimisticGrade;
 
         if (isOptimisticEligible) {
-            console.log(`[X402] Agent ${agentId} (Grade ${grade}): Granting Optimistic Access (Min: ${minOptimisticGrade})`);
+            // Allow optimistic access - accumulate debt
+            console.log(`[X402] Agent ${agentId} (Grade ${grade}): Granting Optimistic Access. Debt: ${currentDebt} → ${newDebt} (Threshold: ${debtThreshold})`);
             await addDebt(agentId, requiredWei);
             res.locals.paymentAmount = requiredWei.toString();
             res.locals.isOptimistic = true;

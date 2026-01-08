@@ -72,6 +72,10 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/services', servicesRouter);
 app.use('/api/provider', providerRouter);
 
+// Manual Debt Settlement (Flush) Endpoint
+import { flushDebt } from './routes/flush';
+app.post('/api/flush', flushDebt);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
