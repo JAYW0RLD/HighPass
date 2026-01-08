@@ -30,6 +30,9 @@ function ProviderPortal() {
         min_grade: 'F'
     });
 
+    // Edit Modal State
+    const [editingService, setEditingService] = useState<Service | null>(null);
+
     useEffect(() => {
         fetchServices();
     }, []);
@@ -74,19 +77,76 @@ function ProviderPortal() {
         }
     };
 
+    const handleUpdateService = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingService) return;
+
+        try {
+            const { error } = await supabase
+                .from('services')
+                .update({
+                    name: editingService.name,
+                    slug: editingService.slug,
+                    upstream_url: editingService.upstream_url,
+                    price_wei: editingService.price_wei,
+                    min_grade: editingService.min_grade
+                })
+                .eq('id', editingService.id);
+
+            if (error) throw error;
+
+            alert('Service Updated!');
+            setEditingService(null);
+            fetchServices();
+        } catch (err: any) {
+            alert(`Error updating service: ${err.message}`);
+        }
+    };
+
+    const handleDeleteService = async () => {
+        if (!editingService) return;
+        if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) return;
+
+        try {
+            const { error } = await supabase
+                .from('services')
+                .delete()
+                .eq('id', editingService.id);
+
+            if (error) throw error;
+
+            alert('Service Deleted!');
+            setEditingService(null);
+            fetchServices();
+        } catch (err: any) {
+            alert(`Error deleting service: ${err.message}`);
+        }
+    };
+
     const createDemoService = async () => {
+        const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+        const demoUpstreamUrl = `${apiOrigin}/api/demo/echo`;
+
+        // Check for existing demo service (Limit 1 per account)
+        const existingDemo = services.find(s => s.upstream_url === demoUpstreamUrl);
+        if (existingDemo) {
+            alert('You already have a Demo Echo Service deployed.');
+            return;
+        }
+
+        if (!confirm('Deploy a Demo Echo Service for testing?')) return;
+
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
             const slug = `demo-${Math.random().toString(36).substring(7)}`;
-            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
 
             const { data, error } = await supabase.from('services').insert({
                 provider_id: user.id,
                 name: 'Demo Echo Service',
                 slug: slug,
-                upstream_url: `${apiOrigin}/api/demo/echo`,
+                upstream_url: demoUpstreamUrl,
                 price_wei: '10000000000000000', // 0.01 CRO
                 min_grade: 'F'
             }).select();
@@ -212,9 +272,18 @@ function ProviderPortal() {
                     <div className="service-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                         {services.map(svc => (
                             <div key={svc.id} className="metric-card" style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>{svc.name}</h3>
-                                    <span className="status-badge verified">{svc.min_grade}+ Only</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span className="status-badge verified">{svc.min_grade}+ Only</span>
+                                        <button
+                                            onClick={() => setEditingService(svc)}
+                                            className="btn-secondary"
+                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                        >
+                                            Manage
+                                        </button>
+                                    </div>
                                 </div>
                                 <code style={{ display: 'block', color: 'var(--accent-blue)', marginBottom: '0.5rem', fontFamily: 'monospace' }}>/gatekeeper/{svc.slug}/resource</code>
                                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -230,6 +299,107 @@ function ProviderPortal() {
             </div>
         </div>
     );
+
+    // Edit Service Modal Component
+    const EditModal = () => {
+        if (!editingService) return null;
+
+        return (
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000
+            }}>
+                <div className="data-section" style={{ padding: '1.5rem', width: '90%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.2rem' }}>Edit Service</h2>
+                    <form onSubmit={handleUpdateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div>
+                            <label className="metric-label">Service Name</label>
+                            <input
+                                type="text"
+                                value={editingService.name}
+                                onChange={e => setEditingService({ ...editingService, name: e.target.value })}
+                                required
+                                className="form-control"
+                            />
+                        </div>
+                        <div>
+                            <label className="metric-label">URL Slug</label>
+                            <input
+                                type="text"
+                                value={editingService.slug}
+                                onChange={e => setEditingService({ ...editingService, slug: e.target.value })}
+                                required
+                                className="form-control"
+                            />
+                        </div>
+                        <div>
+                            <label className="metric-label">Upstream Target</label>
+                            <input
+                                type="text"
+                                value={editingService.upstream_url}
+                                onChange={e => setEditingService({ ...editingService, upstream_url: e.target.value })}
+                                required
+                                className="form-control"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label className="metric-label">Price (CRO)</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={editingService.price_wei === '0' ? '' : Number(editingService.price_wei) / 1e18}
+                                    onChange={e => {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val)) {
+                                            setEditingService({ ...editingService, price_wei: (val * 1e18).toLocaleString('fullwide', { useGrouping: false }) });
+                                        } else {
+                                            setEditingService({ ...editingService, price_wei: '0' });
+                                        }
+                                    }}
+                                    required
+                                    className="form-control"
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label className="metric-label">Min Grade</label>
+                                <select
+                                    value={editingService.min_grade}
+                                    onChange={e => setEditingService({ ...editingService, min_grade: e.target.value })}
+                                    className="form-control"
+                                >
+                                    <option value="A">A (Verified Only)</option>
+                                    <option value="B">B (Trusted)</option>
+                                    <option value="C">C (Standard)</option>
+                                    <option value="D">D (Limited)</option>
+                                    <option value="F">F (Allow All)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                            <button type="submit" className="btn-primary" style={{ flex: 1 }}>
+                                Update
+                            </button>
+                            <button type="button" onClick={handleDeleteService} className="btn-secondary" style={{ flex: 1, borderColor: 'var(--accent-red)', color: 'var(--accent-red)' }}>
+                                Delete
+                            </button>
+                            <button type="button" onClick={() => setEditingService(null)} className="btn-secondary" style={{ flex: 1 }}>
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    };
 
     const IntegrationTab = () => {
         const [selectedService, setSelectedService] = useState<Service | null>(services[0] || null);
@@ -369,6 +539,9 @@ callService();
             {activeTab === 'services' && <ServicesTab />}
             {activeTab === 'integration' && <IntegrationTab />}
             {activeTab === 'revenue' && <RevenueTab />}
+
+            {/* Edit Modal */}
+            <EditModal />
         </div>
     );
 }

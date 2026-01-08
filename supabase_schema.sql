@@ -113,6 +113,11 @@ GRANT SELECT ON public_services TO anon, authenticated;
 -- (We just dropped the allow policy, so default deny applies, unless another policy fits)
 -- "Providers can view own" still works for authenticated.
 
+-- Providers can view their own services
+DROP POLICY IF EXISTS "Providers can view own services" ON services;
+CREATE POLICY "Providers can view own services" ON services
+    FOR SELECT USING (auth.uid() = provider_id);
+
 -- Providers can INSERT their own services
 DROP POLICY IF EXISTS "Providers can create services" ON services;
 CREATE POLICY "Providers create services" ON services
