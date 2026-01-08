@@ -12,7 +12,7 @@ function AuthPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session) {
                 // Redirect logic will be handled by the protected route wrapper or initial check
                 // But for direct login, let's wait a bit or just redirect to home and let router decide

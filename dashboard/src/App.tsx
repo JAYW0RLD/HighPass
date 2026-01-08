@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import AuthPage from './pages/AuthPage';
@@ -11,7 +12,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Protected Route Component
-function ProtectedRoute({ children, requiredRole }: { children: JSX.Element, requiredRole?: 'admin' | 'provider' }) {
+function ProtectedRoute({ children, requiredRole }: { children: ReactNode, requiredRole?: 'admin' | 'provider' }) {
   const [session, setSession] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

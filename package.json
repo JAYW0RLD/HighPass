@@ -22,8 +22,7 @@
     "lint:fix": "npx eslint . --ext .ts --fix",
     "format": "npx prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
     "format:check": "npx prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
-    "postinstall": "node -e \"if (process.env.CI !== 'true') require('husky').install().catch(() => {})\""
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
