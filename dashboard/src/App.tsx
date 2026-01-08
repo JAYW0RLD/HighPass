@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import AuthPage from './pages/AuthPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProviderPortal from './pages/ProviderPortal';
+import SettingsPage from './pages/SettingsPage';
 import './App.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -105,6 +106,12 @@ function App() {
         <Route path="/portal" element={
           <ProtectedRoute requiredRole="provider">
             <ProviderPortal />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/settings" element={
+          <ProtectedRoute requiredRole="provider">
+            <SettingsPage />
           </ProtectedRoute>
         } />
 

@@ -9,6 +9,7 @@ import { loggerMiddleware } from './middleware/logger';
 import { initDB } from './database/db';
 import statsRouter from './routes/stats';
 import servicesRouter from './routes/services';
+import settingsRouter from './routes/settings';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -66,6 +67,7 @@ initDB().then(() => {
 // Install Logger & Stats
 app.use(loggerMiddleware);
 app.use('/api', statsRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api/services', servicesRouter);
 
 // Health check endpoint
