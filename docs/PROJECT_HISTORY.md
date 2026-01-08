@@ -24,7 +24,25 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
-### v2.0.3 - Critical Security Fixes (Latest)
+### v2.3 - UI/UX Overhaul & Settlement (Latest)
+- **[DESIGN] GitHub Light Theme**: Complete redesign of the dashboard with a clean, white-based interface inspired by GitHub.
+- **[FEATURE] Automated Settlements**: 
+    - Implemented `provider_settings` and `withdrawals` tables.
+    - Added GitHub-style Settings page for auto-withdrawal configuration (address, threshold).
+- **[UX] Provider Portal**: Enhanced "Boxed Group" layout and tabbed navigation.
+
+### v2.2 - Vercel Deployment & Security
+- **[OPS] Vercel Support**: Full compatibility with Vercel Serverless Functions (`api/index.ts`).
+- **[OPS] React Stability**: Downgraded React to 18.x to resolve production `useState` null errors.
+- **[SECURITY] Domain Verification**: Implemented `.well-known` token verification to prevent hijacking of upstream URLs.
+- **[DOCS] Deployment Guides**: Comprehensive guides for Vercel & Supabase deployment (KR/EN).
+
+### v2.1 - Revenue & Integration (Completed)
+- **[UI] Revenue Dashboard**: Visual breakdown of Protocol Fees vs Provider Revenue.
+- **[DX] Integration Guide**: Auto-generated code snippets (viem) for connecting Agents to Services.
+- **[FEATURE] Split Payment Logic**: Backend implementation of fee calculation (Platform Fee).
+
+### v2.0.3 - Critical Security Fixes
 - **[SECURITY] Replay Attack Fixed**: Implemented atomic transaction hash locking to prevent double-spending race condition.
     - Added UNIQUE constraint on `tx_hash` in database schema.
     - Modified `logRequest()` to support UPSERT for atomic claiming.
@@ -79,14 +97,10 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ---
 
-## 🚀 Roadmap (Upcoming Updates)
+## 🚀 Roadmap (Future)
 
-### v2.1 - Revenue & Integration (In Progress)
-- **[UI] Revenue Dashboard**: Visual breakdown of Protocol Fees (0.5%) vs Provider Revenue.
-- **[DX] Integration Guide**: "Agent Builder" tab in Provider Portal with auto-generated code snippets (TypeScript/Python) for connecting to services.
-- **[SMART CONTRACT] Split Payment**: Implement automated fee splitting on-chain (currently logic-based).
+### v2.4 - Optimization & Scaling (Planned)
+- **[OPS] Docker Compose**: Full containerization for easy on-premise deployment.
+- **[OPS] CI/CD Pipeline**: GitHub Actions for automated testing and deployment.
+- **[SECURITY] Rate Limiting**: Per-service/Per-tier rate limiting updates using Redis (Vercel KV).
 
-### v2.2 - Production Hardening (Planned)
-- **[OPS] Docker Compose**: Full containerization for easy deployment.
-- **[OPS] CI/CD Pipeline**: Automated testing and deployment workflows.
-- **[SECURITY] Rate Limiting**: Per-service/Per-tier rate limiting updates.
