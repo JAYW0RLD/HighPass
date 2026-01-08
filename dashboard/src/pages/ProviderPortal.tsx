@@ -32,6 +32,13 @@ function ProviderPortal() {
 
     // Edit Modal State
     const [editingService, setEditingService] = useState<Service | null>(null);
+    const [verificationData, setVerificationData] = useState<{ token: string; instructions: any } | null>(null);
+    const [verifying, setVerifying] = useState(false);
+
+    // Test Simulator State
+    const [testingService, setTestingService] = useState<Service | null>(null);
+    const [testResult, setTestResult] = useState<any>(null);
+    const [testLoading, setTestLoading] = useState(false);
 
     useEffect(() => {
         fetchServices();
@@ -53,6 +60,88 @@ function ProviderPortal() {
         } catch (err) {
             console.error('Error fetching services:', err);
             setLoading(false);
+        }
+    };
+
+    const handleGenerateToken = async () => {
+        if (!editingService) return;
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+            const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/generate-token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user.id
+                }
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            setVerificationData(data);
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
+    const handleVerifyDomain = async () => {
+        if (!editingService) return;
+        setVerifying(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+            const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user.id
+                }
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            alert('Domain Verified Successfully!');
+            setEditingService(null);
+            setVerificationData(null);
+            fetchServices();
+        } catch (err: any) {
+            alert(`Verification Failed: ${err.message}`);
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+    const handleRunTest = async () => {
+        if (!testingService) return;
+        setTestLoading(true);
+        setTestResult(null);
+
+        try {
+            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+            const res = await fetch(`${apiOrigin}/gatekeeper/${testingService.slug}/resource`, {
+                method: 'GET',
+                headers: {
+                    'X-Agent-ID': 'prime-agent',
+                    'X-Agent-Signature': 'simulated-signature',
+                    'X-Auth-Timestamp': Date.now().toString()
+                }
+            });
+
+            const data = await res.json();
+            setTestResult({
+                status: res.status,
+                headers: Object.fromEntries(res.headers.entries()),
+                body: data
+            });
+        } catch (err: any) {
+            setTestResult({ error: err.message });
+        } finally {
+            setTestLoading(false);
         }
     };
 
@@ -127,7 +216,6 @@ function ProviderPortal() {
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
         const demoUpstreamUrl = `${apiOrigin}/api/demo/echo`;
 
-        // Check for existing demo service (Limit 1 per account)
         const existingDemo = services.find(s => s.upstream_url === demoUpstreamUrl);
         if (existingDemo) {
             alert('You already have a Demo Echo Service deployed.');
@@ -142,18 +230,16 @@ function ProviderPortal() {
 
             const slug = `demo-${Math.random().toString(36).substring(7)}`;
 
-            const { data, error } = await supabase.from('services').insert({
+            const { error } = await supabase.from('services').insert({
                 provider_id: user.id,
                 name: 'Demo Echo Service',
                 slug: slug,
                 upstream_url: demoUpstreamUrl,
                 price_wei: '10000000000000000', // 0.01 CRO
                 min_grade: 'F'
-            }).select();
+            });
 
             if (error) throw error;
-            console.log('Demo Service Created:', data);
-
             alert('Demo Service Deployed!');
             fetchServices();
         } catch (err: any) {
@@ -161,7 +247,7 @@ function ProviderPortal() {
         }
     };
 
-    // --- Components for Tabs ---
+    // --- Sub-Components ---
 
     const ServicesTab = () => (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '2rem' }}>
@@ -222,7 +308,7 @@ function ProviderPortal() {
                                     required
                                     className="form-control"
                                 />
-                                <p className="help-text">≈ ${(Number(newService.price_wei) / 1e18 * 0.08).toFixed(4)} USD (1 CRO ≈ $0.08)</p>
+                                <p className="help-text">≈ ${(Number(newService.price_wei) / 1e18 * 0.08).toFixed(4)} USD</p>
                             </div>
                             <div style={{ flex: 1 }}>
                                 <label className="metric-label">Min Grade</label>
@@ -251,21 +337,13 @@ function ProviderPortal() {
                         type="button"
                         onClick={createDemoService}
                         className="btn-secondary"
-                        style={{
-                            padding: '0.5rem 1rem',
-                            fontWeight: 500,
-                            fontSize: '0.85rem',
-                            background: 'transparent',
-                            border: '1px solid var(--border)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                     >
                         + Deploy Demo Echo API
                     </button>
                 </div>
             </div>
 
-            {/* SERVICE LIST */}
             <div className="data-section" style={{ padding: '1.5rem' }}>
                 <h2 style={{ marginTop: 0, fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>My Services</h2>
                 {loading ? <p>Loading...</p> : (
@@ -273,21 +351,28 @@ function ProviderPortal() {
                         {services.map(svc => (
                             <div key={svc.id} className="metric-card" style={{ padding: '1rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>{svc.name}</h3>
+                                    <h3 style={{ margin: 0, fontSize: '1rem' }}>{svc.name}</h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <span className={`status-badge ${svc.upstream_url.includes('/api/demo/echo') ? 'verified' : 'pending'}`}>
                                             {svc.upstream_url.includes('/api/demo/echo') ? 'Verified' : 'Pending Verification'}
                                         </span>
                                         <button
-                                            onClick={() => setEditingService(svc)}
-                                            className="btn-secondary"
-                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                                            onClick={() => setTestingService(svc)}
+                                            className="btn"
+                                            style={{
+                                                padding: '0.4rem 1rem',
+                                                fontSize: '0.75rem',
+                                                backgroundColor: 'var(--accent-blue)',
+                                                color: 'white',
+                                                border: 'none'
+                                            }}
                                         >
-                                            Manage
+                                            Test API
                                         </button>
+                                        <button onClick={() => setEditingService(svc)} className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem' }}>Manage</button>
                                     </div>
                                 </div>
-                                <code style={{ display: 'block', color: 'var(--accent-blue)', marginBottom: '0.5rem', fontFamily: 'monospace' }}>/gatekeeper/{svc.slug}/resource</code>
+                                <code style={{ display: 'block', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>/gatekeeper/{svc.slug}/resource</code>
                                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                     <span>Target: {svc.upstream_url}</span>
                                     <span>•</span>
@@ -295,158 +380,23 @@ function ProviderPortal() {
                                 </div>
                             </div>
                         ))}
-                        {services.length === 0 && <p className="cell-time">No services registered yet.</p>}
+                        {services.length === 0 && <p>No services registered yet.</p>}
                     </div>
                 )}
             </div>
         </div>
     );
 
-    // Edit Service Modal Component
-    const EditModal = () => {
-        if (!editingService) return null;
-
-        return (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000
-            }}>
-                <div className="data-section" style={{ padding: '1.5rem', width: '90%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-                    <h2 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.2rem' }}>Edit Service</h2>
-                    <form onSubmit={handleUpdateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div>
-                            <label className="metric-label">Service Name</label>
-                            <input
-                                type="text"
-                                value={editingService.name}
-                                onChange={e => setEditingService({ ...editingService, name: e.target.value })}
-                                required
-                                className="form-control"
-                            />
-                        </div>
-                        <div>
-                            <label className="metric-label">URL Slug</label>
-                            <input
-                                type="text"
-                                value={editingService.slug}
-                                onChange={e => setEditingService({ ...editingService, slug: e.target.value })}
-                                required
-                                className="form-control"
-                            />
-                        </div>
-                        <div>
-                            <label className="metric-label">Upstream Target</label>
-                            <input
-                                type="text"
-                                value={editingService.upstream_url}
-                                onChange={e => setEditingService({ ...editingService, upstream_url: e.target.value })}
-                                required
-                                className="form-control"
-                            />
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <div style={{ flex: 1 }}>
-                                <label className="metric-label">Price (CRO)</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    value={editingService.price_wei === '0' ? '' : Number(editingService.price_wei) / 1e18}
-                                    onChange={e => {
-                                        const val = parseFloat(e.target.value);
-                                        if (!isNaN(val)) {
-                                            setEditingService({ ...editingService, price_wei: (val * 1e18).toLocaleString('fullwide', { useGrouping: false }) });
-                                        } else {
-                                            setEditingService({ ...editingService, price_wei: '0' });
-                                        }
-                                    }}
-                                    required
-                                    className="form-control"
-                                />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <label className="metric-label">Min Grade</label>
-                                <select
-                                    value={editingService.min_grade}
-                                    onChange={e => setEditingService({ ...editingService, min_grade: e.target.value })}
-                                    className="form-control"
-                                >
-                                    <option value="A">A (Verified Only)</option>
-                                    <option value="B">B (Trusted)</option>
-                                    <option value="C">C (Standard)</option>
-                                    <option value="D">D (Limited)</option>
-                                    <option value="F">F (Allow All)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                            <button type="submit" className="btn-primary" style={{ flex: 1 }}>
-                                Update
-                            </button>
-                            <button type="button" onClick={handleDeleteService} className="btn-secondary" style={{ flex: 1, borderColor: 'var(--accent-red)', color: 'var(--accent-red)' }}>
-                                Delete
-                            </button>
-                            <button type="button" onClick={() => setEditingService(null)} className="btn-secondary" style={{ flex: 1 }}>
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        );
-    };
-
     const IntegrationTab = () => {
         const [selectedService, setSelectedService] = useState<Service | null>(services[0] || null);
-
-        if (services.length === 0) return <p>Please register a service first.</p>;
-
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000';
         const endpoint = `${apiOrigin}/gatekeeper/${selectedService?.slug || 'service-slug'}/resource`;
 
-        const codeSnippet = `
-import { createWalletClient, http } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
-import { cronosTestnet } from 'viem/chains'
-
-const client = createWalletClient({
-  account: privateKeyToAccount('YOUR_PRIVATE_KEY'),
-  chain: cronosTestnet,
-  transport: http()
-})
-
-async function callService() {
-  const serviceUrl = "${endpoint}";
-  
-  // 1. Initial Request (Check Price/Debt)
-  const res = await fetch(serviceUrl, {
-    headers: { 'X-Agent-ID': 'my-agent' }
-  });
-
-  if (res.status === 402) {
-    // 2. Handle Payment logic here
-    console.log("Payment Required:", await res.json());
-  } else {
-    // 3. Success (Optimistic Access)
-    console.log("Success:", await res.json());
-  }
-}
-
-callService();
-    `.trim();
+        if (services.length === 0) return <p>Please register a service first.</p>;
 
         return (
             <div className="data-section" style={{ padding: '1.5rem' }}>
                 <h2>Agent Integration Guide</h2>
-                <p className="metric-label" style={{ marginBottom: '1rem' }}>Select a service to generate the connection code.</p>
-
                 <select
                     onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
                     className="form-control"
@@ -454,74 +404,100 @@ callService();
                 >
                     {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
-
-                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                    <pre style={{ margin: 0, overflowX: 'auto', fontFamily: 'SF Mono, monospace', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                        {codeSnippet}
+                <div style={{ background: '#0d1117', padding: '1rem', borderRadius: '6px', overflowX: 'auto' }}>
+                    <pre style={{ margin: 0, color: '#c9d1d9', fontSize: '0.85rem' }}>
+                        {`// Example Call via Gatekeeper
+const res = await fetch("${endpoint}", {
+  headers: { 'X-Agent-ID': 'my-agent' }
+});
+const data = await res.json();`}
                     </pre>
                 </div>
             </div>
         );
     };
 
-    const RevenueTab = () => {
-        // Mock Revenue Data (In prod, fetch from DB aggregation)
-        const totalCalls = services.length * 125; // Dummy data
-        const grossRevenue = services.length * 0.05 * 1000;
-        const protocolFee = grossRevenue * 0.005;
-        const netEarnings = grossRevenue - protocolFee;
+    const RevenueTab = () => (
+        <div className="data-section" style={{ padding: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Revenue & Analytics</h2>
+            <div className="metrics-grid">
+                <div className="metric-card primary">
+                    <div className="metric-label">Total Calls</div>
+                    <div className="metric-value">{services.length * 125}</div>
+                </div>
+                <div className="metric-card success">
+                    <div className="metric-label">Net Earnings (CRO)</div>
+                    <div className="metric-value">{(services.length * 0.05 * 1000 * 0.995).toFixed(2)}</div>
+                </div>
+            </div>
+        </div>
+    );
+
+    const TestModal = () => {
+        if (!testingService) return null;
+        const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+        const testUrl = `${apiOrigin}/gatekeeper/${testingService.slug}/resource`;
 
         return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-                <div className="data-section" style={{ padding: '1.5rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Financial Overview</h2>
-                    <div className="metrics-grid" style={{ marginTop: '1.5rem', marginBottom: 2 }}>
-                        <div className="metric-card primary">
-                            <div className="metric-label">Total Calls</div>
-                            <div className="metric-value">{totalCalls}</div>
-                        </div>
-                        <div className="metric-card success">
-                            <div className="metric-label">Gross Revenue (CRO)</div>
-                            <div className="metric-value" style={{ color: 'var(--accent-green)' }}>{grossRevenue.toFixed(2)}</div>
-                        </div>
-                        <div className="metric-card warning">
-                            <div className="metric-label">Protocol Fee (0.5%)</div>
-                            <div className="metric-value" style={{ color: 'var(--accent-red)' }}>-{protocolFee.toFixed(2)}</div>
-                        </div>
-                        <div className="metric-card primary">
-                            <div className="metric-label">Net Earnings (CRO)</div>
-                            <div className="metric-value" style={{ color: 'var(--accent-blue)' }}>{netEarnings.toFixed(2)}</div>
-                        </div>
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+                <div className="data-section" style={{ padding: '2rem', width: '90%', maxWidth: '600px', backgroundColor: 'var(--bg-secondary)', border: '2px solid var(--accent-blue)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <h2 style={{ margin: 0 }}>🤖 Agent Simulator</h2>
+                        <button onClick={() => { setTestingService(null); setTestResult(null); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
                     </div>
+                    <div style={{ background: '#0d1117', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#8b949e' }}>REQUESTING AS: <span style={{ color: '#58a6ff' }}>prime-agent (Grade A)</span></p>
+                        <code style={{ fontSize: '0.9rem', color: '#7ee787' }}>GET {testUrl}</code>
+                    </div>
+                    {!testResult ? (
+                        <div style={{ textAlign: 'center' }}><button onClick={handleRunTest} disabled={testLoading} className="btn-primary" style={{ padding: '1rem 2rem' }}>{testLoading ? '🤖 Calling...' : '🚀 RUN TEST'}</button></div>
+                    ) : (
+                        <div style={{ background: '#161b22', padding: '1rem', borderRadius: '8px', border: `1px solid ${testResult.status === 200 ? '#238636' : '#da3633'}` }}>
+                            <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>HTTP {testResult.status}</div>
+                            <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9' }}>{JSON.stringify(testResult.body, null, 2)}</pre>
+                            <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ marginTop: '1rem', width: '100%' }}>Reset</button>
+                        </div>
+                    )}
                 </div>
+            </div>
+        );
+    };
 
-                <div className="data-section" style={{ padding: '1.5rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Service Breakdown</h2>
-                    <div className="data-table" style={{ marginTop: '1rem' }}>
-                        <div className="table-header" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
-                            <span>SERVICE NAME</span>
-                            <span>TOTAL CALLS</span>
-                            <span>PRICE (CRO)</span>
-                            <span>EARNINGS (CRO)</span>
-                        </div>
-                        <div className="table-body">
-                            {services.map(svc => {
-                                // Mock logic for breakdown
-                                const calls = 125;
-                                const priceCro = Number(svc.price_wei) / 1e18;
-                                const earnings = calls * priceCro * 0.995;
-                                return (
-                                    <div key={svc.id} className="table-row" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
-                                        <span style={{ fontWeight: 600 }}>{svc.name}</span>
-                                        <span>{calls}</span>
-                                        <span>{priceCro.toFixed(4)}</span>
-                                        <span style={{ color: 'var(--accent-green)' }}>{earnings.toFixed(4)}</span>
-                                    </div>
-                                );
-                            })}
-                            {services.length === 0 && <p style={{ padding: '1rem', color: 'var(--text-secondary)' }}>No services available.</p>}
-                        </div>
+    const EditModal = () => {
+        if (!editingService) return null;
+        const isDemo = editingService.upstream_url.includes('/api/demo/echo');
+
+        return (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                <div className="data-section" style={{ padding: '1.5rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Manage: {editingService.name}</h2>
+                        <button onClick={() => { setEditingService(null); setVerificationData(null); }} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'gray' }}>&times;</button>
                     </div>
+                    {!isDemo && (
+                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,122,255,0.05)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                            <h3 style={{ marginTop: 0, fontSize: '0.9rem' }}>🛡️ Domain Verification</h3>
+                            {!verificationData ? (
+                                <button onClick={handleGenerateToken} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Begin Verification</button>
+                            ) : (
+                                <div style={{ fontSize: '0.8rem' }}>
+                                    <p>Upload token to: <code>{verificationData.instructions.path}</code></p>
+                                    <code style={{ display: 'block', padding: '0.5rem', background: 'var(--bg-primary)', margin: '0.5rem 0' }}>{verificationData.token}</code>
+                                    <button onClick={handleVerifyDomain} disabled={verifying} className="btn-primary" style={{ width: '100%' }}>{verifying ? 'Verifying...' : 'Check Verification'}</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <form onSubmit={handleUpdateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} placeholder="Name" className="form-control" required />
+                        <input type="text" value={editingService.slug} onChange={e => setEditingService({ ...editingService, slug: e.target.value })} placeholder="Slug" className="form-control" required />
+                        <input type="text" value={editingService.upstream_url} onChange={e => setEditingService({ ...editingService, upstream_url: e.target.value })} placeholder="Target URL" className="form-control" required disabled={isDemo} />
+                        <input type="number" step="any" value={Number(editingService.price_wei) / 1e18} onChange={e => setEditingService({ ...editingService, price_wei: (parseFloat(e.target.value) * 1e18).toLocaleString('fullwide', { useGrouping: false }) })} placeholder="Price (CRO)" className="form-control" required />
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button type="submit" className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
+                            <button type="button" onClick={handleDeleteService} className="btn-secondary" style={{ flex: 0.5, color: 'red' }}>Delete</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         );
@@ -530,41 +506,26 @@ callService();
     return (
         <div className="dashboard provider-portal">
             <Header title="Provider Portal" />
-
-            {/* TABS */}
-            <nav style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
-                <TabButton label="My Services" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
-                <TabButton label="Integration Guide" active={activeTab === 'integration'} onClick={() => setActiveTab('integration')} />
-                <TabButton label="Revenue & Analytics" active={activeTab === 'revenue'} onClick={() => setActiveTab('revenue')} />
+            {/* TABS (YouTube Chips Style) */}
+            <nav className="chip-nav">
+                <button className={`chip ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>My Services</button>
+                <button className={`chip ${activeTab === 'integration' ? 'active' : ''}`} onClick={() => setActiveTab('integration')}>Integration</button>
+                <button className={`chip ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => setActiveTab('revenue')}>Revenue</button>
             </nav>
-
             {activeTab === 'services' && <ServicesTab />}
             {activeTab === 'integration' && <IntegrationTab />}
             {activeTab === 'revenue' && <RevenueTab />}
-
-            {/* Edit Modal */}
             <EditModal />
+            <TestModal />
+            <footer className="footer" style={{ marginTop: '4rem' }}>
+                <span>Provider Portal</span>
+                <span>•</span>
+                <span>Role: Service Provider</span>
+                <span>•</span>
+                <span>x402 Gatekeeper v2.3</span>
+            </footer>
         </div>
     );
 }
-
-const TabButton = ({ label, active, onClick }: any) => (
-    <button
-        onClick={onClick}
-        style={{
-            background: 'none',
-            border: 'none',
-            color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            padding: '0.75rem 0.25rem',
-            borderBottom: active ? '2px solid var(--accent-orange)' : '2px solid transparent',
-            marginBottom: '-1px'
-        }}
-    >
-        {label}
-    </button>
-);
 
 export default ProviderPortal;

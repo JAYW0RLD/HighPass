@@ -37,7 +37,7 @@ function AuthPage() {
                 <h1 style={{ fontSize: '24px', fontWeight: '300', letterSpacing: '-0.5px' }}>Sign in to X402</h1>
             </div>
 
-            <div className="boxed-group" style={{ width: '100%', maxWidth: '340px', padding: '20px', backgroundColor: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}>
+            <div className="data-section" style={{ width: '100%', maxWidth: '340px', padding: '24px', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)', border: 'none' }}>
                 <Auth
                     supabaseClient={supabase}
                     appearance={{
@@ -45,37 +45,20 @@ function AuthPage() {
                         variables: {
                             default: {
                                 colors: {
-                                    brand: '#2da44e',
-                                    brandAccent: '#2c974b',
+                                    brand: '#0f0f0f',
+                                    brandAccent: '#272727',
                                     inputBackground: 'var(--bg-primary)',
                                     inputText: 'var(--text-primary)',
                                     inputBorder: 'var(--border)',
-                                    inputBorderFocus: '#0969da',
+                                    inputBorderFocus: '#065fd4',
                                     inputLabelText: 'var(--text-primary)',
                                 },
                                 radii: {
-                                    borderRadiusButton: '6px',
-                                    buttonBorderRadius: '6px',
-                                    inputBorderRadius: '6px',
+                                    borderRadiusButton: '20px',
+                                    buttonBorderRadius: '20px',
+                                    inputBorderRadius: '12px',
                                 },
-                                space: {
-                                    inputPadding: '5px 12px',
-                                    buttonPadding: '5px 16px',
-                                },
-                                fontSizes: {
-                                    baseBodySize: '14px',
-                                    baseInputSize: '14px',
-                                    baseLabelSize: '14px',
-                                    baseButtonSize: '14px',
-                                }
                             }
-                        },
-                        style: {
-                            button: {
-                                fontWeight: '500',
-                                border: '1px solid rgba(27,31,36,0.15)',
-                                boxShadow: '0 1px 0 rgba(27,31,36,0.1)'
-                            },
                         }
                     }}
                     providers={[]}

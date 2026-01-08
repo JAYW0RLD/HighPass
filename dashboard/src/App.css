@@ -3,24 +3,35 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* GitHub Light Theme Variables */
+  /* GitHub x YouTube Blend Theme Variables */
   --bg-primary: #ffffff;
-  --bg-secondary: #f6f8fa;
+  --bg-secondary: #f8f9fa;
+  /* Slightly softer gray */
   --bg-elevated: #ffffff;
-  --text-primary: #24292f;
-  --text-secondary: #57606a;
-  --text-tertiary: #6e7681;
-  --border: #d0d7de;
-  --border-secondary: #d8dee4;
+  --text-primary: #0f0f0f;
+  /* YouTube's intense dark */
+  --text-secondary: #606060;
+  /* YouTube's gray text */
+  --text-tertiary: #909090;
+  --border: #e5e5e5;
+  /* Softer border */
+  --border-secondary: #f2f2f2;
 
-  --accent-blue: #0969da;
-  --accent-green: #1a7f37;
-  --accent-orange: #9a6700;
-  --accent-red: #cf222e;
+  --accent-blue: #065fd4;
+  /* YouTube Blue */
+  --accent-green: #2da44e;
+  --accent-orange: #f57c00;
+  --accent-red: #cc0000;
+  /* YouTube Red */
 
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-elevated: 0 8px 24px rgba(140, 149, 159, 0.2);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 50px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 * {
@@ -91,34 +102,29 @@ body {
 .nav-item {
   position: relative;
   display: block;
-  padding: 8px 10px;
+  padding: 10px 16px;
   font-size: 14px;
   color: var(--text-primary);
-  border-radius: 6px;
-  margin-bottom: 2px;
+  border-radius: var(--radius-md);
+  margin-bottom: 4px;
+  transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
+  font-weight: 500;
 }
 
 .nav-item:hover {
-  background-color: var(--bg-secondary);
+  background-color: #e5e5e5;
   text-decoration: none;
 }
 
 .nav-item.active {
   font-weight: 600;
-  background-color: var(--bg-secondary);
+  background-color: #0f0f0f;
+  color: #ffffff;
 }
 
 .nav-item.active::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 4px;
-  content: "";
-  background-color: var(--accent-orange);
-  border-radius: 6px 0 0 6px;
-  /* actually sidebar uses border-left usually, but GitHub uses a colored bar */
-  display: block;
+  display: none;
+  /* YouTube style doesn't use the left bar */
 }
 
 /* override rounded corners for the bar effect if we want exact GitHub style, but let's just highlight text */
@@ -127,14 +133,17 @@ body {
 /* Header */
 /* Header */
 .app-header {
-  background-color: #24292f;
-  color: #ffffff;
-  padding: 16px 32px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 12px 24px;
   margin-bottom: 0;
-  /* Remove bottom margin as it's separate from dashboard content */
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .app-header h1 {
@@ -152,13 +161,17 @@ body {
 }
 
 .header-link {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 14px;
-  opacity: 0.75;
-  transition: opacity 0.2s;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: all 0.2s;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
 }
 
 .header-link:hover {
+  background-color: var(--bg-secondary);
   opacity: 1;
   text-decoration: none;
 }
@@ -281,16 +294,16 @@ h1 {
 .metric-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 1.5rem;
-  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.05, 0, 0, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-elevated);
-  border-color: var(--accent-blue);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+  border-color: transparent;
 }
 
 .metric-card.primary {
@@ -333,10 +346,10 @@ h1 {
 .data-section {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -468,11 +481,11 @@ h1 {
 /* Status Badges */
 .status-badge {
   display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   border: 1px solid;
 }
 
@@ -654,19 +667,14 @@ h1 {
 
 .form-control {
   width: 100%;
-  padding: 5px 12px;
+  padding: 10px 16px;
   font-size: 14px;
   line-height: 20px;
   color: var(--text-primary);
-  vertical-align: middle;
   background-color: var(--bg-primary);
-  background-repeat: no-repeat;
-  background-position: right 8px center;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: var(--shadow-card);
-  transition: .2s cubic-bezier(.3, 0, .5, 1);
-  transition-property: color, background-color, border-color;
+  border-radius: var(--radius-md);
+  transition: all .2s cubic-bezier(.05, 0, 0, 1);
 }
 
 .form-control:focus {
@@ -682,31 +690,32 @@ h1 {
 }
 
 .btn {
-  display: inline-block;
-  padding: 5px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 20px;
   white-space: nowrap;
   vertical-align: middle;
   cursor: pointer;
-  -webkit-user-select: none;
   user-select: none;
-  border: 1px solid;
-  border-radius: 6px;
-  -webkit-appearance: none;
-  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
 }
 
 .btn-primary {
   color: #ffffff;
-  background-color: #2da44e;
-  border-color: rgba(27, 31, 36, 0.15);
-  box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
+  background-color: #0f0f0f;
+  /* YouTube Secondary Black */
+  border-color: transparent;
 }
 
 .btn-primary:hover {
-  background-color: #2c974b;
+  background-color: #272727;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -729,4 +738,39 @@ h1 {
   gap: 0.5rem;
   font-weight: 400 !important;
   cursor: pointer;
+}
+/* YouTube Chips Navigation */
+.chip-nav {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding: 4px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chip-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
+  background-color: #f2f2f2;
+  color: #0f0f0f;
+}
+
+.chip:hover {
+  background-color: #e5e5e5;
+}
+
+.chip.active {
+  background-color: #0f0f0f;
+  color: #ffffff;
 }

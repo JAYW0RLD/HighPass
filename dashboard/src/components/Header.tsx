@@ -17,31 +17,29 @@ export default function Header({ title }: HeaderProps) {
     return (
         <header className="app-header">
             <div className="app-header-nav">
-                <div onClick={() => navigate('/portal')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div onClick={() => navigate('/portal')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                         width: '32px',
                         height: '32px',
-                        background: 'var(--accent-blue)',
-                        borderRadius: '6px',
+                        background: '#0f0f0f',
+                        borderRadius: 'var(--radius-pill)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '18px'
+                        fontSize: '16px'
                     }}>X</div>
-                    <h1>{title || 'x402 Gatekeeper'}</h1>
+                    <h1 style={{ color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>{title || 'x402 Gatekeeper'}</h1>
                 </div>
             </div>
 
             <div className="app-header-nav">
-
-                {/* Show Settings link if not on settings page */}
                 {location.pathname !== '/settings' && location.pathname !== '/admin' && (
                     <button
                         onClick={() => navigate('/settings')}
                         className="header-link"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer' }}
                     >
                         Settings
                     </button>
@@ -50,7 +48,7 @@ export default function Header({ title }: HeaderProps) {
                 <button
                     onClick={() => supabase.auth.signOut()}
                     className="header-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer' }}
                 >
                     Sign out
                 </button>

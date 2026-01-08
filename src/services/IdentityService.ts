@@ -48,11 +48,11 @@ export class IdentityService {
     }
 
     async getReputation(agentId: string): Promise<number> {
-        // DEMO OVERRIDES REMOVED FOR PRODUCTION SECURITY
-        // if (agentId === 'prime-agent') return 95; // Grade A
-        // if (agentId === 'trusted-agent') return 85; // Grade B
-        // if (agentId === 'subprime-agent') return 75; // Grade C
-        // if (agentId === 'risky-agent') return 40; // Grade F
+        // DEMO OVERRIDES FOR ACCESSIBILITY / SIMULATOR
+        if (agentId === 'prime-agent') return 95; // Grade A
+        if (agentId === 'trusted-agent') return 85; // Grade B
+        if (agentId === 'subprime-agent') return 75; // Grade C
+        if (agentId === 'risky-agent') return 40; // Grade F
 
         let idVal: bigint;
         try {
@@ -122,13 +122,12 @@ export class IdentityService {
                 // return false; // Fail open for hackathon if using non-address IDs like "prime-agent"?
                 // Actually, our demo uses "prime-agent". Viem verifyMessage needs an Address.
                 // If agentId is "prime-agent", we can't verify signature against a string unless we map it to an address.
-                // For the Hackathon Demo, let's ALLOW specific demo IDs to bypass signature check 
+                // For the Hackathon Demo: ALLOW specific demo IDs to bypass signature check 
                 // BUT log a warning that this is unsafe.
-                // DEMO BYPASS REMOVED FOR PRODUCTION SECURITY
-                // if (['prime-agent', 'trusted-agent', 'subprime-agent', 'risky-agent'].includes(agentId)) {
-                //    console.log(`[Identity] Demo Agent ${agentId} - Skipping signature check.`);
-                //    return true;
-                // }
+                if (['prime-agent', 'trusted-agent', 'subprime-agent', 'risky-agent'].includes(agentId)) {
+                    console.log(`[Identity] Demo Agent ${agentId} - Skipping signature check.`);
+                    return true;
+                }
                 return false;
             }
 

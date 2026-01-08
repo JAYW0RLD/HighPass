@@ -198,15 +198,15 @@ function AdminDashboard() {
                 ))}
             </div>
 
-            <div className="sub-header" style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-                <div className="header-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>GATEKEEPER ADMIN</h2>
-                    <div className="system-status">
+            <div className="sub-header" style={{ marginBottom: '2.5rem', marginTop: '1rem' }}>
+                <div className="header-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: '400', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Gatekeeper Admin</h2>
+                    <div className="system-status" style={{ background: '#f2f2f2', padding: '6px 12px', borderRadius: 'var(--radius-pill)', fontSize: '12px' }}>
                         <div className="status-indicator active"></div>
-                        <span>OPERATIONAL</span>
+                        <span style={{ fontWeight: '600' }}>OPERATIONAL</span>
                     </div>
                 </div>
-                <p className="header-subtitle" style={{ margin: 0 }}>Global Infrastructure & Revenue Overview</p>
+                <p className="header-subtitle" style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Global Infrastructure & Revenue Overview</p>
             </div>
 
             <div className="metrics-grid">

@@ -263,6 +263,11 @@ export default function SettingsPage() {
                     </div>
                 </main>
             </div>
+            <footer className="footer" style={{ marginTop: '4rem' }}>
+                <span>Account Settings</span>
+                <span>•</span>
+                <span>x402 Gatekeeper v2.3</span>
+            </footer>
         </div>
     );
 }
