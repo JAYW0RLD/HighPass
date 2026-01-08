@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cd dashboard && npm install && npm run build",
+    "build:backend": "tsc",
+    "build:frontend": "cd dashboard && npm run build",
+    "vercel-build": "npm run build",
     "start": "node dist/src/server.js",
+    "dev": "ts-node src/server.ts",
     "deploy:cronos": "node dist/scripts/deploy-cronos.js",
     "verify:cronos": "node dist/scripts/simulate_cronos.js",
     "demo": "node dist/scripts/run_demo.js",

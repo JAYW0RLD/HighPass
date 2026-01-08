@@ -121,11 +121,17 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     res.status(500).json({ error: errorMessage });
 });
 
-app.listen(port, () => {
-    console.log(`Gatekeeper API listening at http://localhost:${port}`);
-    console.log(`Health check available at http://localhost:${port}/health`);
-    console.log(`[Environment] ${isProduction ? 'Production' : 'Development'} mode`);
-    console.log(`[Security] Rate limiting: 10 req/min per IP`);
-    console.log(`[Security] Helmet.js: Enabled`);
-    console.log(`[Logging] Morgan: ${isProduction ? 'Combined' : 'Dev'} format`);
-});
+// Export for Vercel Serverless Functions
+export default app;
+
+// Only listen on port if running locally (not in Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`Gatekeeper API listening at http://localhost:${port}`);
+        console.log(`Health check available at http://localhost:${port}/health`);
+        console.log(`[Environment] ${isProduction ? 'Production' : 'Development'} mode`);
+        console.log(`[Security] Rate limiting: 10 req/min per IP`);
+        console.log(`[Security] Helmet.js: Enabled`);
+        console.log(`[Logging] Morgan: ${isProduction ? 'Combined' : 'Dev'} format`);
+    });
+}
