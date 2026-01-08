@@ -105,20 +105,62 @@ import { creditGuard } from './middleware/creditGuard';
 
 // Dynamic Service Route (RBAC / Multi-Provider)
 // Route: /gatekeeper/:serviceSlug/resource
-app.get('/gatekeeper/:serviceSlug/resource',
+app.all('/gatekeeper/:serviceSlug/resource',
     serviceResolver,
     creditGuard,
     optimisticPaymentCheck,
-    (req, res) => {
+    async (req, res) => {
         const isOptimistic = res.locals.isOptimistic;
         const config = res.locals.serviceConfig;
 
-        res.status(200).json({
-            data: "Access Granted: Service Data",
-            service: config?.name || "Unknown",
-            timestamp: new Date().toISOString(),
-            ...(isOptimistic && { optimistic: true, message: "Pay later! Debt recorded." })
-        });
+        if (!config || !config.upstream_url) {
+            return res.status(500).json({ error: 'Service configuration invalid' });
+        }
+
+        try {
+            // Forward request to upstream service
+            const upstreamUrl = config.upstream_url;
+
+            // Prepare headers (exclude host and connection-related headers)
+            const forwardHeaders: Record<string, string> = {};
+            Object.keys(req.headers).forEach(key => {
+                if (!['host', 'connection', 'x-agent-id', 'x-agent-signature', 'x-auth-timestamp'].includes(key.toLowerCase())) {
+                    forwardHeaders[key] = req.headers[key] as string;
+                }
+            });
+
+            // Add gatekeeper metadata header
+            forwardHeaders['x-forwarded-by'] = 'x402-gatekeeper';
+            forwardHeaders['x-service-name'] = config.name;
+
+            // Forward the request
+            const upstreamResponse = await fetch(upstreamUrl, {
+                method: req.method,
+                headers: forwardHeaders,
+                body: ['POST', 'PUT', 'PATCH'].includes(req.method) ? JSON.stringify(req.body) : undefined
+            });
+
+            const upstreamData = await upstreamResponse.json();
+
+            // Return upstream response with gatekeeper metadata
+            res.status(upstreamResponse.status).json({
+                ...upstreamData,
+                _gatekeeper: {
+                    service: config.name,
+                    timestamp: new Date().toISOString(),
+                    optimistic: isOptimistic || false,
+                    message: isOptimistic ? "Pay later! Debt recorded." : "Payment verified"
+                }
+            });
+
+        } catch (error: any) {
+            console.error('[Gatekeeper] Upstream proxy error:', error);
+            res.status(502).json({
+                error: 'Bad Gateway',
+                message: 'Failed to connect to upstream service',
+                details: error.message
+            });
+        }
     }
 );
 

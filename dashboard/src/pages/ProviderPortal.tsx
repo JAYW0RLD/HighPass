@@ -45,6 +45,9 @@ function ProviderPortal() {
     const [testingService, setTestingService] = useState<Service | null>(null);
     const [testResult, setTestResult] = useState<any>(null);
     const [testLoading, setTestLoading] = useState(false);
+    const [testMethod, setTestMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE'>('GET');
+    const [testBody, setTestBody] = useState('');
+    const [testHeaders, setTestHeaders] = useState<Record<string, string>>({});
 
     useEffect(() => {
         fetchServices();
@@ -149,18 +152,30 @@ function ProviderPortal() {
 
         try {
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+
+            // Build headers
+            const headers: Record<string, string> = {
+                'X-Agent-ID': 'prime-agent',
+                'X-Agent-Signature': 'simulated-signature',
+                'X-Auth-Timestamp': Date.now().toString(),
+                ...testHeaders
+            };
+
+            // Add content-type for POST/PUT requests
+            if (['POST', 'PUT'].includes(testMethod) && testBody) {
+                headers['Content-Type'] = 'application/json';
+            }
+
             const res = await fetch(`${apiOrigin}/gatekeeper/${testingService.slug}/resource`, {
-                method: 'GET',
-                headers: {
-                    'X-Agent-ID': 'prime-agent',
-                    'X-Agent-Signature': 'simulated-signature',
-                    'X-Auth-Timestamp': Date.now().toString()
-                }
+                method: testMethod,
+                headers,
+                body: ['POST', 'PUT'].includes(testMethod) && testBody ? testBody : undefined
             });
 
             const data = await res.json();
             setTestResult({
                 status: res.status,
+                statusText: res.statusText,
                 headers: Object.fromEntries(res.headers.entries()),
                 body: data
             });
@@ -479,25 +494,105 @@ const data = await res.json();`}
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
         const testUrl = `${apiOrigin}/gatekeeper/${testingService.slug}/resource`;
 
+        const handleClose = () => {
+            setTestingService(null);
+            setTestResult(null);
+            setTestMethod('GET');
+            setTestBody('');
+            setTestHeaders({});
+        };
+
         return (
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-                <div className="data-section" style={{ padding: '2rem', width: '90%', maxWidth: '600px', backgroundColor: 'var(--bg-secondary)', border: '2px solid var(--accent-blue)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <h2 style={{ margin: 0 }}>🤖 Agent Simulator</h2>
-                        <button onClick={() => { setTestingService(null); setTestResult(null); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                <div className="data-section" style={{ padding: '2rem', width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '600' }}>API Test Console</h2>
+                        <button onClick={handleClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', padding: '0.5rem' }}>&times;</button>
                     </div>
-                    <div style={{ background: '#0d1117', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#8b949e' }}>REQUESTING AS: <span style={{ color: '#58a6ff' }}>prime-agent (Grade A)</span></p>
-                        <code style={{ fontSize: '0.9rem', color: '#7ee787' }}>GET {testUrl}</code>
-                    </div>
-                    {!testResult ? (
-                        <div style={{ textAlign: 'center' }}><button onClick={handleRunTest} disabled={testLoading} className="btn-primary" style={{ padding: '1rem 2rem' }}>{testLoading ? '🤖 Calling...' : '🚀 RUN TEST'}</button></div>
-                    ) : (
-                        <div style={{ background: '#161b22', padding: '1rem', borderRadius: '8px', border: `1px solid ${testResult.status === 200 ? '#238636' : '#da3633'}` }}>
-                            <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>HTTP {testResult.status}</div>
-                            <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9' }}>{JSON.stringify(testResult.body, null, 2)}</pre>
-                            <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ marginTop: '1rem', width: '100%' }}>Reset</button>
+
+                    {/* Request Configuration */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>HTTP Method</label>
+                        <select
+                            value={testMethod}
+                            onChange={(e) => setTestMethod(e.target.value as any)}
+                            className="form-control"
+                            style={{ maxWidth: '200px', marginBottom: '1rem' }}
+                        >
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+
+                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Endpoint</label>
+                        <code style={{ display: 'block', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--accent-blue)' }}>
+                            {testMethod} {testUrl}
+                        </code>
+
+                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Authentication</label>
+                        <div style={{ padding: '0.75rem', background: '#f0f6ff', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                            <div><strong>Agent:</strong> prime-agent (Grade A)</div>
+                            <div><strong>Headers:</strong> X-Agent-ID, X-Agent-Signature, X-Auth-Timestamp</div>
                         </div>
+
+                        {['POST', 'PUT'].includes(testMethod) && (
+                            <>
+                                <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Request Body (JSON)</label>
+                                <textarea
+                                    value={testBody}
+                                    onChange={(e) => setTestBody(e.target.value)}
+                                    placeholder='{"key": "value"}'
+                                    className="form-control"
+                                    style={{ fontFamily: 'monospace', minHeight: '100px', marginBottom: '1rem' }}
+                                />
+                            </>
+                        )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    {!testResult ? (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                onClick={handleRunTest}
+                                disabled={testLoading}
+                                className="btn-primary"
+                                style={{ flex: 1, padding: '0.75rem 1.5rem' }}
+                            >
+                                {testLoading ? 'Sending Request...' : 'Send Request'}
+                            </button>
+                            <button onClick={handleClose} className="btn-secondary" style={{ padding: '0.75rem 1.5rem' }}>Cancel</button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Response Display */}
+                            <div style={{ marginTop: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Response</h3>
+                                    <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Clear</button>
+                                </div>
+                                <div style={{
+                                    background: testResult.status === 200 ? '#f0fff4' : '#fff5f5',
+                                    border: `1px solid ${testResult.status === 200 ? '#38a169' : '#e53e3e'}`,
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '1rem',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: testResult.status === 200 ? '#38a169' : '#e53e3e' }}>
+                                        HTTP {testResult.status} {testResult.statusText || ''}
+                                    </div>
+                                </div>
+                                <div style={{ background: '#161b22', padding: '1rem', borderRadius: 'var(--radius-md)', maxHeight: '300px', overflowY: 'auto' }}>
+                                    <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        {JSON.stringify(testResult.body, null, 2)}
+                                    </pre>
+                                </div>
+                            </div>
+                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                                <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ flex: 1 }}>Test Again</button>
+                                <button onClick={handleClose} className="btn-secondary">Close</button>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
