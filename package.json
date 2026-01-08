@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "./node_modules/.bin/tsc && cd dashboard && npm install && npm run build",
+    "build": "./node_modules/.bin/tsc && cd dashboard && npm install --include=dev && npm run build",
     "build:backend": "./node_modules/.bin/tsc",
     "build:frontend": "cd dashboard && npm run build",
     "vercel-build": "npm run build",
