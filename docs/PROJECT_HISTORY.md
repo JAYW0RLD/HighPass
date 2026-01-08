@@ -30,6 +30,8 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
     - Implemented `provider_settings` and `withdrawals` tables.
     - Added GitHub-style Settings page for auto-withdrawal configuration (address, threshold).
 - **[UX] Provider Portal**: Enhanced "Boxed Group" layout and tabbed navigation.
+- **[UX] Login Page**: Redesigned AuthPage to match GitHub's login aesthetics.
+- **[REFACTOR] Global Navigation**: Unified Header component across all pages for consistent UX.
 
 ### v2.2 - Vercel Deployment & Security
 - **[OPS] Vercel Support**: Full compatibility with Vercel Serverless Functions (`api/index.ts`).
