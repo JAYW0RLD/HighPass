@@ -1,0 +1,110 @@
+# 📜 Project History & Roadmap
+
+This document serves as the single source of truth for the project's evolution, current architectural state, and future milestones.
+
+---
+
+## 🏗️ Current Architecture: v2.0 (Multi-Provider Platform)
+**Released:** January 2026
+
+The project has evolved from a single-tenant gatekeeper into a **Multi-Provider Platform** capable of hosting multiple API services with Role-Based Access Control (RBAC).
+
+### Key Features
+- **Database**: PostgreSQL (Supabase) replaces local SQLite for scalability and realtime capabilities.
+- **Auth & RBAC**: Supabase Auth integration distinguishing between `Admin` (Superuser) and `Provider` (Service Owner).
+- **Dynamic Routing**: Middleware dynamically resolves `/gatekeeper/:serviceSlug/resource` to registered services in the DB.
+- **Self-Service Portal**: Providers can register APIs, set prices (Wei), and define minimum credit grades.
+
+### Tech Stack
+- **Backend**: Node.js, Express, `viem` (Blockchain), `@supabase/supabase-js`.
+- **Frontend**: React (Vite), `react-router-dom`, Supabase Auth UI.
+- **Infrastructure**: Cronos zkEVM Testnet, Supabase (DB/Auth/Realtime).
+
+---
+
+## ⏳ Changelog
+
+### v2.3 - UI/UX Overhaul & Simulator (Latest)
+### v2.4 - Rebranding & Security Hardening (Latest)
+- **[REBRAND] HighStation**: Complete project rebrand from "X402 Gatekeeper" to **HighStation**.
+    - Updated all documentation, UI components, and branding assets.
+    - New identity: "HighStation - The next-generation agent payment gateway"
+    - GitHub repository renamed to `JAYW0RLD/HighStation`.
+- **[SECURITY] Provider Test Mode - JWT Verification**:
+    - Implemented secure free testing for providers using Supabase JWT authentication.
+    - Prevents header spoofing attacks by verifying `x-provider-token` instead of trusting client headers.
+    - Attack detection logging for impersonation attempts.
+    - Zero-cost API testing for providers to verify service connectivity.
+- **[FEATURE] Response Headers Display**: Enhanced Test API Console with full HTTP response header visibility.
+    - Organized response display: Status → Headers → Body.
+    - Scrollable header container with monospace formatting.
+- **[UI] Settings Navigation Fix**: Improved active state visibility with !important CSS override.
+
+### v2.3 - UI/UX Overhaul & Simulator
+- **[DESIGN] YouTube x GitHub Hybrid**: 
+    - Integrated YouTube-style **Chip Navigation** for a modern, fluid tab experience.
+    - Switched to **Pill-shaped (Round)** buttons and inputs for a premium consumer-grade feel.
+    - Enhanced UX with **Scale-up Hover Effects** and smooth transitions across all cards.
+    - Updated **AuthPage**, **Header**, and **AdminDashboard** with the new hybrid aesthetic.
+- **[FEATURE] Agent Simulator**: Added "Test API" button and 🤖 Agent Simulator modal for instant API verification.
+    - Automatically generates `X-Agent-ID`, `X-Agent-Signature`, and `X-Auth-Timestamp`.
+    - Real-time response inspection (Status, Headers, Body).
+- **[FEATURE] Automated Settlements**: 
+    - Implemented `provider_settings` and `withdrawals` tables.
+    - Added Settings page for auto-withdrawal configuration (address, threshold).
+- **[DEV] Demo Agent Support**: Restored controlled demo agent overrides in `IdentityService` to facilitate instant testing.
+- **[UX] Provider Portal**: Enhanced layout with sticky headers and responsive chip-tabs.
+- **[FEATURE] Demo Service**: Added "Deploy Demo Echo API" button for one-click testing without external infrastructure.
+- **[FIX] RLS Policy**: Resolved `new row violates row-level security policy` error for providers.
+
+### v2.2 - Vercel Deployment & Security
+- **[OPS] Vercel Support**: Full compatibility with Vercel Serverless Functions (`api/index.ts`).
+- **[OPS] React Stability**: Downgraded React to 18.x to resolve production `useState` null errors.
+- **[SECURITY] Domain Verification**: Implemented `.well-known` token verification to prevent hijacking of upstream URLs.
+- **[DOCS] Deployment Guides**: Comprehensive guides for Vercel & Supabase deployment (KR/EN).
+
+### v2.1 - Revenue & Integration (Completed)
+- **[UI] Revenue Dashboard**: Visual breakdown of Protocol Fees vs Provider Revenue.
+- **[DX] Integration Guide**: Auto-generated code snippets (viem) for connecting Agents to Services.
+- **[FEATURE] Split Payment Logic**: Backend implementation of fee calculation (Platform Fee).
+
+### v2.0.3 - Critical Security Fixes
+- **[SECURITY] Replay Attack Fixed**: Implemented atomic transaction hash locking to prevent double-spending race condition.
+- **[SECURITY] Information Leakage Fixed**: Removed `upstream_url` exposure from API responses.
+- **[SECURITY] Cheat Mode Hardening**: Strictly disabled in production; enforced 32+ char keys.
+- **[SECURITY] Weak Secret Fallback Removed**: Server now fails to start if `SUPABASE_SERVICE_ROLE_KEY` is missing.
+- **[AUDIT] Security Rating**: Improved from 4/10 to 9/10 (Production Ready).
+
+### v2.0.2 - Red Team & Testability
+- **[FEATURE] Safe Cheat Mode**: Implemented secure testing capability via `TEST_CHEAT_KEY` env var.
+- **[FIX] Service Resolver Hardening**: Patch for potential Path Traversal vulnerability in service slugs.
+- **[AUDIT] Race Condition Discovered**: Identified "Double Spending" vector in replay protection.
+
+### v2.0.1 - Security Hardening (Red Team Audit)
+- **[FIX] Replay Attack**: Implemented duplicate transaction hash detection.
+- **[FIX] Identity Spoofing**: Implemented `X-Agent-Signature` verification.
+- **[FIX] Service Enumeration**: Restricted public access to sensitive service data using DB Views.
+
+### v2.0 - Role-Based Multi-Provider Upgrade
+- **[NEW] Multi-Tenancy**: Added `profiles` and `services` tables to support multiple providers.
+- **[NEW] Dynamic Middleware**: `serviceResolver` middleware replaces static routing.
+- **[NEW] Provider Portal**: Dedicated dashboard for providers to manage their APIs.
+- **[NEW] Admin Dashboard**: Global view of protocol fees and overall ecosystem health.
+
+### v1.2 - Supabase Migration
+- **[MIGRATION] PostgreSQL**: Migrated from SQLite to Supabase.
+- **[NEW] Realtime Activity**: Dashboard now uses Supabase Realtime for instant request logging.
+
+### v1.1 - Agent Credit Rating System
+- **[NEW] Credit Scoring**: Implemented `IdentityService` to map reputation scores to A-F grades.
+- **[NEW] Access Policies**: Optimistic access for high-grade agents.
+- **[DEV] Local Anvil Fork**: Integrated local testnet fork for rapid development.
+
+---
+
+## 🚀 Roadmap (Future)
+
+### v2.4 - Optimization & Scaling (Planned)
+- **[OPS] Docker Compose**: Full containerization for easy on-premise deployment.
+- **[OPS] CI/CD Pipeline**: GitHub Actions for automated testing and deployment.
+- **[SECURITY] Rate Limiting**: Per-service/Per-tier rate limiting using Redis (Vercel KV).

@@ -75,14 +75,14 @@ contract PaymentHandler {
         emit AdminChanged(previousAdmin, newAdmin);
     }
 
-    /// @notice Pay for service (0.5% protocol fee)
+    /// @notice Pay for service (1% protocol fee)
     /// @dev SECURITY: Minimum payment prevents precision loss
     function pay(uint256 serviceId) external payable nonReentrant whenNotPaused {
         require(msg.value >= MIN_PAYMENT, "Payment too small (min 10000 wei)");
 
-        uint256 fee = (msg.value * 50) / 10000; // 0.5% (50 basis points)
+        uint256 fee = (msg.value * 100) / 10000; // 1% (100 basis points)
         
-        // Fee will be at least 5 wei due to MIN_PAYMENT requirement
+        // Fee will be at least 10 wei due to MIN_PAYMENT requirement
         assert(fee > 0);
 
         // Effects: Update state before external calls
