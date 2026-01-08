@@ -83,7 +83,7 @@ export default function SettingsPage() {
 
     return (
         <div className="dashboard">
-            <Header title="Settings" subtitle="Manage your account preferences" />
+            <Header title="Settings" />
 
             <div className="settings-layout" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '2rem' }}>
                 {/* Sidebar */}

@@ -24,21 +24,60 @@ function AuthPage() {
     }, [navigate]);
 
     return (
-        <div className="auth-container" style={{
+        <div style={{
+            minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            height: '100vh',
-            backgroundColor: '#0a0b1e',
-            color: 'white'
+            padding: '40px 16px',
+            backgroundColor: 'var(--bg-secondary)'
         }}>
-            <div style={{ width: '350px', padding: '2rem', background: '#131429', borderRadius: '12px', border: '1px solid #2d2f45' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#00f7ff' }}>X402 LOGIN</h2>
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+                <h1 style={{ fontSize: '24px', fontWeight: '300', letterSpacing: '-0.5px' }}>Sign in to X402</h1>
+            </div>
+
+            <div className="boxed-group" style={{ width: '100%', maxWidth: '340px', padding: '20px', backgroundColor: 'var(--bg-primary)', boxShadow: 'var(--shadow-card)' }}>
                 <Auth
                     supabaseClient={supabase}
-                    appearance={{ theme: ThemeSupa }}
-                    theme="dark"
+                    appearance={{
+                        theme: ThemeSupa,
+                        variables: {
+                            default: {
+                                colors: {
+                                    brand: '#2da44e',
+                                    brandAccent: '#2c974b',
+                                    inputBackground: 'var(--bg-primary)',
+                                    inputText: 'var(--text-primary)',
+                                    inputBorder: 'var(--border)',
+                                    inputBorderFocus: '#0969da',
+                                    inputLabelText: 'var(--text-primary)',
+                                },
+                                radii: {
+                                    borderRadiusButton: '6px',
+                                    buttonBorderRadius: '6px',
+                                    inputBorderRadius: '6px',
+                                },
+                                space: {
+                                    inputPadding: '5px 12px',
+                                    buttonPadding: '5px 16px',
+                                },
+                                fontSizes: {
+                                    baseBodySize: '14px',
+                                    baseInputSize: '14px',
+                                    baseLabelSize: '14px',
+                                    baseButtonSize: '14px',
+                                }
+                            }
+                        },
+                        style: {
+                            button: {
+                                fontWeight: '500',
+                                border: '1px solid rgba(27,31,36,0.15)',
+                                boxShadow: '0 1px 0 rgba(27,31,36,0.1)'
+                            },
+                        }
+                    }}
                     providers={[]}
                 />
             </div>

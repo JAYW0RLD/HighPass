@@ -270,7 +270,7 @@ callService();
 
     return (
         <div className="dashboard provider-portal">
-            <Header title="Provider Portal" subtitle="Manage your Agent Services" />
+            <Header title="Provider Portal" />
 
             {/* TABS */}
             <nav style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)' }}>

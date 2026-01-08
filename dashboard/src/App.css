@@ -38,22 +38,131 @@ body {
 }
 
 .dashboard {
-  max-width: 1600px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
+  width: 100%;
 }
 
-/* Header */
-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-  background-color: var(--bg-secondary);
-  margin-left: -2rem;
-  margin-right: -2rem;
-  padding: 1.5rem 2rem;
-  margin-top: -2rem;
+/* Layout Containers */
+.container-lg {
+  max-width: 1012px;
+  margin-right: auto;
+  margin-left: auto;
 }
+
+.settings-layout {
+  display: flex !important;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.settings-sidebar {
+  width: 256px;
+  flex-shrink: 0;
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-nav {
+  margin-bottom: 1rem;
+}
+
+.nav-group {
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-group:last-child {
+  border-bottom: 0;
+}
+
+.nav-header {
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nav-item {
+  position: relative;
+  display: block;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-secondary);
+  text-decoration: none;
+}
+
+.nav-item.active {
+  font-weight: 600;
+  background-color: var(--bg-secondary);
+}
+
+.nav-item.active::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  content: "";
+  background-color: var(--accent-orange);
+  border-radius: 6px 0 0 6px;
+  /* actually sidebar uses border-left usually, but GitHub uses a colored bar */
+  display: block;
+}
+
+/* override rounded corners for the bar effect if we want exact GitHub style, but let's just highlight text */
+
+
+/* Header */
+/* Header */
+.app-header {
+  background-color: #24292f;
+  color: #ffffff;
+  padding: 16px 32px;
+  margin-bottom: 0;
+  /* Remove bottom margin as it's separate from dashboard content */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-link {
+  color: #ffffff;
+  font-size: 14px;
+  opacity: 0.75;
+  transition: opacity 0.2s;
+}
+
+.header-link:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+
 
 .header-content {
   display: flex;
@@ -505,6 +614,7 @@ h1 {
     left: 1rem;
   }
 }
+
 /* GitHub Style Forms & Boxed Groups */
 .boxed-group {
   border: 1px solid var(--border);
@@ -555,8 +665,8 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: var(--shadow-card);
-  transition: .2s cubic-bezier(.3,0,.5,1);
-  transition-property: color,background-color,border-color;
+  transition: .2s cubic-bezier(.3, 0, .5, 1);
+  transition-property: color, background-color, border-color;
 }
 
 .form-control:focus {
@@ -591,8 +701,8 @@ h1 {
 .btn-primary {
   color: #ffffff;
   background-color: #2da44e;
-  border-color: rgba(27,31,36,0.15);
-  box-shadow: 0 1px 0 rgba(27,31,36,0.1);
+  border-color: rgba(27, 31, 36, 0.15);
+  box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
 }
 
 .btn-primary:hover {
@@ -603,9 +713,9 @@ h1 {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   border-color: var(--border);
-  box-shadow: 0 1px 0 rgba(27,31,36,0.04);
-  transition: .2s cubic-bezier(.3,0,.5,1);
-  transition-property: color,background-color,border-color;
+  box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04);
+  transition: .2s cubic-bezier(.3, 0, .5, 1);
+  transition-property: color, background-color, border-color;
 }
 
 .btn-secondary:hover {

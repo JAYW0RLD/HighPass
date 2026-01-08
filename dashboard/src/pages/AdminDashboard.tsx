@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import Header from '../components/Header';
 import '../App.css';
 
 interface RequestLog {
@@ -181,6 +182,8 @@ function AdminDashboard() {
 
     return (
         <div className="dashboard">
+            <Header title="x402 Gatekeeper" />
+
             {/* Notifications */}
             <div className="notifications">
                 {notifications.map(notif => (
@@ -195,16 +198,16 @@ function AdminDashboard() {
                 ))}
             </div>
 
-            <header>
-                <div className="header-content">
-                    <h1>GATEKEEPER ADMIN</h1>
+            <div className="sub-header" style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+                <div className="header-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>GATEKEEPER ADMIN</h2>
                     <div className="system-status">
                         <div className="status-indicator active"></div>
                         <span>OPERATIONAL</span>
                     </div>
                 </div>
-                <p className="header-subtitle">Global Infrastructure & Revenue Overview</p>
-            </header>
+                <p className="header-subtitle" style={{ margin: 0 }}>Global Infrastructure & Revenue Overview</p>
+            </div>
 
             <div className="metrics-grid">
                 <div className="metric-card primary">
