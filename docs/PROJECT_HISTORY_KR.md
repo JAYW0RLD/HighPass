@@ -24,6 +24,17 @@
 
 ## ⏳ 변경 기록 (Changelog)
 
+### v3.3 - 보안 취약점 긴급 패치 (Security Remediation)
+**일자**: 2026-01-09
+- **[보안] SSRF 우회 경로 차단**:
+    - `serviceResolver.ts`에 존재하던 `echo-service` 슬러그 기반의 하드코딩 예외 처리를 제거.
+    - 내부 데모 API(`localhost`) 접근 시 화이트리스트 기반의 엄격한 경로 검증 적용.
+- **[보안] 신원 스푸핑(Identity Spoofing) 방지**:
+    - API 엔드포인트가 클라이언트의 `x-user-id` 헤더를 맹목적으로 신뢰하던 취약점 수정.
+    - `authMiddleware.ts`를 도입하여 모든 요청에 대해 Supabase JWT 서명을 검증하고, 토큰에서 추출한 사용자 ID만 사용하도록 강제.
+- **[검증] 보안 테스트 슈트**:
+    - 인증 우회 시도를 차단하는지 확인하는 자동화 테스트(`test/security/auth.test.ts`) 추가 및 통과.
+
 ### v3.2 - 프리미엄 프론트엔드 디자인 개선 (Visual Overhaul)
 **일자**: 2026-01-09
 - **[UI/UX] 브랜드 아이덴티티 강화**:

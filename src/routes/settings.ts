@@ -6,7 +6,7 @@ const router = express.Router();
 // GET /api/settings - Get provider settings
 router.get('/', async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'];
+        const userId = res.locals.user.id;
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
         const db = await initDB();
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
 // PUT /api/settings - Update settings
 router.put('/', async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'];
+        const userId = res.locals.user.id;
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
         const { withdrawal_address, auto_withdraw_enabled, min_withdrawal_amount } = req.body;
@@ -80,7 +80,7 @@ router.put('/', async (req, res) => {
 // GET /api/settings/withdrawals - Get withdrawal history
 router.get('/withdrawals', async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'];
+        const userId = res.locals.user.id;
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
         const db = await initDB();

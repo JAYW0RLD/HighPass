@@ -119,10 +119,17 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
         }
 
         // SSRF PROTECTION (Defense in Depth)
-        // Skip check for internal demo service (localhost) which is safe in this context
-        const isInternalDemo = serviceSlug === 'echo-service';
+        // Fix: Removed unsafe slug-based bypass (echo-service)
 
-        if (!isInternalDemo && !(await isValidUpstreamUrl(data.upstream_url))) {
+        // Define Safe Internal Endpoints
+        // We only allow localhost/internal hits if they match specific safe paths
+        const isSafeInternalEndpoint = (url: string) => {
+            return url.endsWith('/api/demo/echo');
+        };
+
+        const isInternalSafe = isSafeInternalEndpoint(data.upstream_url);
+
+        if (!isInternalSafe && !(await isValidUpstreamUrl(data.upstream_url))) {
             console.error(`[ServiceResolver] Blocked unsafe upstream URL: ${data.upstream_url}`);
             return res.status(502).json({ error: 'Bad Gateway', message: 'Upstream service configuration is unsafe.' });
         }

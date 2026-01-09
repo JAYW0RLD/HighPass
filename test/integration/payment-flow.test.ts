@@ -1,9 +1,14 @@
 import request from 'supertest';
-import express from 'express';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { initDB } from '../../src/database/db';
-import app from '../../src/server'; // Import the actual app
-import { IdentityService } from '../../src/services/IdentityService';
+
+// Set Env vars BEFORE importing server/authMiddleware
+process.env.SUPABASE_URL = 'https://mock.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock';
+process.env.SUPABASE_ANON_KEY = 'mock';
+
+const { initDB } = require('../../src/database/db');
+const app = require('../../src/server').default;
+const { IdentityService } = require('../../src/services/IdentityService');
 
 // Mock IdentityService to avoid real blockchain calls for Reputation
 jest.mock('../../src/services/IdentityService', () => {

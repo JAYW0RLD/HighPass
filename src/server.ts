@@ -83,12 +83,18 @@ initDB().then(() => {
     if (isProduction) process.exit(1); // Fail fast in production
 });
 
+import { authMiddleware } from './middleware/authMiddleware';
+
 // Install Logger & Stats
 app.use(loggerMiddleware);
-app.use('/api', statsRouter);
-app.use('/api/settings', settingsRouter);
-app.use('/api/services', servicesRouter);
-app.use('/api/provider', providerRouter);
+app.use('/api', statsRouter); // Public stats
+
+// Protected Routes
+app.use('/api/settings', authMiddleware, settingsRouter);
+app.use('/api/services', authMiddleware, servicesRouter); // Note: servicesRouter has a public GET / which we might need to unprotect? 
+// Actually, services.ts GET / is protected by RLS if used via Supabase, but here it's an API.
+// provider/stats needs auth.
+app.use('/api/provider', authMiddleware, providerRouter);
 
 // Manual Debt Settlement (Flush) Endpoint
 import { flushDebt } from './routes/flush';

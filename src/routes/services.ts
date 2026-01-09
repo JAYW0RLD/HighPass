@@ -15,7 +15,7 @@ const router = express.Router();
 router.post('/:id/generate-token', async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.headers['x-user-id']; // From Supabase Auth
+        const userId = res.locals.user.id; // From Auth Middleware
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -67,7 +67,7 @@ router.post('/:id/generate-token', async (req, res) => {
 router.post('/:id/verify', async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.headers['x-user-id'];
+        const userId = res.locals.user.id;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });

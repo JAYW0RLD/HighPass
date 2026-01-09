@@ -92,10 +92,13 @@ function ProviderPortal() {
 
     const fetchProviderStats = async (userId: string) => {
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
             const res = await fetch(`${apiOrigin}/api/provider/stats`, {
                 headers: {
-                    'x-user-id': userId
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
@@ -110,15 +113,15 @@ function ProviderPortal() {
     const handleGenerateToken = async () => {
         if (!editingService) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
             const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/generate-token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': user.id
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 
@@ -135,15 +138,15 @@ function ProviderPortal() {
         if (!editingService) return;
         setVerifying(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
             const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
             const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': user.id
+                    'Authorization': `Bearer ${session.access_token}`
                 }
             });
 

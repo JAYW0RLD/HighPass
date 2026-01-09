@@ -38,7 +38,9 @@ npx ts-node scripts/run-agent.ts
 ```
 
 ## 📚 Resources
-- [**프로젝트 히스토리 (History)**](./docs/PROJECT_HISTORY_KR.md)
+- [**📜 설계 철학 (Why HighStation?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - *Must-read*
+- [**🏰 프로젝트 히스토리 (History)**](./docs/PROJECT_HISTORY_KR.md) - *Changelog & Roadmap*
+- [**🤖 에이전트 연동 가이드**](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md)
 - [**English README**](./README_EN.md) (Coming Soon)
 
 ---

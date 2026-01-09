@@ -10,7 +10,7 @@ const router = Router();
  */
 router.get('/stats', async (req: Request, res: Response) => {
     try {
-        const userId = req.headers['x-user-id'];
+        const userId = res.locals.user.id; // Authenticated via authMiddleware
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
