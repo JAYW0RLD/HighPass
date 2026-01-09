@@ -1,72 +1,81 @@
-# 🤖 HighStation Agent Simulator (Demo)
+# 🤖 HighStation Agent Simulator (Interactive CLI)
 
-The **Agent Simulator** allows you to experience HighStation's core "Agentic Payment" feature firsthand.
-You can create your own agent in the terminal and experience the process of calling the Gatekeeper API through a real wallet.
+Experience **"Agentic Payment"** firsthand with this interactive console tool.
+Turn your terminal into an AI Agent's control center.
 
 ## ✨ Key Features
-- **CLI Agent Generation**: Automatically generates a cryptocurrency wallet (Private Key) and saves it securely locally.
-- **Auto Signing & Auth**: The agent autonomously generates timestamps and nonces, signing requests (ECDSA) to call the API.
-- **Optimistic Payment**: Even new agents with low credit scores can experience the "Use now, pay later" logic via the demo service.
+- **Interactive Menu**: Control your agent using simple number keys (1, 2, 3...).
+- **Real-time Dashboard**: Monitor wallet address, balance, and target server status instantly.
+- **Remote Access**: Connect to and test any deployed server (e.g., Vercel) seamlessly.
 
 ---
 
-## 🚀 User Guide (3 Steps)
+## 🚀 Getting Started (External Users)
 
-This demo works on both local development environments (`localhost`) and **remote deployed servers** (`Vercel`).
+This guide assumes you have downloaded the project and want to test against a **Remote Server (e.g., Vercel)**.
 
-### Step 1: Start Server (Local Only)
-Required only if you are running the server on your own machine. Skip this if testing a generic remote server.
+### Step 1: Navigate to Project Folder (Critical!)
+You MUST be inside the `highstation` directory to run the scripts.
+(Skipping this will cause `MODULE_NOT_FOUND` errors)
+
 ```bash
-npm run dev
+cd highstation
 ```
 
-### Step 2: Create Agent (Wallet)
-Run this once to create your unique agent wallet.
+### Step 2: Install Dependencies
+Install the necessary tools. (First time only)
+```bash
+npm install
+```
+
+### Step 3: Create Agent (Wallet)
+Generate your unique agent wallet.
 ```bash
 npx ts-node scripts/create-agent.ts
 ```
-- **Result**: A `scripts/agent-wallet.json` file is created.
-- **Tip**: For real Mainnet testing, fund the printed address with tokens (CRO).
 
-### Step 3: Run Agent (Action)
-Command the agent to **call the API**.
+### Step 4: Run Simulator!
+Pass the **Target Server URL** as an argument.
 
-**Option A: Localhost Test (Default)**
 ```bash
-npx ts-node scripts/run-agent.ts
-```
-> Sends requests to `http://localhost:3000` by default.
+# Usage: npx ts-node scripts/run-agent.ts [TARGET_URL]
 
-**Option B: Remote Server Test (External User / Vercel)** ⭐️
-To test against a live deployed server (e.g., Vercel), **pass the URL as an argument.**
-```bash
-npx ts-node scripts/run-agent.ts https://my-highstation-demo.vercel.app
-```
-> **External users** can use this command to instantly test deployed services without local server setup.
-
----
-
-## ✅ Example Output
-```
-🤖 AGENT AI ACTIVATED
-===============================
-➤ Identity Loaded 0xaEE2...8462
-➤ Target Acquired https://highstation-demo.vercel.app/gatekeeper/echo-service/resource
-➤ Generating Proof Nonce: 812931
-➤ Signing Request 0xc69f...4b20...
-
-📡 Transmitting data to Gatekeeper...
-
-✅ ACCESS GRANTED (124ms)
--------------------------------
-Data Received: { service: 'Demo Echo', ... }
-
-💳 NOTE: Optimistic Payment Mode
-   Your reputation allowed you to pay later (Debt recorded).
+# Example:
+npx ts-node scripts/run-agent.ts https://highstation-demo.vercel.app
 ```
 
 ---
 
-## 💡 Notes
-- **Security**: The generated wallet file (`agent-wallet.json`) is added to `.gitignore` and will not be uploaded to GitHub.
-- **Demo Mode**: The `echo-service` has a Static Fallback configuration so it works without a database connection.
+## 🎮 How to Use
+
+Once launched, you will see the dashboard:
+
+```text
+   HighStation Agent Simulator v2.0
+
+⚡ AGENT PROFILE
+   ID:      0xaEE2...8462
+   Balance: 0.0 CRO
+   Target:  https://highstation-demo.vercel.app
+   Status:  ONLINE
+----------------------------------------
+
+COMMANDS:
+  [1] 💰 Check Wallet Balance
+  [2] 📡 Send API Request
+  [3] ⚙️  Set Target URL
+  [4] 🚪 Exit
+```
+
+1.  Press **`[2]` (Send API Request)**.
+2.  The agent will auto-sign and connect to the server.
+3.  Look for **"✅ ACCESS GRANTED"**! (Optimistic Payment Mode)
+
+---
+
+## 💡 FAQ
+**Q: I get `MODULE_NOT_FOUND` error.**
+A: Make sure you followed Step 1 (`cd highstation`). You cannot run this from the root folder.
+
+**Q: Does this cost real money?**
+A: No. It runs on Cronos Testnet and defaults to 'Optimistic Mode' (Post-paid/Demo), so no funds are required.
