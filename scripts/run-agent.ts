@@ -21,6 +21,7 @@ const BOLD = "\x1b[1m";
 // State
 let agentAccount: any;
 let targetUrl: string = '';
+let targetMethod: string = 'GET';
 let currentBalance: string = 'Unknown';
 let currentGrade: string = 'Checking...';
 
@@ -38,12 +39,30 @@ function clearScreen() {
     console.clear();
 }
 
+function parseTarget(input: string) {
+    const parts = input.trim().split(' ');
+    if (parts.length >= 2) {
+        // e.g. "POST https://..."
+        const potentialMethod = parts[0].toUpperCase();
+        if (['GET', 'POST', 'PUT', 'DELETE'].includes(potentialMethod)) {
+            targetMethod = potentialMethod;
+            targetUrl = parts[1];
+        } else {
+            targetMethod = 'GET';
+            targetUrl = parts[0];
+        }
+    } else {
+        targetMethod = 'GET';
+        targetUrl = parts[0];
+    }
+}
+
 function printHeader() {
     clearScreen();
     console.log(`${CYAN}${BOLD}`);
-    console.log(`   HighStation Agent Simulator v2.5`);
+    console.log(`   HighStation Agent Simulator v2.6`);
     console.log(`${RESET}`);
-    console.log(`${DIM}  Generic Agent Client${RESET}\n`);
+    console.log(`${DIM}  Real-World Testnet Edition${RESET}\n`);
 
     let gradeColor = DIM;
     if (currentGrade === 'A') gradeColor = GREEN;
@@ -54,7 +73,9 @@ function printHeader() {
     console.log(`   ${DIM}ID:${RESET}      ${agentAccount.address}`);
     console.log(`   ${DIM}Grade:${RESET}   ${gradeColor}${currentGrade}${RESET}`);
     console.log(`   ${DIM}Balance:${RESET} ${currentBalance === 'Unknown' ? DIM + currentBalance : GREEN + currentBalance + ' CRO'}${RESET}`);
-    console.log(`   ${DIM}Target:${RESET}  ${targetUrl || RED + 'Not Set' + RESET}`);
+
+    const methodColor = targetMethod === 'POST' ? CYAN : GREEN;
+    console.log(`   ${DIM}Target:${RESET}  ${methodColor}[${targetMethod}]${RESET} ${targetUrl || RED + 'Not Set' + RESET}`);
     console.log("----------------------------------------");
 }
 
@@ -88,18 +109,13 @@ async function sendRequest() {
         return;
     }
 
-    // 1. SELECT METHOD
-    console.log(`\n${CYAN}📝 HTTP METHOD:${RESET}`);
-    console.log(`  [1] GET (Default)`);
-    console.log(`  [2] POST`);
-    const methodChoice = await ask(`Select [1/2]: `);
-    const method = methodChoice.trim() === '2' ? 'POST' : 'GET';
-
-    // 2. INPUT BODY (If POST)
+    // 1. CONFIRM METHOD & BODY
+    // If Method is POST/PUT/PATCH, ask for Body
     let data = {};
-    if (method === 'POST') {
-        console.log(`\n${CYAN}📦 REQUEST BODY (JSON):${RESET}`);
-        const jsonInput = await ask(`Enter JSON (Press Enter for empty {}): `);
+    if (['POST', 'PUT', 'PATCH'].includes(targetMethod)) {
+        console.log(`\n${CYAN}📦 REQUEST BODY for ${targetMethod}:${RESET}`);
+        console.log(`${DIM}(Press ENTER to send empty JSON '{}')${RESET}`);
+        const jsonInput = await ask(`JSON Payload: `);
         try {
             data = jsonInput.trim() ? JSON.parse(jsonInput) : {};
         } catch (e) {
@@ -110,7 +126,6 @@ async function sendRequest() {
 
     console.log(`\n${YELLOW}📡 INITIATING API REQUEST SEQUENCE...${RESET}`);
 
-    // Auth Headers
     const timestamp = Date.now().toString();
     const nonce = Math.floor(Math.random() * 1000000).toString();
     const message = `Identify as ${agentAccount.address} at ${timestamp} with nonce ${nonce}`;
@@ -119,12 +134,12 @@ async function sendRequest() {
     console.log(`${DIM}   ├─ Signing Identity...${RESET}`);
     const signature = await agentAccount.signMessage({ message });
 
-    console.log(`${DIM}   └─ Calling:${RESET} ${method} ${targetUrl}`);
+    console.log(`${DIM}   └─ Calling:${RESET} ${targetMethod} ${targetUrl}`);
 
     try {
         const startTime = Date.now();
         const response = await axios({
-            method: method,
+            method: targetMethod,
             url: targetUrl,
             data: data,
             headers: {
@@ -137,7 +152,6 @@ async function sendRequest() {
         });
         const latency = Date.now() - startTime;
 
-        // Update Grade
         if (response.headers['x-agent-grade']) {
             currentGrade = response.headers['x-agent-grade'];
         }
@@ -178,14 +192,14 @@ async function main() {
     await loadWallet();
 
     if (process.argv[2]) {
-        targetUrl = process.argv[2];
+        parseTarget(process.argv.slice(2).join(' '));
     } else {
         console.log(`\n${YELLOW}👋 Welcome to HighStation Agent Simulator!${RESET}`);
-        console.log(`To verify a service, enter the ${BOLD}FULL API Endpoint URL${RESET}.`);
-        console.log(`${DIM}(Get this from the Provider Portal -> My Services -> Endpoint)${RESET}`);
+        console.log(`Enter the ${BOLD}Method + URL${RESET} of the Service you want to test.`);
+        console.log(`${DIM}(Example: POST https://highstation-demo.vercel.app/api/resource)${RESET}`);
 
-        const input = await ask(`\n👉 Enter Full URL: `);
-        targetUrl = input.trim();
+        const input = await ask(`\n👉 Enter Target: `);
+        parseTarget(input);
     }
 
     while (true) {
@@ -203,7 +217,10 @@ async function main() {
         switch (choice.trim()) {
             case '1': await fetchBalance(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '2': await sendRequest(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
-            case '3': targetUrl = (await ask(`\nEnter new URL: `)).trim(); break;
+            case '3':
+                const input = await ask(`\nEnter new Target (e.g. "POST https://..."): `);
+                if (input.trim()) parseTarget(input);
+                break;
             case '4':
                 console.log(`\n🔗 Faucet: https://cronos.org/faucet\n🆔 Address: ${agentAccount.address}`);
                 await ask(`\n${DIM}Press ENTER...${RESET}`); break;
