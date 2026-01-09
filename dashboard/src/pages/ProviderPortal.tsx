@@ -440,8 +440,9 @@ function ProviderPortal() {
     const IntegrationTab = () => {
         const [selectedService, setSelectedService] = useState<Service | null>(services[0] || null);
         const [selectedLang, setSelectedLang] = useState<'curl' | 'python' | 'nodejs'>('curl');
-        const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000';
-        const endpoint = `${apiOrigin}/gatekeeper/${selectedService?.slug || 'service-slug'}/resource`;
+        const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'https://highstation.vercel.app';
+        // Always show echo-service as example (not real user service)
+        const endpoint = `${apiOrigin}/gatekeeper/echo-service/resource`;
 
         if (services.length === 0) return (
             <div className="card p-15 text-center">
