@@ -35,6 +35,15 @@
 - **[검증] 보안 테스트 슈트**:
     - 인증 우회 시도를 차단하는지 확인하는 자동화 테스트(`test/security/auth.test.ts`) 추가 및 통과.
 
+### v3.4 - 사양 일치 및 편의성 개선 (Consistency & Discovery)
+**일자**: 2026-01-09
+- **[백엔드] Service Pricing Info**:
+    - `GET /gatekeeper/:serviceSlug/info` 엔드포인트 추가.
+    - 실제 요청 없이도 현재 요금(Wei/CRO)과 요구 등급을 미리 조회(Pre-flight Check)할 수 있게 됨.
+- **[수정] 로직 충돌 및 기본값 일치**:
+    - DB 스키마(`global_debt_limit`)와 비즈니스 로직 간의 불일치($5.0 vs $1.0)를 Spec(Grade C=$1)에 맞춰 수정.
+    - 검증된 개발자(Track 2)가 일반 신용 체크에 의해 잘못 막히는 문제를 우선순위 조정을 통해 해결.
+
 ### v3.2 - 프리미엄 프론트엔드 디자인 개선 (Visual Overhaul)
 **일자**: 2026-01-09
 - **[UI/UX] 브랜드 아이덴티티 강화**:

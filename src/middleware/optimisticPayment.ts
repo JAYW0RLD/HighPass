@@ -83,6 +83,17 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS || "0x0000000000000000000000000000000000000000";
         const commonHeaders = `receiver="${paymentHandlerAddress}", asset="CRO", chainId="240", datetime="${new Date().toISOString()}"`;
 
+        // Case 0: Dual-Track / Verified Developer (Priority Check)
+        if (res.locals.track === 'TRACK_2') {
+            // Already verified by AccessControlEngine (including Max Debt Limit)
+            console.log(`[Dual-Track] Agent ${agentId} is Verified (Track 2). Allowing optimistic payment.`);
+            await addDebt(agentId, requiredWei);
+            res.locals.paymentAmount = requiredWei.toString();
+            res.locals.isOptimistic = true;
+            next();
+            return;
+        }
+
         // Case 1: Outstanding Debt - Check Settlement Threshold
         // Grade-based debt aggregation for gas optimization
         const DEBT_THRESHOLDS = {
@@ -128,18 +139,7 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             return;
         }
 
-        // Case 2: Check Optimistic Policy (Dynamic)
-        // Dual-Track Logic (Track 2 = Verified Developer)
-        if (res.locals.track === 'TRACK_2') {
-            // Already verified by AccessControlEngine (including Max Debt Limit)
-            // Still respected Case 1 (Settlement Threshold) above.
-            console.log(`[Dual-Track] Agent ${agentId} is Verified (Track 2). Allowing optimistic payment.`);
-            await addDebt(agentId, requiredWei);
-            res.locals.paymentAmount = requiredWei.toString();
-            res.locals.isOptimistic = true;
-            next();
-            return;
-        }
+
 
         // Condition: Grade is "Better or Equal" to Min Grade.
         // Since Grade A < Grade B (lexicographically), we check if agentGrade <= minGrade

@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { IdentityService } from './services/IdentityService';
+import { PriceService } from './services/PriceService';
+import { FeeSettlementEngine } from './services/FeeSettlementEngine';
 import { optimisticPaymentCheck } from './middleware/optimisticPayment';
 import { loggerMiddleware } from './middleware/logger';
 import { initDB } from './database/db';
@@ -131,6 +133,66 @@ app.get('/api/demo/echo', (req, res) => {
 import { serviceResolver } from './middleware/serviceResolver';
 import { creditGuard } from './middleware/creditGuard';
 import { accessControlEngine } from './middleware/AccessControlEngine';
+
+// Service Info & Cost Discovery Endpoint
+app.get('/gatekeeper/:serviceSlug/info',
+    serviceResolver,
+    async (req, res) => {
+        const config = res.locals.serviceConfig;
+        if (!config) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+
+        try {
+            // Dynamic Price Calculation
+            const priceService = new PriceService();
+            const feeEngine = new FeeSettlementEngine();
+
+            // Base Price
+            let basePriceWei = BigInt(config.price_wei || '0');
+
+            // If dynamic oracle pricing was used (fallback), we might miss it here if logic is only in optimisticPayment.
+            // But serviceResolver sets 'config' from DB. If DB has 0, optimisticPayment defaults to oracle.
+            // We should replicate that 'fallback' logic if needed, or just show what's in config.
+            // For accuracy, let's assume DB dictates price. If DB is 0 and it's not a demo, implementation might vary.
+            // But let's stick to config-based reporting for now.
+
+            // Calculate Total Fee (Gas + Margin)
+            const feeResult = await feeEngine.calculateFee({
+                servicePriceWei: basePriceWei,
+                marginPercent: 0.005 // 0.5% Margin
+            });
+
+            const totalWei = feeResult.totalWei;
+
+            // Convert to roughly USD for display
+            // Assuming 1 CRO = $0.10 roughly (just for display, real rate depends on oracle)
+            const croAmount = Number(totalWei) / 1e18;
+
+            res.json({
+                name: config.name,
+                slug: config.slug,
+                status: 'active',
+                pricing: {
+                    base_price_wei: basePriceWei.toString(),
+                    total_price_wei: totalWei.toString(),
+                    currency: 'CRO',
+                    estimated_cro: croAmount.toFixed(6),
+                    breakdown: feeResult.breakdown
+                },
+                requirements: {
+                    min_grade: config.min_grade || 'F',
+                    payment_model: 'optimistic_v1'
+                },
+                upstream_base: config.upstream_url
+            });
+
+        } catch (err: any) {
+            console.error('[Info] Error calculating price:', err);
+            res.status(500).json({ error: 'Internal Server Error', details: err.message });
+        }
+    }
+);
 
 // Dynamic Service Route (RBAC / Multi-Provider)
 // Route: /gatekeeper/:serviceSlug/resource

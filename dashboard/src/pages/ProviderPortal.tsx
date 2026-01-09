@@ -285,7 +285,7 @@ function ProviderPortal() {
     // --- Sub-Components ---
 
     const ServicesTab = () => (
-        <div className="grid grid-cols-3 gap-2 service-grid-layout">
+        <div className="grid grid-cols-2 gap-2 service-grid-layout">
             <div className="flex flex-col gap-1">
                 <div className="card p-15">
                     <h2 className="section-header">Register New Service</h2>

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS developers (
     user_id uuid references auth.users not null,
     github_id text,
     total_reputation text default 'Grade C', -- Grade A, B, C, D, E, F
-    global_debt_limit numeric default 5.0,   -- USD limit before forced settlement
+    global_debt_limit numeric default 1.0,   -- USD limit for Grade C
     created_at timestamptz default now(),
     unique(user_id)
 );
