@@ -1,82 +1,59 @@
 # 🤖 HighStation 에이전트 시뮬레이터 (Interactive CLI)
 
 **"에이전트 자동 결제(Agentic Payment)"**를 체험할 수 있는 대화형 콘솔 도구입니다.
-여러분의 터미널이 곧 AI 에이전트의 제어 화면이 됩니다.
 
-## ✨ 주요 기능
-- **대화형 메뉴**: 복잡한 명령어 없이 숫자 키(1, 2, 3...)로 에이전트를 제어합니다.
-- **실시간 대시보드**: 지갑 주소, 잔액, 타겟 서버 상태를 한눈에 확인합니다.
-- **실전 검증**: 실제 블록체인(Cronos Testnet)과 연동되어 동작합니다.
-
----
-
-## 🚀 시작하기 (외부 사용자용)
-
-이 가이드는 GitHub에서 프로젝트를 다운로드 받은 후, **외부 서버(Vercel 등)**를 테스트하는 상황을 가정합니다.
-
-### 1단계: 프로젝트 폴더로 이동 (중요!)
-스크립트를 실행하려면 반드시 `highstation` 폴더 안에 있어야 합니다.
-(이 단계를 건너뛰면 `MODULE_NOT_FOUND` 에러가 발생합니다)
+## 🚀 시작하기
 
 ```bash
 cd highstation
-```
-
-### 2단계: 의존성 설치
-스크립트 실행에 필요한 도구를 설치합니다. (최초 1회)
-```bash
 npm install
-```
-
-### 3단계: 에이전트 생성 (지갑)
-나만의 에이전트 지갑을 생성합니다.
-```bash
 npx ts-node scripts/create-agent.ts
-```
-
-### 4단계: 시뮬레이터 실행!
-**테스트할 서버 주소(URL)**를 준비하세요.
-
-```bash
-# 그냥 실행하면 URL을 입력하는 화면이 나옵니다.
 npx ts-node scripts/run-agent.ts
-
-# 또는 실행할 때 URL을 바로 입력해도 됩니다.
-npx ts-node scripts/run-agent.ts https://highstation-demo.vercel.app
 ```
+
+### 🎯 서버 주소(Target URL) 입력 가이드
+
+에이전트 시뮬레이터는 **두 가지 형태**의 주소를 모두 지원합니다.
+
+**1. 기본 주소 (Base URL)**
+*   입력 예시: `https://my-project.vercel.app`
+*   동작: 자동으로 `.../gatekeeper/echo-service/resource` (기본 데모)를 호출합니다.
+*   *처음 실행하는 분들에게 추천합니다.*
+
+**2. 전체 주소 (Full Endpoint)**
+*   입력 예시: `https://my-project.vercel.app/gatekeeper/custom-service/resource`
+*   동작: 입력한 주소 **그대로** 호출합니다.
+*   *대시보드에서 복사한 특정 API를 테스트할 때 사용하세요.*
 
 ---
 
 ## 🎮 조작 방법
 
 ```text
-COMMANDS:
-  [1] 💰 Check Wallet Balance  (잔액 조회)
-  [2] 📡 Send API Request      (요청 보내기)
-  [3] ⚙️  Set Target URL        (타겟 변경)
-  [4] 🚰 Get Test Tokens       (가스비 받기 - Faucet)
-  [5] ♻️  Reset Agent Identity  (지갑 초기화)
-  [6] 🚪 Exit                  (종료)
+  HighStation Agent Simulator v2.4
+
+⚡ AGENT PROFILE
+   ID:      0x123...abc
+   Grade:   Unknown (요청 시 갱신됨)
+   Balance: 0 CRO
+   Target:  https://my-project.vercel.app
 ```
 
-### 주요 시나리오
+```text
+COMMANDS:
+  [1] 💰 Check Wallet Balance
+  [2] 📡 Send API Request      (핵심!) -- 등급(Grade) 확인 가능
+  [3] ⚙️  Set Target URL        (주소 변경)
+  [4] 🚰 Get Test Tokens       (가스비 받기 - Faucet)
+  [5] ♻️  Reset Agent Identity  (지갑 초기화)
+  [6] 🚪 Exit
+```
 
-**A. 돈 없이 사용하기 (Optimistic Payment)**
-1.  **`[2]`번 (요청 보내기)**를 누릅니다.
-2.  잔액이 0이어도 **"✅ ACCESS GRANTED"**가 뜨며 데이터가 수신됩니다.
-3.  *이것은 신규 유저를 위한 '후불 결제' 모드입니다.*
+### ✅ 결제 테스트 (Optimistic)
+**`[2]`번**을 누르면 요청을 보냅니다.
+*   **Grade C (신규)**: 잔액이 없어도 **"✅ ACCESS GRANTED"** (후불 승인)
+*   **Grade A (우수)**: 더 높은 한도와 빠른 처리 속도 제공 (시뮬레이션)
 
-**B. 실제 돈 내고 사용하기 (Real Payment)**
-1.  **`[4]`번 (가스비 받기)**를 눌러 Faucet 사이트로 이동합니다.
-2.  내 에이전트 주소로 무료 테스트 토큰(TCRO)을 받습니다.
-3.  **`[1]`번 (잔액 조회)**로 입금을 확인합니다.
-4.  이제 요청을 보내면, **실제 블록체인 트랜잭션**이 발생하고 결제가 완료됩니다.
-
----
-
-## 💡 자주 묻는 질문
-**Q: `MODULE_NOT_FOUND` 에러가 떠요.**
-A: 1단계(`cd highstation`)를 수행했는지 확인하세요. `scripts` 폴더 밖에서 실행하면 안 됩니다.
-
-**Q: 내 돈이 나가나요?**
-A: 아니요. 테스트넷(Cronos Testnet) 환경이므로 실제 금전적 비용은 없습니다.
+### ❌ 404 에러가 뜬다면?
+입력한 URL 뒤에 `/gatekeeper/echo-service...`가 중복으로 붙었을 수 있습니다.
+대시보드에서 `.../resource`까지 포함된 Full URL을 복사했다면, 시뮬레이터가 알아서 판단하므로 걱정하지 마세요. (v2.4 업데이트)
