@@ -1,128 +1,40 @@
-# 🚀 HighStation | Agent Payment Gateway
 
-> **Trustless Payments Meet Agent Identity** - A production-ready API gateway enabling secure, low-cost agent-to-agent payments on Cronos zkEVM using X402 protocol.
+# ⚡ HighStation
 
-[![Cronos zkEVM](https://img.shields.io/badge/Cronos-zkEVM-blue)](https://zkevm.cronos.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Security: 9/10](https://img.shields.io/badge/Security-9%2F10-brightgreen)](docs/audit/EXECUTIVE_SUMMARY.md)
-[![Red Team: Audited](https://img.shields.io/badge/Red%20Team-Audited-success)](docs/audit/RED_TEAM_REPORT.md)
-[![Version: 2.9.0](https://img.shields.io/badge/Version-2.9.0-blue)](docs/PROJECT_HISTORY.md)
+**Autonomous Payment Gateway for AI Agents**
 
+HighStation은 AI 에이전트 간의 초고속, 저비용 결제를 가능하게 하는 **Layer 2 Payment Gateway**입니다.
+복잡한 블록체인 서명 과정을 추상화하고, 신용 기반의 **Optimistic Payment(후불 결제)** 시스템을 제공합니다.
 
-## 📖 Overview
+## 🚀 Key Features
 
-HighStation is a **next-generation API gateway** designed for the **autonomous agent economy**. It combines:
-
-- **Multi-Provider Platform** - Self-service portal for API providers to monetize services
-- **Dual-Track Access Control** - Validates both Anonymous (Track 1) and Verified (Track 2) agents
-- **Dynamic Pricing** - Real-time CRO/USD price feeds via Pyth Oracle
-- **1% Protocol Fee** - Sustainable revenue model via `PaymentHandler` smart contract
-- **HTTP 402 Standard** - Native web protocol for machine-to-machine payments
-- **Cronos zkEVM** - Ultra-low gas fees (~$0.001/tx) for micro-transactions
-- **Supabase Backend** - PostgreSQL + Auth + Realtime for production scalability
-
-## 🎯 Key Features
-
-- ✅ **Provider Portal** - Register APIs, set pricing, view analytics
-- ✅ **Developer Portal** - One-click GitHub Onboarding, wallet linkage, and reputation tracking
-- ✅ **Test Console** - Built-in API testing with response inspection
-- ✅ **JWT Security** - Provider authentication with zero-trust verification
-- ✅ **Automated Settlements** - Configure auto-withdrawal thresholds
-- ✅ **Data Foundation** - High-fidelity telemetry (Latency, Size, Integrity, Type)
-- ✅ **Revenue Dashboard** - Real-time earnings and protocol metrics
-- ✅ **CLI Agent Simulator** - Create and simulate autonomous agents in your terminal
+- **Optimistic Payment**: 신용 등급(Grade A/B/C)에 따라 '선 사용, 후 결제'를 지원하여 트랜잭션 속도를 100배 향상시킵니다.
+  - **Grade A**: 50 CRO 한도 (약 $5.00)
+  - **Grade B/C**: 10 CRO 한도 (약 $1.00)
+- **Smart Credit Policy**: 한도의 80% 사용 시 경고, 100% 도달 시 결제(Settlement)를 강제하여 리스크를 관리합니다.
+- **X402 Protocol**: `402 Payment Required` 표준을 확장하여, 에이전트가 스스로 채무를 정산하고 서비스를 재개할 수 있는 프로토콜을 구현했습니다.
+- **Agent Simulator**: 실제 에이전트처럼 동작하는 CLI 도구를 통해 결제 흐름을 시뮬레이션할 수 있습니다.
 
 ## 📚 Documentation
+- [**한국어 가이드 (KR)**](./docs/guides/AGENT_CLI_GUIDE_KR.md) 🇰🇷
+- [**English Guide (EN)**](./docs/guides/AGENT_CLI_GUIDE.md) 🇺🇸
+- [**Project History**](./docs/PROJECT_HISTORY_KR.md)
 
-### Core
-- [📜 Project History & Changelog](docs/PROJECT_HISTORY.md)
-- [🛡️ Security Audit](docs/audit/EXECUTIVE_SUMMARY.md)
+## 🛠️ Quick Start (Agent Simulator)
 
-### Guides (English)
-- [🤖 Agent Simulator (CLI)](docs/guides/AGENT_CLI_GUIDE.md)
-- [🚀 Deployment Guide](docs/guides/DEPLOYMENT.md)
+외부 사용자(심사위원)는 로컬 설치 없이 `npx`로 바로 시뮬레이터를 실행해볼 수 있습니다.
 
-### Guides (Korean / 한국어)
-- [🇰🇷 한국어 시작하기 (Quick Start)](README_KR.md)
-- [🇰🇷 에이전트 시뮬레이터](docs/guides/AGENT_CLI_GUIDE_KR.md)
-- [🇰🇷 배포 가이드](docs/guides/DEPLOYMENT_KR.md)
-- [🇰🇷 프로젝트 히스토리](docs/PROJECT_HISTORY_KR.md)
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- Foundry
-- Cronos zkEVM Testnet funds ([Faucet](https://cronos.org/faucet))
-
-### Installation
 ```bash
-git clone https://github.com/yourname/highstation
+git clone https://github.com/JAYW0RLD/HighStation.git
 cd highstation
 npm install
-forge install
+npx ts-node scripts/run-agent.ts
 ```
 
-### Configuration
-Create `.env`:
-```env
-PRIVATE_KEY=0x...
-RPC_URL=https://testnet.zkevm.cronos.org
-CHAIN_ID=240
-ADMIN_WALLET_ADDRESS=0x...
-PYTH_PRICE_FEED_ID=0xff61491a131119af66174c751631553554319142416d44692a7556e17be2139a
-```
-
-### Deploy Contracts
-```bash
-forge build
-npm run deploy:cronos
-```
-
-### Start Backend
-```bash
-npm run start
-```
-
-### Start Dashboard
-```bash
-cd dashboard
-npm run dev
-```
-
-### Run Verification
-```bash
-npm run verify:cronos
-```
-
-**Expected Output:**
-```
->>> REAL WORLD SIMULATION (Public Cronos zkEVM) <<<
-SUCCESS: 402 Recv. Header: Token realm="X402", amount="97230562443800720", asset="CRO"
-Payment Tx Sent: 0x0ce...eb6
-SUCCESS: 200 OK
-```
-
-## 📊 Live Demo
-
-**Deployed Contracts (Cronos zkEVM Testnet):**
-- Identity: `0xf793549b33b121125e06e0578455c9fe84cc8f23`
-- Payment Handler: `0xcb54c99e0025ce8a2f407a7e6f4ecf01ced141dc`
-
-**Example Transaction:**
-[View on Explorer](https://explorer.zkevm.cronos.org/tx/0x0ce46d564c1cea58e000c9f3f4f24e7145dbc5b84aeb187889516f6b8768eeb6)
-
-## 🛠️ Tech Stack
-
-- **Blockchain**: Cronos zkEVM
-- **Backend**: Node.js, Express, Supabase
-- **Frontend**: React, Vite
-- **Smart Contracts**: Solidity, Foundry
-
-## 📜 License
-
-MIT - See [LICENSE](./LICENSE)
+## 🏗️ Architecture
+- **Gatekeeper (Middleware)**: API 요청을 가로채 인증 및 결제 상태를 검사합니다.
+- **Credit Engine**: 에이전트의 온체인 활동을 분석하여 실시간으로 신용 등급을 산출합니다.
+- **Settlement Layer**: Cronos zkEVM Testnet 상에서 효율적인 배치(Batch) 정산을 수행합니다.
 
 ---
-
-**Built with ❤️ using X402 Protocol on Cronos zkEVM**
+© 2026 HighStation Team. All Rights Reserved.
