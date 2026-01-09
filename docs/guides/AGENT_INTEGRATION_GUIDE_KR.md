@@ -1,7 +1,22 @@
 # 🤖 HighStation AI Agent 연동 가이드
 
 이 문서는 개발자가 자신의 **AI 에이전트(LangChain, AutoGPT, Python 봇 등)**에 HighStation 결제 프로토콜(X402)을 탑재하는 방법을 설명합니다.
-연동을 완료하면 에이전트는 API 호출 시 자동으로 신원을 증명하고, 외상이 막혔을 때 스스로 지갑을 열어 결제하고 업무를 계속할 수 있습니다.
+특히 **Crypto.com AI Agent SDK**를 사용하는 에이전트와의 호환성을 완벽하게 지원합니다.
+
+---
+
+## 🦁 Crypto.com AI Agent SDK Integration (Hackathon Special)
+
+Crypto.com AI Agent SDK를 사용하여 봇을 개발 중이신가요?
+HighStation은 CDC SDK가 사용하는 표준 EVM Wallet (`viem` 기반)과 완벽하게 호환됩니다.
+
+### ✅ Integration Demo
+저희가 제공하는 데모 스크립트를 통해 연동 과정을 미리 확인해 보세요.
+```bash
+# CDC Agent SDK 스타일의 연동 데모 실행
+npx ts-node scripts/cdc-agent-demo.ts
+```
+> 이 스크립트는 `Crypto.com AI Agent`가 외부 유료 API를 호출할 때, `402 Payment Required`를 만나면 자동으로 Cronos Testnet에서 결제를 수행하고 업무를 재개하는 전체 흐름을 시뮬레이션합니다.
 
 ---
 
