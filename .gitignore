@@ -45,3 +45,4 @@ supabase/.temp
 supabase/functions/*/deno.lock
 
 # Private Documentation
+scripts/agent-wallet.json

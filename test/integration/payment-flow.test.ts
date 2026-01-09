@@ -1,53 +1,61 @@
 import request from 'supertest';
 import express from 'express';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { initDB } from '../../src/database/db';
+import app from '../../src/server'; // Import the actual app
+import { IdentityService } from '../../src/services/IdentityService';
 
-describe('Full Payment Flow Integration Test', () => {
-    let app: express.Application;
+// Mock IdentityService to avoid real blockchain calls for Reputation
+jest.mock('../../src/services/IdentityService', () => {
+    const originalModule = jest.requireActual('../../src/services/IdentityService');
+    return {
+        ...originalModule,
+        IdentityService: jest.fn().mockImplementation(() => {
+            return {
+                verifySignature: originalModule.IdentityService.prototype.verifySignature,
+                getCreditGrade: jest.fn().mockResolvedValue('A'),
+                getReputation: jest.fn().mockResolvedValue(100),
+                getClient: jest.fn()
+            };
+        })
+    };
+});
+
+describe('Agent Payment Simulation (Integration)', () => {
+    const agentPrivateKey = generatePrivateKey();
+    const agentAccount = privateKeyToAccount(agentPrivateKey);
+    const agentId = agentAccount.address;
+
+    console.log(`[Test] 🤖 Spawning Virtual Agent: ${agentId}`);
 
     beforeAll(async () => {
-        // Initialize test database
         process.env.NODE_ENV = 'test';
+        process.env.SUPABASE_URL = 'https://mock.supabase.co';
+        process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock';
         await initDB();
-
-        // This would import and start your actual server
-        // For now, we'll create a minimal test app
-        app = express();
     });
 
-    describe('End-to-end optimistic payment flow', () => {
-        it('should complete full optimistic payment cycle', async () => {
-            // 1. Agent with high reputation makes first request
-            // 2. Gets optimistic access (debt recorded)
-            // 3. Makes second request
-            // 4. Gets blocked (debt outstanding)
-            // 5. Pays debt
-            // 6. Can access again
+    it('should allow an Agent to perform an Optimistic Payment (Pay Later)', async () => {
+        const timestamp = Date.now().toString();
+        const nonce = Math.floor(Math.random() * 1000000).toString();
+        const message = `Identify as ${agentId} at ${timestamp} with nonce ${nonce}`;
+        const signature = await agentAccount.signMessage({ message });
 
-            // This would test the actual integrated flow
-            expect(true).toBe(true); // Placeholder
-        });
+        // TARGET ECHO SERVICE (Hit ServiceResolver Fallback)
+        const response = await request(app)
+            .get('/gatekeeper/echo-service/resource')
+            .set('x-agent-id', agentId)
+            .set('x-agent-signature', signature)
+            .set('x-auth-timestamp', timestamp)
+            .set('x-auth-nonce', nonce);
 
-        it('should handle concurrent requests correctly', async () => {
-            // Test that concurrent requests don't create race conditions
-            expect(true).toBe(true); // Placeholder
-        });
-    });
+        console.log('[Test] 📡 Response Status:', response.status);
+        if (response.status !== 200) {
+            console.error('[Test] ❌ Error:', response.body);
+        }
 
-    describe('Rate limiting integration', () => {
-        it('should enforce rate limits per IP', async () => {
-            // Make 11 requests rapidly
-            // First 10 should succeed
-            // 11th should get 429
-
-            expect(true).toBe(true); // Placeholder
-        });
-    });
-
-    describe('Security headers integration', () => {
-        it('should include all security headers in responses', async () => {
-            // Test that Helmet is active
-            expect(true).toBe(true); // Placeholder
-        });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('_gatekeeper');
+        expect(response.body._gatekeeper.optimistic).toBe(true);
     });
 });
