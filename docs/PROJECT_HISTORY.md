@@ -24,6 +24,14 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v2.9.0 - Agent Payment Simulator (New)
+**Date**: 2026-01-09
+- **[FEATURE] CLI Simulator**:
+    - Implemented `scripts/create-agent.ts` and `scripts/run-agent.ts` for end-to-end agent simulation.
+    - Allows manual verification of wallet generation, signing, and optimistic payment flows.
+- **[TEST] Integration Suite**: Added `test/integration/payment-flow.test.ts` covering optimistic payments and security rejections.
+- **[FIX] Demo Mode**: Validated database-less fallback for `echo-service` to facilitate easier local testing.
+
 ### v2.8 - Security & Architecture Hardening (Red Team)
 - **[SECURITY] SSRF Protection (DNS Pinning)**:
     - Fixed a critical Time-of-Check Time-of-Use (TOCTOU) vulnerability in domain verification.
