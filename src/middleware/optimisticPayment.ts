@@ -122,9 +122,9 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         // Case 1: Outstanding Debt - Check Settlement Threshold
         // Grade-based debt aggregation for gas optimization
         const DEBT_THRESHOLDS = {
-            'A': BigInt('5000000000000000000'), // $5.00 @ $0.10/CRO = 50 CRO
-            'B': BigInt('1000000000000000000'), // $1.00 = 10 CRO
-            'C': BigInt('1000000000000000000'), // $1.00 = 10 CRO
+            'A': BigInt('50000000000000000000'), // $5.00 @ $0.10/CRO = 50 CRO
+            'B': BigInt('10000000000000000000'), // $1.00 = 10 CRO
+            'C': BigInt('10000000000000000000'), // $1.00 = 10 CRO
             'D': BigInt(0), // Immediate payment
             'E': BigInt(0), // Immediate payment
             'F': BigInt(0)  // Immediate payment
@@ -132,6 +132,17 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
 
         const debtThreshold = DEBT_THRESHOLDS[grade as keyof typeof DEBT_THRESHOLDS] || BigInt(0);
         const newDebt = currentDebt + requiredWei;
+
+        // 80% Warning Logic (Soft Demand)
+        if (debtThreshold > BigInt(0)) {
+            const usagePercent = (newDebt * 100n) / debtThreshold;
+            res.set('X-Credit-Usage', usagePercent.toString());
+
+            if (usagePercent >= 80n && usagePercent < 100n) {
+                console.log(`[X402] Agent ${agentId}: High Credit Usage (${usagePercent}%). Sending Warning.`);
+                res.set('X-Credit-Warning', 'High Usage: Please settle debt to avoid blocking.');
+            }
+        }
 
         if (currentDebt > 0 && newDebt >= debtThreshold) {
             // Debt exceeded threshold - demand settlement

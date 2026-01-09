@@ -215,6 +215,17 @@ async function sendRequest() {
 
         if (response.data._gatekeeper?.optimistic) {
             console.log(`${YELLOW}💳 Payment: POSTPAID (Optimistic Mode)${RESET}`);
+
+            // Credit Hints
+            const usage = response.headers['x-credit-usage'];
+            const warning = response.headers['x-credit-warning'];
+            if (usage) {
+                console.log(`${DIM}   Usage:   ${usage}% of Credit Limit${RESET}`);
+            }
+            if (warning) {
+                console.log(`${RED}⚠️  WARNING: ${warning}${RESET}`);
+                console.log(`${RED}   Consider settling debt manually to prevent blocking.${RESET}`);
+            }
         } else {
             console.log(`${GREEN}💰 Payment: SETTLED${RESET}`);
         }
