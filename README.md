@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: 9/10](https://img.shields.io/badge/Security-9%2F10-brightgreen)](docs/audit/EXECUTIVE_SUMMARY.md)
 [![Red Team: Audited](https://img.shields.io/badge/Red%20Team-Audited-success)](docs/audit/RED_TEAM_REPORT.md)
-[![Version: 2.7.1](https://img.shields.io/badge/Version-2.7.1-blue)](docs/PROJECT_HISTORY.md)
+[![Version: 2.9.0](https://img.shields.io/badge/Version-2.9.0-blue)](docs/PROJECT_HISTORY.md)
 
 
 ## 📖 Overview
@@ -30,13 +30,23 @@ HighStation is a **next-generation API gateway** designed for the **autonomous a
 - ✅ **Automated Settlements** - Configure auto-withdrawal thresholds
 - ✅ **Data Foundation** - High-fidelity telemetry (Latency, Size, Integrity, Type)
 - ✅ **Revenue Dashboard** - Real-time earnings and protocol metrics
+- ✅ **CLI Agent Simulator** - Create and simulate autonomous agents in your terminal
 
 ## 📚 Documentation
 
-- [📜 Project History & Changelog](docs/PROJECT_HISTORY.md) - Full development timeline
-- [🚀 Deployment Guide (English)](docs/guides/DEPLOYMENT.md)
-- [🚀 배포 가이드 (한국어)](docs/guides/DEPLOYMENT_KR.md)
+### Core
+- [📜 Project History & Changelog](docs/PROJECT_HISTORY.md)
 - [🛡️ Security Audit](docs/audit/EXECUTIVE_SUMMARY.md)
+
+### Guides (English)
+- [🤖 Agent Simulator (CLI)](docs/guides/AGENT_CLI_GUIDE.md)
+- [🚀 Deployment Guide](docs/guides/DEPLOYMENT.md)
+
+### Guides (Korean / 한국어)
+- [🇰🇷 한국어 시작하기 (Quick Start)](README_KR.md)
+- [🇰🇷 에이전트 시뮬레이터](docs/guides/AGENT_CLI_GUIDE_KR.md)
+- [🇰🇷 배포 가이드](docs/guides/DEPLOYMENT_KR.md)
+- [🇰🇷 프로젝트 히스토리](docs/PROJECT_HISTORY_KR.md)
 
 ## 🚀 Quick Start
 
