@@ -68,8 +68,8 @@ function AuthPage() {
                     <div style={{
                         width: '48px',
                         height: '48px',
-                        background: 'linear-gradient(135deg, var(--accent-blue), var(--crypto-purple))',
-                        borderRadius: '12px',
+                        background: '#000000',
+                        borderRadius: '50%',
                         margin: '0 auto 1.5rem',
                         display: 'flex',
                         alignItems: 'center',
@@ -77,7 +77,7 @@ function AuthPage() {
                         color: 'white',
                         fontWeight: 'bold',
                         fontSize: '24px',
-                        boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+                        border: '2px solid rgba(255, 255, 255, 0.1)'
                     }}>
                         H
                     </div>
