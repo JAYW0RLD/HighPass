@@ -40,19 +40,14 @@ function clearScreen() {
 function printHeader() {
     clearScreen();
     console.log(`${CYAN}${BOLD}`);
-    console.log(`   ▄▄▄       ▄▄ • ▄▄▄ . ▐ ▄ ▄▄▄▄▄`);
-    console.log(`  ▀▄ █·▪     ▐█ ▀ ▪▀▄.▀·•█▌▐█•██  `);
-    console.log(`  ▐▀▀▄  ▄█▀▄ ▄█ ▀█▄▐▀▀▪▄▐█▐▐▌ ▐█.▪`);
-    console.log(`  ▐█•█▌▐█▌.▐▌▐█▄▪▐█▐█▄▄▌██▐█▌ ▐█▌·`);
-    console.log(`  .▀  ▀ ▀█▄▀▪·▀▀▀▀  ▀b▀ ▀▀ █▪ ▀▀▀ `);
+    console.log(`   HighStation Agent Simulator v2.2`);
     console.log(`${RESET}`);
-    console.log(`${DIM}  HighStation Agent Simulator v2.1${RESET}\n`);
+    console.log(`${DIM}  Real-World Testnet Edition${RESET}\n`);
 
     console.log(`${YELLOW}⚡ AGENT PROFILE${RESET}`);
     console.log(`   ${DIM}ID:${RESET}      ${agentAccount.address}`);
     console.log(`   ${DIM}Balance:${RESET} ${currentBalance === 'Unknown' ? DIM + currentBalance : GREEN + currentBalance + ' CRO'}${RESET}`);
     console.log(`   ${DIM}Target:${RESET}  ${targetUrl || RED + 'Not Set' + RESET}`);
-    console.log(`   ${DIM}Status:${RESET}  ${GREEN}ONLINE${RESET}`);
     console.log("----------------------------------------");
 }
 
@@ -67,7 +62,7 @@ async function loadWallet() {
 }
 
 async function fetchBalance() {
-    console.log(`\n${DIM}🔄 Fetching balance from Public Cronos zkEVM Testnet (Real-World)...${RESET}`);
+    console.log(`\n${DIM}🔄 Fetching balance from Public Cronos zkEVM Testnet...${RESET}`);
     try {
         const client = createPublicClient({
             chain: cronosTestnet,
@@ -86,9 +81,15 @@ async function sendRequest() {
         return;
     }
 
+    if (targetUrl.includes('highstation-demo.vercel.app') || targetUrl.includes('example.com')) {
+        console.log(`\n${RED}⚠️  INVALID TARGET: This is a placeholder URL!${RESET}`);
+        console.log(`   Please set your ACTUAL deployed URL using Option [3].`);
+        console.log(`   (Example: https://your-project-name.vercel.app)`);
+        return;
+    }
+
     console.log(`\n${YELLOW}📡 INITIATING API REQUEST SEQUENCE...${RESET}`);
 
-    // Auth Headers
     const timestamp = Date.now().toString();
     const nonce = Math.floor(Math.random() * 1000000).toString();
     const message = `Identify as ${agentAccount.address} at ${timestamp} with nonce ${nonce}`;
@@ -115,9 +116,7 @@ async function sendRequest() {
         const latency = Date.now() - startTime;
 
         console.log(`\n${GREEN}✅ ACCESS GRANTED${RESET} ${DIM}(${latency}ms)${RESET}`);
-        console.log(`${DIM}────────────────────────────────────────${RESET}`);
         console.log(response.data);
-        console.log(`${DIM}────────────────────────────────────────${RESET}`);
 
         if (response.data._gatekeeper?.optimistic) {
             console.log(`${YELLOW}💳 Payment: POSTPAID (Optimistic Mode)${RESET}`);
@@ -129,11 +128,7 @@ async function sendRequest() {
         console.log(`\n${RED}⛔ REQUEST FAILED${RESET}`);
         if (error.response) {
             console.log(`${RED}[${error.response.status}] ${JSON.stringify(error.response.data.error || error.response.data)}${RESET}`);
-            if (error.response.status === 402) {
-                console.log(`${YELLOW}💡 Reason: Payment Required.${RESET}`);
-                console.log(`   You need real testnet tokens to pay.`);
-                console.log(`   Use Option [4] to get free tokens from Faucet.`);
-            }
+            if (error.response.status === 404) console.log(`${YELLOW}💡 Check if your Dashboard URL is correct.${RESET}`);
         } else {
             console.log(`${RED}${error.message}${RESET}`);
         }
@@ -143,20 +138,14 @@ async function sendRequest() {
 async function main() {
     await loadWallet();
 
-    // Parse Initial Args or Ask Prompt immediately
     if (process.argv[2]) {
         targetUrl = process.argv[2];
-        console.log(`${GREEN}✔ Target set via CLI:${RESET} ${targetUrl}`);
     } else {
-        // Enforce Remote URL prompt for real users
+        // Simple Prompt without Local option
         console.log(`\n${YELLOW}👋 Welcome to HighStation Agent Simulator!${RESET}`);
-        console.log(`To verify the system, please enter the deployed server URL.`);
-        console.log(`${DIM}(Example: https://highstation-demo.vercel.app)${RESET}`);
-
-        const input = await ask(`\n👉 Enter Target URL: `);
+        const input = await ask(`\n👉 Enter your Vercel Deployment URL: `);
         targetUrl = input.trim();
-
-        // Fallback for lazy devs (hidden)
+        // Fallback for lazy developers (hidden)
         if (targetUrl === 'local') targetUrl = 'http://localhost:3000';
     }
 
@@ -173,40 +162,21 @@ async function main() {
         const choice = await ask(`\n${GREEN}agent@highstation:~${RESET}$ `);
 
         switch (choice.trim()) {
-            case '1':
-                await fetchBalance();
-                await ask(`\n${DIM}Press ENTER to continue...${RESET}`);
-                break;
-            case '2':
-                await sendRequest();
-                await ask(`\n${DIM}Press ENTER to continue...${RESET}`);
-                break;
+            case '1': await fetchBalance(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
+            case '2': await sendRequest(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '3':
-                const newUrl = await ask(`\nEnter new base URL (current: ${targetUrl}): `);
-                if (newUrl) targetUrl = newUrl;
-                break;
+                targetUrl = (await ask(`\nEnter new URL: `)).trim(); break;
             case '4':
-                console.log(`\n${YELLOW}🚰 CRONOS TESTNET FAUCET${RESET}`);
-                console.log("To pay for gas (real txs), you need TCRO tokens.");
-                console.log(`🔗 Go to: ${BOLD}https://cronos.org/faucet${RESET}`);
-                console.log(`🆔 Your Address: ${GREEN}${agentAccount.address}${RESET}`);
-                await ask(`\n${DIM}Press ENTER to continue...${RESET}`);
-                break;
+                console.log(`\n🔗 Faucet: https://cronos.org/faucet\n🆔 Address: ${agentAccount.address}`);
+                await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '5':
-                const confirm = await ask(`\n${RED}⚠️  WARNING: This will delete your current wallet!${RESET} (y/N): `);
-                if (confirm.toLowerCase() === 'y') {
+                if ((await ask(`Reset Identity? (y/N): `)).toLowerCase() === 'y') {
                     fs.unlinkSync(WALLET_FILE);
-                    console.log(`\n${GREEN}♻️  Identity deleted.${RESET}`);
-                    console.log(`Please run 'npx ts-node scripts/create-agent.ts' to spawn a new agent.`);
+                    console.log(`Reset complete. Restart required.`);
                     process.exit(0);
                 }
                 break;
-            case '6':
-                console.log(`\n${GREEN}👋 Agent shutting down. Goodbye!${RESET}`);
-                process.exit(0);
-                break;
-            default:
-                break;
+            case '6': process.exit(0); break;
         }
     }
 }
