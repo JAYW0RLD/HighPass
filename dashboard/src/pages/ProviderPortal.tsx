@@ -442,26 +442,58 @@ function ProviderPortal() {
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000';
         const endpoint = `${apiOrigin}/gatekeeper/${selectedService?.slug || 'service-slug'}/resource`;
 
-        if (services.length === 0) return <p>Please register a service first.</p>;
+        if (services.length === 0) return (
+            <div className="card p-15 text-center">
+                <p className="text-secondary">Please register a service first to see integration details.</p>
+            </div>
+        );
 
         return (
-            <div className="data-section" style={{ padding: '1.5rem' }}>
-                <h2>Agent Integration Guide</h2>
-                <select
-                    onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
-                    className="form-control"
-                    style={{ maxWidth: '300px', marginBottom: '1rem' }}
-                >
-                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-                <div style={{ background: '#0d1117', padding: '1rem', borderRadius: '6px', overflowX: 'auto' }}>
-                    <pre style={{ margin: 0, color: '#c9d1d9', fontSize: '0.85rem' }}>
-                        {`// Example Call via Gatekeeper
-const res = await fetch("${endpoint}", {
-  headers: { 'X-Agent-ID': 'my-agent' }
+            <div className="flex flex-col gap-2">
+                <div className="card p-2" style={{ border: '1px solid var(--border)' }}>
+                    <div className="flex justify-between items-center mb-1">
+                        <h2 className="section-title">Integration Guide</h2>
+                        <select
+                            onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
+                            className="form-control"
+                            style={{ minWidth: '200px' }}
+                            value={selectedService?.id}
+                        >
+                            {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                    </div>
+
+                    <p className="text-secondary mb-1">
+                        Use the standard X402 headers to request access. Verified agents (Track 2) are automatically granted credit.
+                    </p>
+
+                    <div style={{ background: '#0d1117', padding: '1.5rem', borderRadius: '8px', overflowX: 'auto', border: '1px solid #30363d' }}>
+                        <div className="flex justify-between text-xs text-secondary mb-05 select-none">
+                            <span>JAVASCRIPT / TYPESCRIPT</span>
+                            <span>ESM</span>
+                        </div>
+                        <pre style={{ margin: 0, color: '#e6edf3', fontSize: '0.9rem', fontFamily: "'JetBrains Mono', monospace", lineHeight: '1.5' }}>
+                            {`// 1. Install Client
+npm install @crypto.com/facilitator-client
+
+// 2. Call API via Gatekeeper
+const response = await fetch("${endpoint}", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Agent-ID": "my-agent-wallet-address",
+    // Premium agents bypass payment if credit score > 70
+  },
+  body: JSON.stringify({ prompt: "Hello world" })
 });
-const data = await res.json();`}
-                    </pre>
+
+if (response.status === 402) {
+  // Handle Payment Request (X402)
+  const { amount, receiver } = await response.json();
+  console.log(\`Payment required: \${amount} wei to \${receiver}\`);
+}`}
+                        </pre>
+                    </div>
                 </div>
             </div>
         );
@@ -470,28 +502,40 @@ const data = await res.json();`}
     const RevenueTab = () => {
         const totalCalls = providerStats?.totalCalls || 0;
         const netRevenueCRO = providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000';
-        const protocolFeeCRO = providerStats ? (Number(providerStats.protocolFeeWei) / 1e18).toFixed(4) : '0.0000';
+        // const protocolFeeCRO = providerStats ? (Number(providerStats.protocolFeeWei) / 1e18).toFixed(4) : '0.0000';
 
         return (
-            <div className="data-section" style={{ padding: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Revenue & Analytics</h2>
-                <div className="metrics-grid">
-                    <div className="metric-card primary">
-                        <div className="metric-label">Total API Calls</div>
-                        <div className="metric-value">{totalCalls}</div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Active Services: {services.length}</p>
+            <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="card p-2 bg-gradient-to-br from-gray-900 to-black border-border">
+                        <div className="flex items-center gap-05 mb-05">
+                            <span style={{ fontSize: '1.2rem' }}>💰</span>
+                            <span className="text-secondary font-medium">Net Revenue</span>
+                        </div>
+                        <div className="metric-value text-3xl font-bold text-success mb-05">
+                            {netRevenueCRO} <span className="text-lg text-secondary">CRO</span>
+                        </div>
+                        <p className="text-sm text-secondary">Total earnings after protocol fees</p>
                     </div>
-                    <div className="metric-card success">
-                        <div className="metric-label">Net Earnings (CRO)</div>
-                        <div className="metric-value">{netRevenueCRO}</div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Protocol Fee: {protocolFeeCRO} CRO</p>
+
+                    <div className="card p-2 bg-gradient-to-br from-gray-900 to-black border-border">
+                        <div className="flex items-center gap-05 mb-05">
+                            <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                            <span className="text-secondary font-medium">Total API Calls</span>
+                        </div>
+                        <div className="metric-value text-3xl font-bold text-primary mb-05">
+                            {totalCalls}
+                        </div>
+                        <p className="text-sm text-secondary">Across {services.length} active services</p>
                     </div>
                 </div>
-                {totalCalls === 0 && (
-                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No API calls recorded yet. Use the Agent Simulator CLI to test!</p>
+
+                <div className="card p-2">
+                    <h3 className="section-title text-base mb-1">Recent Settlements</h3>
+                    <div className="text-center py-2 text-secondary bg-secondary rounded">
+                        No settlement history available yet.
                     </div>
-                )}
+                </div>
             </div>
         );
     };
@@ -608,10 +652,33 @@ const data = await res.json();`}
         <div className="dashboard provider-portal">
             <Header title="Provider Portal" />
             {/* TABS (YouTube Chips Style) */}
-            <nav className="chip-nav">
-                <button className={`chip ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>My Services</button>
-                <button className={`chip ${activeTab === 'integration' ? 'active' : ''}`} onClick={() => setActiveTab('integration')}>Integration</button>
-                <button className={`chip ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => setActiveTab('revenue')}>Revenue</button>
+            {/* TABS (Modern Underline Style) */}
+            <nav style={{
+                display: 'flex',
+                gap: '2rem',
+                borderBottom: '1px solid var(--border)',
+                marginBottom: '2rem',
+                paddingBottom: '1px' // Align with border
+            }}>
+                {['services', 'integration', 'revenue'].map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab as any)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === tab ? '2px solid var(--accent-blue)' : '2px solid transparent',
+                            padding: '0.5rem 0',
+                            color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            fontWeight: activeTab === tab ? 600 : 400,
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                ))}
             </nav>
             {activeTab === 'services' && <ServicesTab />}
             {activeTab === 'integration' && <IntegrationTab />}

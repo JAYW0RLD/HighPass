@@ -15,7 +15,7 @@ interface Settings {
 }
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<'general' | 'billing' | 'api_keys'>('billing');
+    const [activeTab, setActiveTab] = useState<'general' | 'billing'>('billing');
     const [settings, setSettings] = useState<Settings>({
         withdrawal_address: '',
         auto_withdraw_enabled: false,
@@ -189,31 +189,6 @@ export default function SettingsPage() {
                         </div>
                     </>
                 );
-            case 'api_keys':
-                return (
-                    <>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 400, marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>API Keys</h2>
-                        <div className="boxed-group">
-                            <div className="boxed-header">
-                                <h3>Personal Access Tokens</h3>
-                            </div>
-                            <div className="boxed-body">
-                                <p className="help-text" style={{ marginBottom: '1rem' }}>
-                                    These keys allow you to authenticate with the API programmatically.
-                                    (This is a simulation, real API key management would generate long-lived JWTs).
-                                </p>
-                                <div className="form-group">
-                                    <label>Development Key</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input type="text" className="form-control" value="sk_test_..." disabled style={{ flex: 1 }} />
-                                        <button className="btn btn-secondary" disabled>Revoke</button>
-                                    </div>
-                                </div>
-                                <button className="btn btn-primary" onClick={() => alert('This feature is coming soon!')}>Generate New Key</button>
-                            </div>
-                        </div>
-                    </>
-                );
         }
     };
 
@@ -240,13 +215,6 @@ export default function SettingsPage() {
                                 style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit' }}
                             >
                                 Billing & Payouts
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('api_keys')}
-                                className={`nav-item ${activeTab === 'api_keys' ? 'active' : ''}`}
-                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit' }}
-                            >
-                                API Keys
                             </button>
                         </div>
                     </nav>

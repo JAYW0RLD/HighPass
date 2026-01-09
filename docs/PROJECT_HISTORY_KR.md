@@ -44,6 +44,19 @@
     - DB 스키마(`global_debt_limit`)와 비즈니스 로직 간의 불일치($5.0 vs $1.0)를 Spec(Grade C=$1)에 맞춰 수정.
     - 검증된 개발자(Track 2)가 일반 신용 체크에 의해 잘못 막히는 문제를 우선순위 조정을 통해 해결.
 
+### v3.5 - UI/UX Refinement (Premium Feel)
+**일자**: 2026-01-09
+- **[UI] 모던 탭 네비게이션**:
+    - Chip 스타일의 버튼을 제거하고, GitHub/Stripe 스타일의 깔끔한 Underline 탭 인터페이스로 전면 개편.
+    - "No Mindless Circle Buttons": 사용자 피드백을 반영하여 직관적이고 세련된 네비게이션 구현.
+- **[UI] 카드 기반 대시보드 리팩토링**:
+    - `Integration Guide`: 단순 텍스트를 카드 레이아웃과 구문 강조(Syntax Highlight) 스타일의 코드 블록으로 개선.
+    - `Revenue Tab`: 텍스트 나열 대신 그라디언트 카드와 아이콘을 활용한 시각적 정보 전달 강화.
+- **[Cleanup] 설정 메뉴 정리**:
+    - 시뮬레이션용으로 방치되었던 'API Keys' 탭 삭제하여 사용자 혼란 방지.
+- **[UI] 가시성 개선**:
+    - 로그인 화면 등 어두운 배경에서 잘 보이지 않던 버튼 텍스트(White-on-White) 문제 해결.
+
 ### v3.2 - 프리미엄 프론트엔드 디자인 개선 (Visual Overhaul)
 **일자**: 2026-01-09
 - **[UI/UX] 브랜드 아이덴티티 강화**:

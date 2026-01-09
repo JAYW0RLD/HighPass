@@ -94,3 +94,12 @@ HighStation은 단순 API 게이트웨이를 넘어, AI를 위한 **MCP 서버**
 - **Pre-flight Check**: `/gatekeeper/:slug/info` 엔드포인트를 통해 실행 전 정확한 가스비와 요구 신용 등급을 조회할 수 있습니다.
 - **Explicit Protocol**: 모든 비용 청구는 HTTP 402와 표준 헤더를 통해 명시적으로 이루어지며, 숨겨진 수수료는 없습니다.
 - **Why?**: 인간과 달리 AI는 "예상치 못한 청구서"에 당황하지 않습니다. 단지 에러를 낼 뿐입니다. 우리는 AI가 실행 전에 비용-효용 분석(Cost-Benefit Analysis)을 할 수 있도록 완벽한 정보를 제공해야 합니다.
+
+---
+
+## 7. 미학 (Aesthetics): 도구는 예뻐야 쓰고 싶다
+개발자 도구라고 해서 투박할 필요는 없습니다. 우리는 "기능"을 파는 것이 아니라 "경험"을 팝니다.
+
+- **No Mindless Design**: 맥락 없는 원형 버튼(Mindless Circle Buttons)이나 부조화스러운 Chip UI를 배제하고, 기능에 맞는 형태(Form follows Function)를 추구합니다.
+- **Premium Feel**: 어두운 배경, 미세한 그라디언트, 절제된 카드 UI는 사용자에게 "신뢰할 수 있는 금융 도구"라는 인상을 줍니다.
+- **Why?**: 아름다운 도구는 개발자의 자부심을 고취시키고, 더 오래 머물게 만듭니다.
