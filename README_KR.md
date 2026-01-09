@@ -62,18 +62,5 @@ curl -s -H "X-Agent-ID: risky-agent" http://localhost:3000/gatekeeper/resource
 웹 브라우저에서 아래 주소로 접속하면 실시간 로그를 볼 수 있습니다.
 👉 [http://localhost:3000](http://localhost:3000)
 
-### 🚀 AI Agent & MCP Support (New!)
-HighStation은 단순한 API 마켓이 아닌, **AI 에이전트를 위한 경제 인프라**입니다.
-
-*   **Official X402 Client**: `@crypto.com/facilitator-client`를 통한 표준화된 결제 검증
-*   **AI Agent Demo**: 자연어로 API를 검색하고 구매하는 `cdc-agent-demo` (Crypto.com AI Agent SDK 기반)
-*   **MCP Server**: Claude 등 LLM이 HighStation 마켓 데이터를 직접 조회할 수 있는 [Model Context Protocol](https://modelcontextprotocol.io) 서버 내장
-
-```bash
-# MCP 서버 실행 (Stdio 모드)
-npx ts-node src/mcp-server.ts
-```
-
-
 ---
 **팁:** 테스트를 초기화하고 싶다면 서버를 끄고(`Ctrl+C`), `dist/gatekeeper.db` 파일을 지운 뒤 다시 시작하세요.

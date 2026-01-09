@@ -52,10 +52,8 @@
   },
   "dependencies": {
     "@coinbase/x402": "^2.1.0",
-    "@crypto.com/ai-agent-client": "^1.0.2",
     "@crypto.com/developer-platform-client": "^1.1.2",
     "@crypto.com/facilitator-client": "^1.0.2",
-    "@modelcontextprotocol/sdk": "^1.25.2",
     "@pythnetwork/hermes-client": "^2.0.0",
     "@supabase/supabase-js": "^2.90.0",
     "@types/sqlite3": "^3.1.11",
