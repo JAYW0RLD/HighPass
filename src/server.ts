@@ -225,7 +225,13 @@ const flushLimiter = rateLimit({
 
 // Manual Debt Settlement (Flush) Endpoint
 import { flushDebt } from './routes/flush';
+import { depositHandler } from './routes/deposit'; // v1.6.0
+
+// Manual Flush Debt Endpoint - Rate Limited (Authenticated via Signature)
 app.post('/api/flush', flushLimiter, flushDebt);
+
+// v1.6.0: Deposit Endpoint - Rate Limited
+app.post('/api/deposit', flushLimiter, depositHandler);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
