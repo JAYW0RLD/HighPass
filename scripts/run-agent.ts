@@ -115,6 +115,7 @@ async function settleAndRetry(account: any, to: string, value: bigint, method: s
 
     try {
         const hash = await walletClient.sendTransaction({
+            account: account, // FIX: Explicitly pass account
             to: to as `0x${string}`,
             value: value
         });

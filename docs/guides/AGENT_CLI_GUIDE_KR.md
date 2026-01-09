@@ -11,7 +11,7 @@
 1.  [Provider Portal](https://highstation-dashboard.vercel.app)에 접속합니다.
 2.  **My Services** 메뉴에서 내가 등록한 서비스를 클릭합니다.
 3.  **"API Endpoint"**를 복사합니다.
-    *   예시: `https://.../gatekeeper/my-service-slug/resource`
+    *   예시: `GET https://.../gatekeeper/my-service-slug/resource`
 
 **2단계: 시뮬레이터 실행**
 ```bash
