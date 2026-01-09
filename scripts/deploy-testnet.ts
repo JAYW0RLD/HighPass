@@ -7,7 +7,14 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const PRIV_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+// SECURITY FIX: Do not hardcode private keys, even for testnet
+const PRIV_KEY = process.env.PRIVATE_KEY as `0x${string}`;
+
+if (!PRIV_KEY) {
+    console.error("Missing PRIVATE_KEY in .env");
+    process.exit(1);
+}
+
 const account = privateKeyToAccount(PRIV_KEY);
 
 const client = createWalletClient({

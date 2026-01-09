@@ -42,30 +42,37 @@ router.get('/stats', async (req: Request, res: Response) => {
         // Get slugs for service resolution
         const serviceSlugs = services.map(s => s.slug);
 
-        // Query requests table for these services
-        // endpoint format: /gatekeeper/{slug}/resource
-        const { data: requests, error: requestsError } = await db
-            .from('requests')
-            .select('amount, status, endpoint')
-            .in('endpoint', serviceSlugs.map(slug => `/gatekeeper/${slug}/resource`));
+        // SECURITY FIX (V-04): Explicit sanitization defense-in-depth
+        // PERFORMANCE FIX (NEW-HIGH-02): Use service_slug instead of endpoint
+        // This utilizes FK index for better performance
+        const sanitizedSlugs = serviceSlugs
+            .filter(slug => /^[a-zA-Z0-9_-]+$/.test(slug));
 
-        if (requestsError) {
-            throw requestsError;
+        if (sanitizedSlugs.length === 0) {
+            return res.json({
+                totalCalls: 0,
+                totalRevenue: '0',
+                netRevenueWei: '0',
+                protocolFeeWei: '0',
+                services: []
+            });
+        }
+
+        // PERFORMANCE FIX (HIGH-PERF): Use RPC for aggregation to prevent OOM
+        // Red Team finding: fetching all requests causes memory exhaustion
+        const { data: stats, error: statsError } = await db
+            .rpc('calculate_provider_stats', { p_provider_id: userId });
+
+        if (statsError) {
+            throw statsError;
         }
 
         // Calculate statistics
-        const totalCalls = requests?.length || 0;
-
-        // Sum revenue from successful calls (status 200)
-        let totalRevenueWei = 0;
-        if (requests) {
-            totalRevenueWei = requests
-                .filter(r => r.status === 200)
-                .reduce((sum, r) => sum + Number(r.amount || 0), 0);
-        }
+        const totalCalls = stats?.[0]?.total_calls || 0;
+        const totalRevenueWei = BigInt(stats?.[0]?.total_revenue_wei || 0);
 
         // Calculate net revenue (after 0.5% protocol fee)
-        const protocolFee = Math.floor(totalRevenueWei * 0.005);
+        const protocolFee = (totalRevenueWei * BigInt(5)) / BigInt(1000);
         const netRevenue = totalRevenueWei - protocolFee;
 
         res.json({

@@ -5,6 +5,7 @@ import { FeeSettlementEngine } from '../services/FeeSettlementEngine';
 import { getDebt, addDebt, clearDebt, isTxHashUsed, logRequest } from '../database/db';
 import { ServiceConfig } from './serviceResolver';
 import { createClient } from '@supabase/supabase-js';
+import { parseAbi, decodeEventLog, keccak256, toHex } from 'viem';
 
 export const optimisticPaymentCheck = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
@@ -16,8 +17,11 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         return;
     }
 
-    if (typeof agentId !== 'string' || agentId.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(agentId)) {
-        res.status(400).json({ error: "Invalid X-Agent-ID format" });
+    // RED TEAM FIX [HIGH-01]: Strict EVM Address Validation (DoS Prevention)
+    // Previously allowed loose regex which caused DB errors/log spam.
+    // Now enforcing strict 40-char hex string (EVM standard).
+    if (typeof agentId !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(agentId)) {
+        res.status(400).json({ error: "Invalid X-Agent-ID format. Must be a valid EVM address." });
         return;
     }
 
@@ -80,7 +84,16 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
 
     // X402 STANDARD NEGOTIATION
     if (!authHeader || !authHeader.startsWith('Token ')) {
-        const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS || "0x0000000000000000000000000000000000000000";
+        const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS;
+
+        // RED TEAM FIX [V-RT-04]: Fail Closed if Configuration Missing
+        // Prevent accidental burning of funds to Zero Address
+        if (!paymentHandlerAddress) {
+            console.error("[FATAL] PAYMENT_HANDLER_ADDRESS environment variable is missing");
+            res.status(500).json({ error: "Server Configuration Error" });
+            return;
+        }
+
         const commonHeaders = `receiver="${paymentHandlerAddress}", asset="CRO", chainId="240", datetime="${new Date().toISOString()}"`;
 
         // Case 0: Dual-Track / Verified Developer (Priority Check)
@@ -185,21 +198,9 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         return;
     }
 
-    // CHECK FOR REPLAY ATTACK (DB Check)
-    // CRITICAL FIX: We must atomically mark this transaction as "in-use" BEFORE verification
-    // to prevent race condition where two concurrent requests use the same txHash.
-    const replayCheck = await isTxHashUsed(token);
-    if (replayCheck) {
-        console.warn(`[Security] Replay Attack Detected! TxHash ${token} was already used.`);
-        res.status(403).json({
-            error: "Replay Attack Detected",
-            message: "This transaction hash has already been used. Please submit a new payment."
-        });
-        return;
-    }
-
-    // ATOMIC LOCK: Insert a placeholder record immediately to claim this txHash
-    // This prevents concurrent requests from passing the replay check
+    // SECURITY FIX (V-NEW-01): Atomic transaction replay prevention
+    // Use database unique constraint instead of check-then-insert to prevent TOCTOU
+    // The constraint ensures only ONE request can claim each tx_hash atomically
     try {
         await logRequest({
             agentId: agentId,
@@ -209,12 +210,22 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             endpoint: req.originalUrl,
             error: 'PENDING_VERIFICATION'
         });
-    } catch (err) {
-        // If insert fails (duplicate key), another request is already processing this txHash
-        console.warn(`[Security] Concurrent Replay Attack Detected! TxHash ${token} is being processed.`);
-        res.status(409).json({
-            error: "Transaction Processing",
-            message: "This transaction is already being processed. Please wait."
+    } catch (err: any) {
+        // Unique constraint violation (23505) = transaction already used/being processed
+        if (err.code === '23505' || err.message?.includes('duplicate') || err.message?.includes('unique')) {
+            console.error(`[Security] 🚨 REPLAY ATTACK BLOCKED! TxHash ${token} already claimed. Agent: ${agentId}`);
+            res.status(403).json({
+                error: "Transaction Already Used",
+                message: "This transaction hash has already been used or is being processed. Please submit a new payment."
+            });
+            return;
+        }
+
+        // Other database errors - fail closed
+        console.error(`[Security] Database error during tx claim:`, err);
+        res.status(500).json({
+            error: "Payment Verification Failed",
+            message: "Unable to process payment verification. Please try again."
         });
         return;
     }
@@ -243,7 +254,77 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             return;
         }
 
-        console.log(`[Payment] Agent ${agentId}: Payment verified successfully`);
+        // ========================================================================
+        // CRITICAL SECURITY FIX (V-03): Verify Payment Event Data
+        // ========================================================================
+        // Previous implementation only checked tx.to but didn't verify:
+        // - Payment amount matches required
+        // - Sender matches agent ID
+        // - Transaction contains valid PaymentMade event
+        // This allowed attackers to reuse small payments for expensive API access
+
+        const paymentAbi = parseAbi([
+            'event PaymentMade(address indexed from, address indexed to, uint256 amount, uint256 fee)'
+        ]);
+
+        // Calculate expected event signature
+        const paymentEventSignature = keccak256(toHex('PaymentMade(address,address,uint256,uint256)'));
+
+        // Find PaymentMade event in transaction logs
+        const paymentLog = receipt.logs?.find(log =>
+            log.address?.toLowerCase() === paymentHandlerAddress &&
+            log.topics?.[0] === paymentEventSignature
+        );
+
+        if (!paymentLog || !paymentLog.topics || !paymentLog.data) {
+            console.error(`[Payment] No valid PaymentMade event found in tx ${token}`);
+            res.status(403).json({
+                error: 'Invalid Payment Transaction',
+                message: 'No valid payment event found in transaction logs'
+            });
+            return;
+        }
+
+        // Decode event data to extract amount and sender
+        let decoded: any;
+        try {
+            decoded = decodeEventLog({
+                abi: paymentAbi,
+                data: paymentLog.data,
+                topics: paymentLog.topics
+            });
+        } catch (decodeError) {
+            console.error(`[Payment] Failed to decode payment event:`, decodeError);
+            res.status(403).json({
+                error: 'Invalid Payment Event',
+                message: 'Could not parse payment event data'
+            });
+            return;
+        }
+
+        // Verify sender matches agent ID
+        const senderAddress = decoded.args.from?.toLowerCase();
+        if (senderAddress !== agentId.toLowerCase()) {
+            console.error(`[Payment] 🚨 PAYMENT FRAUD DETECTED! Agent ${agentId} submitted tx from ${senderAddress}`);
+            res.status(403).json({
+                error: 'Payment Sender Mismatch',
+                message: `Payment sender (${senderAddress}) does not match agent ID (${agentId})`
+            });
+            return;
+        }
+
+        // Verify payment amount meets or exceeds requirement
+        const paidAmount = BigInt(decoded.args.amount || 0);
+        if (paidAmount < requiredWei) {
+            console.error(`[Payment] 🚨 INSUFFICIENT PAYMENT! Agent ${agentId} paid ${paidAmount} but required ${requiredWei}`);
+            res.status(403).json({
+                error: 'Insufficient Payment',
+                message: `Payment amount (${paidAmount} wei) is less than required (${requiredWei} wei)`
+            });
+            return;
+        }
+
+        console.log(`[Payment] ✅ Agent ${agentId}: Payment fully verified (Sender: ${senderAddress}, Amount: ${paidAmount} >= ${requiredWei})`);
 
         // Clear any outstanding debt
         if (currentDebt > 0) {
@@ -269,10 +350,15 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             error: `Verification failed: ${(error as Error).message}`
         });
 
+        // SECURITY FIX (V-12): Never leak implementation details in production
         const isProduction = process.env.NODE_ENV === 'production';
-        const errorMessage = isProduction
-            ? 'Failed to verify payment'
-            : `Verification failed: ${(error as Error).message}`;
+        const errorMessage = 'Failed to verify payment';
+
+        // Log full details server-side only
+        if (!isProduction) {
+            console.error('[Payment] Full error details:', error);
+        }
+
         res.status(500).json({ error: errorMessage });
         return;
     }

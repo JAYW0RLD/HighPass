@@ -50,19 +50,21 @@ export class IdentityService {
     async getReputation(agentId: string): Promise<number> {
         if (!agentId) throw new Error("Agent ID cannot be empty");
 
-        // Handle Demo Agents (Non-numeric IDs)
-        // This supports the Owner Simulation feature in creditGuard
-        if (agentId === 'prime-agent') return 100;    // Grade A
-        if (agentId === 'trusted-agent') return 85;   // Grade B
-        if (agentId === 'subprime-agent') return 55;  // Grade E
-        if (agentId === 'risky-agent') return 20;     // Grade F
+        // SECURITY FIX (V-07): Removed hardcoded demo agent bypasses
+        // All agents must have valid wallet addresses and on-chain reputation
+        // Previous code allowed 'prime-agent', 'trusted-agent' etc. to bypass authentication
+
+        // Enforce strict address format
+        if (!agentId.startsWith('0x') || agentId.length !== 42) {
+            throw new Error(`Invalid wallet address format: ${agentId}. Must be 0x + 40 hex characters.`);
+        }
 
         let idVal: bigint;
         try {
             idVal = BigInt(agentId);
         } catch {
             console.warn(`[IdentityService] Invalid non-numeric ID: ${agentId}`);
-            return 0; // Return 0 instead of throwing to prevent crashing middleware
+            return 0; // Return 0 for invalid addresses
         }
 
         const contractAddr = process.env.IDENTITY_CONTRACT_ADDRESS as Address;

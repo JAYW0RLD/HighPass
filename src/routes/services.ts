@@ -221,8 +221,9 @@ router.get('/', async (req, res) => {
         if (!db) return res.status(500).json({ error: 'Database error' });
 
 
-        // SECURITY FIX (V-02): Explicitly select safe columns to prevent leaking sensitive info (upstream_url)
-        let query = db.from('services').select('id, slug, name, price_wei, min_grade, status, provider_id, created_at');
+        // SECURITY FIX (V-10): Remove provider_id from public response
+        // to prevent provider enumeration and competitive intelligence gathering
+        let query = db.from('services').select('id, slug, name, price_wei, min_grade, status, created_at');
 
         if (status) {
             query = query.eq('status', status);

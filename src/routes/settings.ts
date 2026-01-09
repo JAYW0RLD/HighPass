@@ -1,5 +1,6 @@
 import express from 'express';
 import { initDB } from '../database/db';
+import { isAddress, getAddress } from 'viem';
 
 const router = express.Router();
 
@@ -44,9 +45,18 @@ router.put('/', async (req, res) => {
 
         const { withdrawal_address, auto_withdraw_enabled, min_withdrawal_amount } = req.body;
 
-        // Validation
-        if (withdrawal_address && !withdrawal_address.startsWith('0x')) {
-            return res.status(400).json({ error: 'Invalid wallet address' });
+        // SECURITY FIX (V-06): Strict wallet address validation
+        let validatedWithdrawalAddress = withdrawal_address;
+        if (withdrawal_address) {
+            // Validate address format (checksum, length, format)
+            if (!isAddress(withdrawal_address)) {
+                return res.status(400).json({
+                    error: 'Invalid wallet address',
+                    details: 'Address must be a valid EVM address (0x + 40 hex chars with valid checksum)'
+                });
+            }
+            // Normalize to checksummed address
+            validatedWithdrawalAddress = getAddress(withdrawal_address);
         }
 
         const db = await initDB();
@@ -56,7 +66,7 @@ router.put('/', async (req, res) => {
             .from('provider_settings')
             .upsert({
                 provider_id: userId,
-                withdrawal_address,
+                withdrawal_address: validatedWithdrawalAddress,
                 auto_withdraw_enabled,
                 min_withdrawal_amount,
                 updated_at: new Date().toISOString()

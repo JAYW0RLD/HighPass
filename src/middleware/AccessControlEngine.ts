@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { initDB } from '../database/db';
+import { getAddress, isAddress } from 'viem';
 
 export const accessControlEngine = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -15,6 +16,25 @@ export const accessControlEngine = async (req: Request, res: Response, next: Nex
             return next();
         }
 
+        // SECURITY FIX (DB-CRIT-03): Normalize address to checksum format
+        let normalizedAgentId = agentId;
+        try {
+            if (isAddress(agentId)) {
+                normalizedAgentId = getAddress(agentId);
+                console.log(`[AccessControl] Normalized address: ${agentId} -> ${normalizedAgentId}`);
+            } else {
+                console.warn(`[AccessControl] Invalid address format: ${agentId}`);
+                res.locals.track = 'TRACK_1';
+                res.locals.isVerified = false;
+                return next();
+            }
+        } catch (e) {
+            console.warn(`[AccessControl] Address normalization failed: ${agentId}`);
+            res.locals.track = 'TRACK_1';
+            res.locals.isVerified = false;
+            return next();
+        }
+
         const db = await initDB();
         if (!db) {
             console.error('[AccessControl] Database connection failed');
@@ -22,7 +42,7 @@ export const accessControlEngine = async (req: Request, res: Response, next: Nex
         }
 
         // Check if wallet exists and is linked to a developer
-        // We assume agentId IS the wallet address
+        // Use case-insensitive comparison as additional safety
         const { data: wallet, error } = await db
             .from('wallets')
             .select(`
@@ -34,11 +54,11 @@ export const accessControlEngine = async (req: Request, res: Response, next: Nex
                     total_reputation
                 )
             `)
-            .eq('address', agentId)
+            .ilike('address', normalizedAgentId)
             .single();
 
         if (error || !wallet || !wallet.developers) {
-            console.log(`[AccessControl] Wallet ${agentId} not verified. Assigning Track 1 (Anonymous).`);
+            console.log(`[AccessControl] Wallet ${normalizedAgentId} not verified. Assigning Track 1 (Anonymous).`);
 
             res.locals.track = 'TRACK_1';
             res.locals.isVerified = false;

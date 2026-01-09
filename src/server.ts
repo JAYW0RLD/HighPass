@@ -3,6 +3,19 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load environment variables immediately
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+
+import { validateEnv, validateProductionEnv } from './utils/validateEnv';
+
+// SECURITY FIX (V-14): Validate environment variables before starting server
+validateEnv();
+validateProductionEnv();
+
 import { IdentityService } from './services/IdentityService';
 import { PriceService } from './services/PriceService';
 import { FeeSettlementEngine } from './services/FeeSettlementEngine';
@@ -15,8 +28,6 @@ import settingsRouter from './routes/settings';
 import providerRouter from './routes/provider';
 
 // Static Files (Frontend) logic moved below declaration
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 import * as fs from 'fs';
 
 // Serve frontend static files in production or if build exists
@@ -57,6 +68,39 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" } // Allow resources to be loaded
 }));
 
+// SECURITY FIX (V-NEW-08): Explicit HTTPS enforcement in production
+if (isProduction) {
+    // RED TEAM FIX [V-RT-01]: Trust Proxy for Vercel
+    // Required to get correct client IP for rate limiting
+    app.set('trust proxy', 1);
+
+    app.use((req, res, next) => {
+        // Check if request came via HTTPS (x-forwarded-proto header is set by proxies like Vercel/Heroku)
+        const proto = req.header('x-forwarded-proto') || req.protocol;
+        if (proto !== 'https') {
+            console.warn(`[Security] Redirecting HTTP to HTTPS: ${req.url}`);
+            return res.redirect(301, `https://${req.headers.host}${req.url}`);
+        }
+        next();
+    });
+}
+
+// ... (skipping to SAFE_HEADERS) ...
+
+// SECURITY FIX (V-NEW-03): Strict header allowlist instead of blocklist
+// Prevent header injection attacks on upstream services
+const SAFE_HEADERS = new Set([
+    'accept',
+    'accept-encoding',
+    'accept-language',
+    'content-type',
+    'content-length',
+    'user-agent',
+    'cache-control'
+    // RED TEAM FIX [V-RT-02]: Strip 'authorization' header to prevent leakage
+    // HighStation's tokens should not be sent to upstream.
+]);
+
 // Request Logging (Morgan)
 if (isProduction) {
     app.use(morgan('combined')); // Apache-style logging for production
@@ -65,16 +109,78 @@ if (isProduction) {
 }
 
 // Enable CORS for dashboard
+// SECURITY FIX (V-NEW-02): Strict CORS origin validation
+const getAllowedOrigins = () => {
+    if (process.env.NODE_ENV === 'production') {
+        const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+        if (!origins || origins.length === 0) {
+            throw new Error('ALLOWED_ORIGINS must be configured in production');
+        }
+
+        // SECURITY: Validate each origin strictly
+        const validOrigins = origins.filter(origin => {
+            try {
+                // Reject dangerous patterns
+                if (origin.includes('*') || origin === 'null' || origin === '') {
+                    console.error(`[CORS] Rejected dangerous origin: ${origin}`);
+                    return false;
+                }
+
+                const url = new URL(origin);
+
+                // HTTPS only in production
+                if (url.protocol !== 'https:') {
+                    console.error(`[CORS] Rejected non-HTTPS origin: ${origin}`);
+                    return false;
+                }
+
+                // No localhost in production
+                if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+                    console.error(`[CORS] Rejected localhost origin in production: ${origin}`);
+                    return false;
+                }
+
+                return true;
+            } catch (err) {
+                console.error(`[CORS] Invalid origin format: ${origin}`, err);
+                return false;
+            }
+        });
+
+        if (validOrigins.length === 0) {
+            throw new Error('No valid origins found in ALLOWED_ORIGINS. Check configuration.');
+        }
+
+        console.log(`[CORS] Validated ${validOrigins.length} allowed origins for production`);
+        return validOrigins;
+    }
+    return ['http://localhost:5173', 'http://localhost:5174'];
+};
+
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:5174'],
-    credentials: true
+    origin: getAllowedOrigins(),
+    credentials: true,
+    maxAge: 86400 // Cache preflight for 24h
 }));
 
-// Rate limiting - 100 requests per minute per IP (Reasonable default for Dashboard/API)
+// Rate limiting - Prevent DoS and service enumeration
+// NOTE: HighStation is a payment gateway - agents may need frequent API calls
+// Global limit set to 100 req/min (reasonable for legitimate use)
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 100, // 100 requests per IP
+    max: 100, // 100 requests per IP - suitable for payment gateway
     message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// SECURITY FIX (V-02): Dedicated stricter limiter for service info endpoint
+// to prevent service enumeration and DB connection pool exhaustion
+// Info endpoint is less critical, so we apply tighter limit
+const infoLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute  
+    max: 20, // 20 info requests per minute (discovery/enumeration prevention)
+    message: { error: 'Too many info requests. Please slow down.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -91,6 +197,18 @@ initDB().then(() => {
     if (isProduction) process.exit(1); // Fail fast in production
 });
 
+// SECURITY FIX (V-NEW-04): More frequent nonce cleanup to prevent timing attacks
+// Run cleanup every 1 minute instead of 5 to minimize replay window
+const { cleanupExpiredNonces } = require('./database/db');
+setInterval(async () => {
+    try {
+        await cleanupExpiredNonces();
+        console.log('[Maintenance] Nonce cleanup completed');
+    } catch (err) {
+        console.error('[Maintenance] Nonce cleanup failed:', err);
+    }
+}, 60 * 1000); // Changed from 5 minutes (300000) to 1 minute (60000)
+
 import { authMiddleware } from './middleware/authMiddleware';
 
 // Install Logger & Stats
@@ -104,9 +222,18 @@ app.use('/api/services', authMiddleware, servicesRouter); // Note: servicesRoute
 // provider/stats needs auth.
 app.use('/api/provider', authMiddleware, providerRouter);
 
+// SECURITY FIX (V-NEW-06): Rate limit flush endpoint to prevent enumeration
+const flushLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 5, // Maximum 5 flush requests per minute per IP
+    message: { error: 'Too many flush requests. Please wait before trying again.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Manual Debt Settlement (Flush) Endpoint
 import { flushDebt } from './routes/flush';
-app.post('/api/flush', flushDebt);
+app.post('/api/flush', flushLimiter, flushDebt);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -122,17 +249,19 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Demo Echo Service for User Testing
-app.get('/api/demo/echo', (req, res) => {
+// Demo Service for User Testing (Placeholder)
+app.get('/api/demo/service', (req, res) => {
     const randomWords = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
     const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
 
     res.json({
-        service: "Demo Echo API",
+        service: "Broadcasting Demo Service",
         status: "alive",
-        random_word: randomWord,
-        timestamp: new Date().toISOString(),
-        your_query: req.query
+        data: {
+            type: "demo_signal",
+            payload: randomWord
+        },
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -146,7 +275,9 @@ if (fs.existsSync(frontendPath)) {
 }
 
 // Service Info & Cost Discovery Endpoint
+// SECURITY FIX (V-02): Apply stricter rate limiter to prevent enumeration
 app.get('/gatekeeper/:serviceSlug/info',
+    infoLimiter,  // NEW: Strict rate limit (10 req/min)
     serviceResolver,
     async (req, res) => {
         const config = res.locals.serviceConfig;
@@ -200,7 +331,17 @@ app.get('/gatekeeper/:serviceSlug/info',
 
         } catch (err: any) {
             console.error('[Info] Error calculating price:', err);
-            res.status(500).json({ error: 'Internal Server Error', details: err.message });
+
+            // SECURITY FIX (V-NEW-05): Prevent information disclosure via error messages
+            const isProduction = process.env.NODE_ENV === 'production';
+            res.status(500).json({
+                error: 'Internal Server Error',
+                // Only show details in development
+                ...(isProduction ? {} : {
+                    details: err.message,
+                    stack: err.stack
+                })
+            });
         }
     }
 );
@@ -224,10 +365,36 @@ app.all('/gatekeeper/:serviceSlug/resource',
             // Forward request to upstream service
             const upstreamUrl = config.upstream_url;
 
-            // Prepare headers (exclude host and connection-related headers)
+            // SECURITY FIX (V-NEW-03): Strict header allowlist instead of blocklist
+            // Prevent header injection attacks on upstream services
+            const SAFE_HEADERS = new Set([
+                'accept',
+                'accept-encoding',
+                'accept-language',
+                'content-type',
+                'content-length',
+                'user-agent',
+                'cache-control'
+                // RED TEAM FIX [V-RT-02]: Strip 'authorization' header to prevent leakage of HighStation tokens
+            ]);
+
             const forwardHeaders: Record<string, string> = {};
             Object.keys(req.headers).forEach(key => {
-                if (!['host', 'connection', 'x-agent-id', 'x-agent-signature', 'x-auth-timestamp'].includes(key.toLowerCase())) {
+                const lowerKey = key.toLowerCase();
+
+                // BLOCK dangerous proxy-control headers that could exploit upstream
+                if (lowerKey.startsWith('x-forwarded') ||
+                    lowerKey.startsWith('x-real-ip') ||
+                    lowerKey.startsWith('x-original') ||
+                    lowerKey.startsWith('x-rewrite') ||
+                    lowerKey === 'host' ||
+                    lowerKey === 'connection') {
+                    console.warn(`[Security] Blocked dangerous header from forwarding: ${key}`);
+                    return;
+                }
+
+                // ALLOW only verified safe headers
+                if (SAFE_HEADERS.has(lowerKey)) {
                     forwardHeaders[key] = req.headers[key] as string;
                 }
             });

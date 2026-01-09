@@ -23,7 +23,7 @@ describe('IdentityService', () => {
 
     describe('getReputation', () => {
         it('should return reputation score as number', async () => {
-            const reputation = await identityService.getReputation('12345');
+            const reputation = await identityService.getReputation('0x1234567890123456789012345678901234567890');
 
             expect(typeof reputation).toBe('number');
             expect(reputation).toBeGreaterThanOrEqual(0);
@@ -31,7 +31,7 @@ describe('IdentityService', () => {
         });
 
         it('should handle agent ID as string', async () => {
-            const reputation = await identityService.getReputation('99999');
+            const reputation = await identityService.getReputation('0x1234567890123456789012345678901234567890');
 
             expect(reputation).toBeDefined();
         });
@@ -47,7 +47,7 @@ describe('IdentityService', () => {
 
     describe('isTrusted', () => {
         it('should return true for high reputation agent', async () => {
-            const isTrusted = await identityService.isTrusted('12345', 70);
+            const isTrusted = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 70);
 
             expect(typeof isTrusted).toBe('boolean');
             expect(isTrusted).toBe(true); // Mock returns 85
@@ -61,25 +61,25 @@ describe('IdentityService', () => {
             });
 
             const service = new IdentityService();
-            const isTrusted = await service.isTrusted('12345', 70);
+            const isTrusted = await service.isTrusted('0x1234567890123456789012345678901234567890', 70);
 
             expect(isTrusted).toBe(false);
         });
 
         it('should handle threshold parameter correctly', async () => {
-            const isTrustedAt80 = await identityService.isTrusted('12345', 80);
-            const isTrustedAt90 = await identityService.isTrusted('12345', 90);
+            const isTrustedAt80 = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 80);
+            const isTrustedAt90 = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 90);
 
             expect(isTrustedAt80).toBe(true); // 85 >= 80
             expect(isTrustedAt90).toBe(false); // 85 < 90
         });
 
         it('should throw error for negative threshold', async () => {
-            await expect(identityService.isTrusted('12345', -1)).rejects.toThrow();
+            await expect(identityService.isTrusted('0x1234567890123456789012345678901234567890', -1)).rejects.toThrow();
         });
 
         it('should use default threshold if not provided', async () => {
-            const isTrusted = await identityService.isTrusted('12345', 80);
+            const isTrusted = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 80);
 
             expect(typeof isTrusted).toBe('boolean');
         });
@@ -100,7 +100,7 @@ describe('IdentityService', () => {
             const service = new IdentityService();
 
             // Should succeed after retry
-            const reputation = await service.getReputation('12345');
+            const reputation = await service.getReputation('0x1234567890123456789012345678901234567890');
             expect(reputation).toBe(85);
             expect(mockReadContract).toHaveBeenCalledTimes(2);
         });

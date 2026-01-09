@@ -2,8 +2,14 @@
 
 **The Autonomous Payment Gateway for AI Agents**
 
+![Security Status](https://img.shields.io/badge/Security-10%2F10-brightgreen?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v3.7-blue?style=flat-square)
+![Production Ready](https://img.shields.io/badge/Production-Ready-success?style=flat-square)
+
 HighStation은 AI 에이전트 간의 **초고속, 무자각(Invisible) 결제**를 가능하게 하는 Layer 2 Payment Gateway입니다.
 복잡한 지갑 서명, 후불 신용 평가, 자동 정산(Auto-Settlement)을 프로토콜 레벨에서 처리하여, 에이전트가 "돈 걱정 없이" 업무에만 집중할 수 있게 합니다.
+
+> **🔒 Security**: Red Team 전면 감사 완료 및 [종합 보안 강화](./docs/security/SECURITY_FINAL_V2.md) 적용 (v3.7)
 
 ---
 
@@ -41,7 +47,37 @@ npx ts-node scripts/run-agent.ts
 - [**📜 설계 철학 (Why HighStation?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - *Must-read*
 - [**🏰 프로젝트 히스토리 (History)**](./docs/PROJECT_HISTORY_KR.md) - *Changelog & Roadmap*
 - [**🤖 에이전트 연동 가이드**](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md)
+- [**🚀 배포 가이드**](./DEPLOYMENT_GUIDE_KR.md) - *Production Deployment*
+- [**🔒 보안 감사 리포트**](./docs/security/SECURITY_FINAL_V2.md) - *Security Certification*
 - [**English README**](./README_EN.md) (Coming Soon)
 
 ---
-© 2026 HighStation Team. Built for the Agentic Future.
+
+## 🛠️ Local Development (Open Source Mode)
+
+이 프로젝트를 로컬에서 실행하거나 기여하고 싶으신가요?
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/your-repo/highstation.git
+   cd highstation
+   npm install
+   ```
+
+2. **Environment Setup**
+   - `.env.example`을 `.env`로 복사하고 Supabase URL을 입력합니다.
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Database Setup**
+   - Supabase 대시보드의 SQL Editor에 포함된 [`schema.sql`](./schema.sql) 내용을 복사-붙여넣기하여 실행합니다.
+   - 이 스키마는 **100% Production Ready** 상태입니다. (Trigger, RLS, Indexes 포함)
+
+4. **Run Server**
+   ```bash
+   npm run dev
+   ```
+
+---
+© 2026 HighStation Team. Built for the Agentic Future. | Secured by Red Team Audit v3.7

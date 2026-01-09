@@ -80,10 +80,15 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
                 const urlObj = new URL(data.upstream_url);
                 const hostname = urlObj.hostname;
 
-                // Allow localhost, vercel.app, or configured API Origin
-                const apiOrigin = process.env.VITE_API_ORIGIN ? new URL(process.env.VITE_API_ORIGIN).hostname : 'localhost';
+                // Check if it's the configured API Origin (Internal Demo)
+                const apiOrigin = process.env.VITE_API_ORIGIN ? new URL(process.env.VITE_API_ORIGIN).hostname : null;
 
-                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app') || hostname === apiOrigin) {
+                // SECURITY FIX (V-11): Strict origin check for demo service
+                // Removed loose check for *.vercel.app which allowed bypass
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                    isVerifiedOrBypassed = true;
+                } else if (apiOrigin && hostname === apiOrigin) {
+                    console.log('[ServiceResolver] Allowed Internal Demo Service:', hostname);
                     isVerifiedOrBypassed = true;
                 }
             }

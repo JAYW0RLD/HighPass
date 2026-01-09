@@ -2,9 +2,22 @@ import request from 'supertest';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 // Set Env vars BEFORE importing server/authMiddleware
+process.env.NODE_ENV = 'test';
 process.env.SUPABASE_URL = 'https://mock.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock';
 process.env.SUPABASE_ANON_KEY = 'mock';
+process.env.PAYMENT_HANDLER_ADDRESS = '0x1234567890123456789012345678901234567890';
+process.env.IDENTITY_CONTRACT_ADDRESS = '0x1234567890123456789012345678901234567890';
+process.env.RPC_URL = 'https://rpc.example.com';
+process.env.CHAIN_ID = '240';
+process.env.ALLOWED_ORIGINS = 'http://localhost:3000';
+
+// Mock process.exit to prevent crash during validation
+jest.spyOn(process, 'exit').mockImplementation((code?: any) => {
+    console.warn(`process.exit(${code}) trapped in test`);
+    throw new Error('PROCESS_EXIT_TRAPPED');
+});
+jest.spyOn(console, 'error').mockImplementation(() => { });
 
 const { initDB } = require('../../src/database/db');
 const app = require('../../src/server').default;
@@ -48,7 +61,7 @@ describe('Agent Payment Simulation (Integration)', () => {
 
         // TARGET ECHO SERVICE (Hit ServiceResolver Fallback)
         const response = await request(app)
-            .get('/gatekeeper/echo-service/resource')
+            .get('/gatekeeper/demo-service/resource')
             .set('x-agent-id', agentId)
             .set('x-agent-signature', signature)
             .set('x-auth-timestamp', timestamp)

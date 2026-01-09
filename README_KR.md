@@ -49,19 +49,19 @@ npm run build && npm run start
 
 **1. 신용 좋은 에이전트 (A등급)**
 ```bash
-curl -s -H "X-Agent-ID: prime-agent" http://localhost:3000/gatekeeper/resource
+curl -s -H "X-Agent-ID: prime-agent" http://localhost:3000/gatekeeper/demo-service/resource
 ```
 > 결과: `Access Granted` (성공)
 
 **2. 신용 보통 에이전트 (C등급)**
 ```bash
-curl -s -v -H "X-Agent-ID: subprime-agent" http://localhost:3000/gatekeeper/resource
+curl -s -v -H "X-Agent-ID: subprime-agent" http://localhost:3000/gatekeeper/demo-service/resource
 ```
 > 결과: `402 Payment Required` (결제 필요)
 
 **3. 위험 에이전트 (F등급)**
 ```bash
-curl -s -H "X-Agent-ID: risky-agent" http://localhost:3000/gatekeeper/resource
+curl -s -H "X-Agent-ID: risky-agent" http://localhost:3000/gatekeeper/demo-service/resource
 ```
 > 결과: `403 Forbidden` (차단됨)
 
