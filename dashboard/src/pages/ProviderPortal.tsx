@@ -43,13 +43,7 @@ function ProviderPortal() {
     const [verificationData, setVerificationData] = useState<{ token: string; instructions: any } | null>(null);
     const [verifying, setVerifying] = useState(false);
 
-    // Test Simulator State
-    const [testingService, setTestingService] = useState<Service | null>(null);
-    const [testResult, setTestResult] = useState<any>(null);
-    const [testLoading, setTestLoading] = useState(false);
-    const [testMethod, setTestMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE'>('GET');
-    const [testBody, setTestBody] = useState('');
-    const [testHeaders, setTestHeaders] = useState<Record<string, string>>({});
+
 
     useEffect(() => {
         fetchServices();
@@ -147,52 +141,7 @@ function ProviderPortal() {
         }
     };
 
-    const handleRunTest = async () => {
-        if (!testingService) return;
-        setTestLoading(true);
-        setTestResult(null);
 
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-
-            // Build headers
-            const headers: Record<string, string> = {
-                'X-Agent-ID': 'prime-agent',
-                'X-Agent-Signature': 'simulated-signature',
-                'X-Auth-Timestamp': Date.now().toString(),
-                ...testHeaders
-            };
-
-            // Add Provider JWT for secure free testing (NOT user-id!)
-            if (session?.access_token) {
-                headers['x-provider-token'] = session.access_token;
-            }
-
-            // Add content-type for POST/PUT requests
-            if (['POST', 'PUT'].includes(testMethod) && testBody) {
-                headers['Content-Type'] = 'application/json';
-            }
-
-            const res = await fetch(`${apiOrigin}/gatekeeper/${testingService.slug}/resource`, {
-                method: testMethod,
-                headers,
-                body: ['POST', 'PUT'].includes(testMethod) && testBody ? testBody : undefined
-            });
-
-            const data = await res.json();
-            setTestResult({
-                status: res.status,
-                statusText: res.statusText,
-                headers: Object.fromEntries(res.headers.entries()),
-                body: data
-            });
-        } catch (err: any) {
-            setTestResult({ error: err.message });
-        } finally {
-            setTestLoading(false);
-        }
-    };
 
     const handleCreateService = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -432,21 +381,6 @@ function ProviderPortal() {
                                         <span className={`status-badge ${svc.upstream_url.includes('/api/demo/echo') ? 'verified' : 'pending'}`}>
                                             {svc.upstream_url.includes('/api/demo/echo') ? 'Verified' : 'Pending Verification'}
                                         </span>
-                                        <button
-                                            onClick={() => setTestingService(svc)}
-                                            className="btn"
-                                            style={{
-                                                padding: '8px 20px',
-                                                fontSize: '13px',
-                                                backgroundColor: '#065fd4', /* YouTube Blue */
-                                                color: '#ffffff',
-                                                border: 'none',
-                                                fontWeight: 'bold',
-                                                zIndex: 10
-                                            }}
-                                        >
-                                            Test API
-                                        </button>
                                         <button onClick={() => setEditingService(svc)} className="btn-secondary" style={{ padding: '8px 20px', fontSize: '13px' }}>Manage</button>
                                     </div>
                                 </div>
@@ -517,155 +451,14 @@ const data = await res.json();`}
                 </div>
                 {totalCalls === 0 && (
                     <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No API calls recorded yet. Use the Test API button to simulate a request!</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No API calls recorded yet. Use the Agent Simulator CLI to test!</p>
                     </div>
                 )}
             </div>
         );
     };
 
-    const TestModal = () => {
-        if (!testingService) return null;
-        const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-        const testUrl = `${apiOrigin}/gatekeeper/${testingService.slug}/resource`;
 
-        const handleClose = () => {
-            setTestingService(null);
-            setTestResult(null);
-            setTestMethod('GET');
-            setTestBody('');
-            setTestHeaders({});
-        };
-
-        return (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-                <div className="data-section" style={{ padding: '2rem', width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '600' }}>API Test Console</h2>
-                        <button onClick={handleClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', padding: '0.5rem' }}>&times;</button>
-                    </div>
-
-                    {/* Request Configuration */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>HTTP Method</label>
-                        <select
-                            value={testMethod}
-                            onChange={(e) => setTestMethod(e.target.value as any)}
-                            className="form-control"
-                            style={{ maxWidth: '200px', marginBottom: '1rem' }}
-                        >
-                            <option value="GET">GET</option>
-                            <option value="POST">POST</option>
-                            <option value="PUT">PUT</option>
-                            <option value="DELETE">DELETE</option>
-                        </select>
-
-                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Endpoint</label>
-                        <code style={{ display: 'block', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--accent-blue)' }}>
-                            {testMethod} {testUrl}
-                        </code>
-
-                        <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Authentication</label>
-                        <div style={{ padding: '0.75rem', background: '#f0f6ff', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                            <div><strong>Agent:</strong> prime-agent (Grade A)</div>
-                            <div><strong>Headers:</strong> X-Agent-ID, X-Agent-Signature, X-Auth-Timestamp</div>
-                        </div>
-
-                        {['POST', 'PUT'].includes(testMethod) && (
-                            <>
-                                <label className="metric-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Request Body (JSON)</label>
-                                <textarea
-                                    value={testBody}
-                                    onChange={(e) => setTestBody(e.target.value)}
-                                    placeholder='{"key": "value"}'
-                                    className="form-control"
-                                    style={{ fontFamily: 'monospace', minHeight: '100px', marginBottom: '1rem' }}
-                                />
-                            </>
-                        )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    {!testResult ? (
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button
-                                onClick={handleRunTest}
-                                disabled={testLoading}
-                                className="btn-primary"
-                                style={{ flex: 1, padding: '0.75rem 1.5rem' }}
-                            >
-                                {testLoading ? 'Sending Request...' : 'Send Request'}
-                            </button>
-                            <button onClick={handleClose} className="btn-secondary" style={{ padding: '0.75rem 1.5rem' }}>Cancel</button>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Response Display */}
-                            <div style={{ marginTop: '1.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Response</h3>
-                                    <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Clear</button>
-                                </div>
-
-                                {/* Status Badge */}
-                                <div style={{
-                                    background: testResult.status === 200 ? '#f0fff4' : '#fff5f5',
-                                    border: `1px solid ${testResult.status === 200 ? '#38a169' : '#e53e3e'}`,
-                                    borderRadius: 'var(--radius-md)',
-                                    padding: '1rem',
-                                    marginBottom: '1rem'
-                                }}>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: testResult.status === 200 ? '#38a169' : '#e53e3e' }}>
-                                        HTTP {testResult.status} {testResult.statusText || ''}
-                                    </div>
-                                </div>
-
-                                {/* Response Headers */}
-                                {testResult.headers && Object.keys(testResult.headers).length > 0 && (
-                                    <div style={{ marginBottom: '1rem' }}>
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Response Headers</h4>
-                                        <div style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: 'var(--radius-md)',
-                                            padding: '0.75rem',
-                                            maxHeight: '150px',
-                                            overflowY: 'auto'
-                                        }}>
-                                            {Object.entries(testResult.headers).map(([key, value]) => (
-                                                <div key={key} style={{
-                                                    fontSize: '0.8rem',
-                                                    marginBottom: '0.25rem',
-                                                    fontFamily: 'monospace',
-                                                    color: 'var(--text-secondary)'
-                                                }}>
-                                                    <span style={{ color: 'var(--accent-blue)', fontWeight: '600' }}>{key}:</span> {String(value)}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Response Body */}
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Response Body</h4>
-                                    <div style={{ background: '#161b22', padding: '1rem', borderRadius: 'var(--radius-md)', maxHeight: '300px', overflowY: 'auto' }}>
-                                        <pre style={{ margin: 0, fontSize: '0.85rem', color: '#c9d1d9', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                            {JSON.stringify(testResult.body, null, 2)}
-                                        </pre>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                                <button onClick={() => setTestResult(null)} className="btn-secondary" style={{ flex: 1 }}>Test Again</button>
-                                <button onClick={handleClose} className="btn-secondary">Close</button>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-        );
-    };
 
     const EditModal = () => {
         if (!editingService) return null;
@@ -743,7 +536,6 @@ const data = await res.json();`}
             {activeTab === 'integration' && <IntegrationTab />}
             {activeTab === 'revenue' && <RevenueTab />}
             <EditModal />
-            <TestModal />
             <footer className="footer" style={{ marginTop: '4rem' }}>
                 <span>Provider Portal</span>
                 <span>•</span>

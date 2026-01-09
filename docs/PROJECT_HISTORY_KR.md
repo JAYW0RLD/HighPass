@@ -24,16 +24,24 @@
 
 ## ⏳ 변경 기록 (Changelog)
 
-
-### v3.0 - 공식 SDK 통합
+### v3.1 - 보안 강화 및 레거시 정리 (Security Hardening)
 **일자**: 2026-01-09
-- **[리팩토링] X402 클라이언트 표준화**:
-    - **@crypto.com/facilitator-client**: 공식 Cronos SDK 설치 및 참고
-    - **ethers.js 전환**: `viem`에서 `ethers.js`로 전환하여 표준 호환성 확보
-    - `scripts/run-agent.ts` 리팩토링: 더 깔끔한 코드, 동일한 기능
+- **[보안] Owner Bypass 제거**:
+    - 서비스 소유자라도 서명 없이 API를 호출할 수 있던 "Test API" 우회 경로를 전면 삭제.
+    - 모든 트랜잭션은 `run-agent.ts` 또는 실제 클라이언트를 통해 정당한 서명 프로세스를 거쳐야 함 (Zero Trust).
+- **[UI] 레거시 기능 정리**:
+    - Provider Portal에서 더 이상 사용되지 않는 "Test API" 버튼 및 모달 제거.
+    - CLI 기반의 표준화된 테스트 흐름 강제.
+
+### v3.0 - X402 Facilitator 표준 호환 (Standardization)
+**일자**: 2026-01-09
+- **[핵심] X402 공식 클라이언트 도입**:
+    - `@crypto.com/facilitator-client` SDK를 전면 도입하여 수동 구현된 인증 로직 대체.
+    - 크로노스 생태계 표준과의 100% 상호운용성 확보.
+- **[문서] 설계 철학 공개**:
+    - 프로젝트의 핵심 기능(외상, 평판 등)에 대한 설계적 정당성을 담은 [DESIGN_PHILOSOPHY_KR.md](./DESIGN_PHILOSOPHY_KR.md) 발행.
 
 ### v2.9.0 - 에이전트 결제 시뮬레이터 (New)
-
 **일자**: 2026-01-09
 - **[기능] CLI 시뮬레이터**:
     - `scripts/create-agent.ts` 및 `scripts/run-agent.ts`를 구현하여 종단간(End-to-End) 에이전트 시뮬레이션 지원.

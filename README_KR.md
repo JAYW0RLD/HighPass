@@ -2,6 +2,13 @@
 
 이 가이드는 로컬 환경에서 **HighStation**을 빠르고 쉽게 실행하고 테스트하는 방법을 설명합니다.
 
+이 가이드는 로컬 환경에서 **HighStation**을 빠르고 쉽게 실행하고 테스트하는 방법을 설명합니다.
+
+> **📚 핵심 문서:**
+> *   **[설계 철학 & 정당성 (Why HighStation?)](./docs/DESIGN_PHILOSOPHY_KR.md)**: 우리가 왜 외상/평판 시스템을 만들었는가?
+> *   **[AI 에이전트 연동 가이드](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md)**: X402 공식 Client 탑재 방법
+> *   **[프로젝트 히스토리](./docs/PROJECT_HISTORY_KR.md)**: v3.0 (표준화) 업데이트 기록
+
 ## 1. 준비 사항
 *   터미널 창 2개가 필요합니다.
 *   **Node.js**가 설치되어 있어야 합니다.

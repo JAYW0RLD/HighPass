@@ -31,91 +31,20 @@ export const creditGuard = async (req: Request, res: Response, next: NextFunctio
     // Let's require them unless it's a known demo agent ID format (simple strings vs hex).
 
 
-    // Strict Mode: All agents must sign UNLESS it's the Service Owner testing their own service.
     // -------------------------------------------------------------
-    // OWNER BYPASS (SECURE SIMULATION)
+    // STRICT MODE: NO BYPASS, NO EXCEPTIONS
     // -------------------------------------------------------------
-    const providerToken = req.headers['x-provider-token'] as string;
-    const serviceConfig = res.locals.serviceConfig; // From serviceResolver
-
-    let isOwnerBypass = false;
-
-    if (providerToken && serviceConfig && serviceConfig.provider_id) {
-        try {
-            // We need to verify the token. 
-            // Ideally we shouldn't init Supabase client on every request here if possible, 
-            // but for auth verifiction it's necessary.
-            // We can reuse the initDB client or a fresh auth client.
-            const { createClient } = require('@supabase/supabase-js');
-            const supabase = createClient(
-                process.env.SUPABASE_URL!,
-                process.env.SUPABASE_SERVICE_ROLE_KEY!
-            );
-
-            const { data: { user }, error } = await supabase.auth.getUser(providerToken);
-
-            if (!error && user && user.id === serviceConfig.provider_id) {
-                console.log(`[CreditGuard] Owner Bypass: Provider ${user.id} accessing own service ${serviceConfig.slug}`);
-                isOwnerBypass = true;
-            }
-        } catch (e) {
-            console.error("[CreditGuard] Owner Bypass Check Failed", e);
-        }
-    }
-
-    if (!isOwnerBypass && (!signature || !timestamp || !nonce)) {
-        // Exception for Demo Agents (Securely Gated):
-        const isDemoAgent = ['prime-agent', 'trusted-agent', 'subprime-agent', 'risky-agent'].includes(agentId);
-
-        if (process.env.ENABLE_DEMO_AGENTS === 'true' && isDemoAgent) {
-            // Pass through to verification logic (checks flag again)
-        } else {
-            res.status(401).json({ error: "Missing Identity Headers: X-Agent-Signature, X-Auth-Timestamp, X-Auth-Nonce" });
-            return;
-        }
-    }
-
-    // 2. Check Replay prevention (Time window)
-    if (timestamp) {
-        const reqTime = parseInt(timestamp, 10);
-        const now = Date.now();
-        if (Math.abs(now - reqTime) > 5 * 60 * 1000) { // 5 minutes tolerance
-            res.status(401).json({ error: "Auth Timestamp expired (Clock skew > 5min)" });
-            return;
-        }
-    }
-
-    // Exception for Demo Agents:
-    // SECURITY FIX: Prevent external impersonation.
-    // "Demo Agents" (prime-agent) are only allowed if the request is authenticated by the Service Owner (Owner Bypass).
-    // This allows Providers to test their own services using simulated profiles,
-    // but prevents attackers from just sending "X-Agent-ID: prime-agent" to bypass security.
-    const isDemoAgent = ['prime-agent', 'trusted-agent', 'subprime-agent', 'risky-agent'].includes(agentId);
-
-    // We do NOT set allowDemo based purely on env var + ID anymore.
-    // Simulating an agent is a privilege of the Owner.
-    // So, if isOwnerBypass is true, we implicitly allow the "simulation" (skipping signature).
-    // But we need to ensure we don't block on "Missing Headers" if it is Owner Bypass.
-    // (Logic above: "if (!isOwnerBypass && ...)" handles the check)
-
-    // So actually, if isOwnerBypass is TRUE, we already skip:
-    // 1. Missing Header check
-    // 2. Nonce Check
-    // 3. Signature Verify
-
-    // The only remaining issue is: Does IdentityService crash on "prime-agent"?
-    // Yes, because it expects BigInt. 
-    // We need to handle that in IdentityService or catch it here.
-
-    // Revert the insecure "allowDemo" logic.
-    // We rely SOLELY on isOwnerBypass for simulation.
 
     // 1. Enforce headers (Strict Mode)
-    // Only check if NOT Owner.
-    if (!isOwnerBypass && (!signature || !timestamp || !nonce)) {
+    // All requests must be properly signed.
+    if (!signature || !timestamp || !nonce) {
         res.status(401).json({ error: "Missing Identity Headers: X-Agent-Signature, X-Auth-Timestamp, X-Auth-Nonce" });
         return;
     }
+
+    // 1. Enforce headers (Strict Mode)
+    // Only check if NOT Owner.
+
 
     // ...
 
@@ -140,7 +69,7 @@ export const creditGuard = async (req: Request, res: Response, next: NextFunctio
     }
 
     // 3. NONCE VALIDATION (NEW - Replay Attack Prevention)
-    if (!isOwnerBypass && nonce) {
+    if (nonce) {
         // ATOMIC NONCE CHECK (V-04-FIXED): 
         // We removed the separate `isNonceUsed` check to prevent Race Conditions (TOCTOU).
         // We rely on the Database Unique Constraint in `recordNonce` to fail if nonce exists.
@@ -161,14 +90,11 @@ export const creditGuard = async (req: Request, res: Response, next: NextFunctio
     }
 
     // 4. Verify Signature
-    if (!isOwnerBypass) {
-        const isValid = await identityService.verifySignature(agentId, signature || '', timestamp || '', nonce || '');
-        if (!isValid) {
-            res.status(403).json({ error: "Invalid Identity Signature" });
-            return;
-        }
-    } else if (isOwnerBypass && isDemoAgent) {
-        console.log(`[CreditGuard] ⚠️ OWNER SIMULATION: ${agentId} bypassed verification.`);
+    // 4. Verify Signature
+    const isValid = await identityService.verifySignature(agentId, signature || '', timestamp || '', nonce || '');
+    if (!isValid) {
+        res.status(403).json({ error: "Invalid Identity Signature" });
+        return;
     }
 
     try {
