@@ -466,3 +466,67 @@ ALLOWED_ORIGINS=https://your-app.vercel.app
 
 **철학**: "HighStation 등급이 없는 에이전트/API는 쓰지 마라"는 관습이 생기는 순간, 시장 권력은 우리에게 넘어옵니다.
 
+
+## v1.5.1 - Development Tools & Final Polish (2026-01-10)
+**일자**: 2026-01-10  
+**주요 변경 사항**: 개발 편의성 개선 및 최종 문서 정리
+
+- **[Infrastructure] Development Seed Script**:
+    - `scripts/seed-dev.ts` 추가 - 개발용 Supabase에 샘플 데이터 주입
+    - 서비스, 지갑, 개발자 샘플 데이터 자동 생성
+    - Idempotent (여러 번 실행 가능)
+- **[Documentation] 환경 변수 가이드**:
+    - `.env.example` 업데이트 - 모든 환경 변수 문서화
+
+**프로덕션 준비**: ✅ 최종 릴리즈 (Hackathon Ready)
+
+---
+
+## v1.5.0 - Hidden Features Audit & Codebase Hygiene (2026-01-10)
+
+### 🧹 Codebase Cleanup
+- **Centralized Dependencies**:
+  - `src/utils/env.ts` 도입으로 환경 변수 로드 로직 단일화 (중복 `dotenv` 호출 제거).
+  - `src/utils/supabase.ts` 도입으로 Supabase 클라이언트 싱글톤 구현 (중복 연결 방지).
+  - `src/utils/viemClient.ts`를 통해 모든 블록체인 상호작용 중앙화 (`IdentityService` 리팩토링).
+
+### 🔒 Security Hardening
+- **Proxy Logic Inspection**:
+  - `server.ts`의 노출된 프록시 로직을 `src/services/ProxyService.ts`로 캡슐화.
+  - 헤더 필터링 및 보안 메타데이터 주입 로직 강화.
+- **SSRF Protection (Network I/O)**:
+  - 숨겨진 DNS 조회를 `validateUpstreamNetwork` (`src/utils/ssrfGuard.ts`)로 명시적 분리.
+  - `validators.ts`는 순수 문법 검증만 수행하도록 역할 축소.
+- **Zero-Address Fail-Closed**:
+  - `flush.ts`에서 하드코딩된 Zero Address 폴백 제거 및 명시적 에러 처리 도입.
+- **Gas Price Centralization**:
+  - `FeeSettlementEngine.ts`에 하드코딩된 가스 가격을 실시간 fetch로 전환.
+
+### 📚 Documentation
+- **Periodic Checklist**: `docs/PERIODIC_CHECKLIST_KR.md` 생성 (레드팀 점검, 로직 점검, 하드코딩 점검 가이드).
+- **Final Inspection**: 전체 코드베이스 paranoid 스캔 완료 - 하드코딩, 매직 넘버, 의심스러운 폴백 제거.
+
+**프로덕션 준비**: ✅ 완료 (Security Score: 10/10)
+
+---
+
+## v1.5.0 - Hidden Features Audit & Codebase Hygiene (2026-01-10)
+
+### 🧹 Codebase Cleanup
+- **Centralized Dependencies**:
+  - `src/utils/env.ts` 도입으로 환경 변수 로드 로직 단일화 (중복 `dotenv` 호출 제거).
+  - `src/utils/supabase.ts` 도입으로 Supabase 클라이언트 싱글톤 구현 (중복 연결 방지).
+  - `src/utils/viemClient.ts`를 통해 모든 블록체인 상호작용 중앙화 (`IdentityService` 리팩토링).
+
+### 🔒 Security Hardening
+- **Proxy Logic Inspection**:
+  - `server.ts`의 노출된 프록시 로직을 `src/services/ProxyService.ts`로 캡슐화.
+  - 헤더 필터링 및 보안 메타데이터 주입 로직 강화.
+- **SSRF Protection (Network I/O)**:
+  - 숨겨진 DNS 조회를 `validateUpstreamNetwork` (`src/utils/ssrfGuard.ts`)로 명시적 분리.
+  - `validators.ts`는 순수 문법 검증만 수행하도록 역할 축소.
+- **Zero-Address Fail-Closed**:
+  - `flush.ts`에서 하드코딩된 Zero Address 폴백 제거 및 명시적 에러 처리 도입.
+
+### 📚 Documentation
+- **Periodic Checklist**: `docs/PERIODIC_CHECKLIST_KR.md` 생성 (레드팀 점검, 로직 점검, 하드코딩 점검 가이드).

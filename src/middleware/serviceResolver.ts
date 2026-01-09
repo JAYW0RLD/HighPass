@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { initDB } from '../database/db';
-import { isValidUpstreamUrl } from '../utils/validators';
+import { validateUpstreamNetwork } from '../utils/ssrfGuard';
 import { createClient } from '@supabase/supabase-js';
 
 export interface ServiceConfig {
@@ -134,7 +134,7 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
 
         const isInternalSafe = isSafeInternalEndpoint(data.upstream_url);
 
-        if (!isInternalSafe && !(await isValidUpstreamUrl(data.upstream_url))) {
+        if (!isInternalSafe && !(await validateUpstreamNetwork(data.upstream_url))) {
             console.error(`[ServiceResolver] Blocked unsafe upstream URL: ${data.upstream_url}`);
             return res.status(502).json({ error: 'Bad Gateway', message: 'Upstream service configuration is unsafe.' });
         }

@@ -1,33 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-import path from 'path';
+// Load env vars via centralized loader
+import '../utils/env';
+import { getSupabase } from '../utils/supabase';
 
-// Load env vars
-const localEnvPath = path.join(__dirname, '../../.env.local');
-dotenv.config({ path: localEnvPath, override: true });
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase credentials for auth middleware');
-}
-
-// Create a client for auth verification (Anon key is sufficient for getUser with token)
-let supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http'))
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
-
-// TEST FIX: If in test mode and failed to init (e.g. invalid URL), use a dummy mock
-if (!supabase && process.env.NODE_ENV === 'test') {
-    supabase = {
-        auth: {
-            getUser: async (token: string) => ({ data: { user: null }, error: { message: 'Mock Error' } })
-        }
-    } as any;
-}
+// Use shared singleton
+const supabase = getSupabase();
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     try {

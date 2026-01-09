@@ -91,7 +91,11 @@ export const flushDebt = async (req: Request, res: Response) => {
         }
 
         // Return payment request
-        const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS || '0x0000000000000000000000000000000000000000';
+        if (!process.env.PAYMENT_HANDLER_ADDRESS) {
+            console.error('[Flush] PAYMENT_HANDLER_ADDRESS is not set');
+            return res.status(500).json({ error: 'Server misconfiguration: missing payment handler' });
+        }
+        const paymentHandlerAddress = process.env.PAYMENT_HANDLER_ADDRESS;
         const commonHeaders = `receiver="${paymentHandlerAddress}", asset="CRO", chainId="240", datetime="${new Date().toISOString()}"`;
 
         res.status(402).set(

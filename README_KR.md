@@ -1,73 +1,173 @@
-# HighStation - 초간단 실행 가이드 🚀
+# HighStation - AI 에이전트 결제 게이트웨이 🚀
 
-이 가이드는 로컬 환경에서 **HighStation**을 빠르고 쉽게 실행하고 테스트하는 방법을 설명합니다.
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Production](https://img.shields.io/badge/Status-Live-success)](https://highstation-dashboard.vercel.app/)
 
-이 가이드는 로컬 환경에서 **HighStation**을 빠르고 쉽게 실행하고 테스트하는 방법을 설명합니다.
+**X402 Protocol 기반** | **평판 인증** | **외상 결제 (Pay Later)**
 
-> **📚 핵심 문서:**
-> *   **[설계 철학 & 정당성 (Why HighStation?)](./docs/DESIGN_PHILOSOPHY_KR.md)**: 우리가 왜 외상/평판 시스템을 만들었는가?
-> *   **[AI 에이전트 연동 가이드](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md)**: X402 공식 Client 탑재 방법
-> *   **[프로젝트 히스토리](./docs/PROJECT_HISTORY_KR.md)**: v3.0 (표준화) 업데이트 기록
+자율 AI 에이전트를 위한 "지금 쓰고 나중에 결제" 플랫폼. 신용 등급에 따라 API를 먼저 사용하고, 부채가 쌓이면 자동 정산됩니다.
 
-## 1. 준비 사항
-*   터미널 창 2개가 필요합니다.
-*   **Node.js**가 설치되어 있어야 합니다.
+> 🔗 **Live Demo**: [https://highstation-dashboard.vercel.app](https://highstation-dashboard.vercel.app)
 
-## 2. 설치 (최초 1회)
-프로젝트 폴더에서 다음 명령어로 라이브러리를 설치하세요.
+---
+
+## ⚡ 3분 만에 이해하기
+
+### 1️⃣ 대시보드 접속 (배포됨)
+👉 **[HighStation Dashboard](https://highstation-dashboard.vercel.app)** 방문
+
+### 2️⃣ 핵심 기능 체험
+- **Provider Portal**: GitHub 로그인 → 내 API 등록 → 실시간 수익 확인
+- **Services 페이지**: 등록된 서비스 목록 확인 (Public/Verified)
+
+### 3️⃣ Agent Simulator로 결제 플로우 테스트
+로컬에서 실제 결제 흐름을 체험하려면:
 ```bash
+# 1. 저장소 클론 (최초 1회)
+git clone https://github.com/JAYW0RLD/HighStation.git
+cd HighStation/highstation
+
+# 2. Agent 생성 (최초 1회)
+npx ts-node scripts/create-agent.ts
+
+# 3. Gated API 호출 (외상 결제 체험)
+npx ts-node scripts/run-agent.ts
+```
+
+### 4️⃣ 작동 원리
+```
+AI Agent (Grade A) → API Call → ✅ 200 OK (외상 승인)
+                   → Debt += 0.1 CRO
+... 50번 호출 ...
+                   → Debt >= $5 → 🔔 402 Payment Required
+                   → Auto Settlement (on-chain) → Debt = 0
+```
+
+---
+
+## 🎯 핵심 기능
+
+### 평판 기반 신용 등급 (A-F)
+온체인 평판 점수로 자동 등급 부여:
+
+| 등급 | 평판 점수 | 외상 한도 | 정책 |
+|------|----------|----------|------|
+| **A** | 90+ | $5 | 외상 OK, 먼저 쓰고 나중에 결제 |
+| **B-C** | 70-89 | $1 | 소액 외상 허용 |
+| **D-F** | 0-69 | $0 | 선결제 필수 |
+
+### X402 Protocol (Autonomous Settlement)
+HTTP `402 Payment Required`를 활용한 **자동 정산**:
+
+```http
+HTTP/1.1 402 Payment Required
+WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="240"
+```
+
+→ Agent가 자동으로 트랜잭션 생성 → 재시도 → 성공 ✅
+
+### Optimistic Payment
+신용 좋은 에이전트는 **먼저 사용 → 나중에 정산**:
+- 80% 도달 → 경고
+- 100% 도달 → 강제 정산
+- 정산 완료 → 한도 복구
+
+---
+
+## 📚 문서
+
+### 필수 읽을거리
+- [**설계 철학 (Why?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - 왜 외상 결제인가?
+- [**프로젝트 히스토리**](./docs/PROJECT_HISTORY_KR.md) - 개발 과정 & 로드맵
+- [**보안 감사**](./docs/security/) - Red Team 전면 감사 완료
+
+### 통합 가이드
+- [AI 에이전트 연동](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md) - Python/Node.js
+- [Agent CLI Simulator](./docs/guides/AGENT_CLI_GUIDE_KR.md) - 터미널에서 테스트
+- [Provider 가이드](./docs/guides/PROVIDER_GUIDE_KR.md) - API 공급자용
+
+---
+
+## 🏗️ 기술 스택
+
+**Backend**: Node.js, Express, TypeScript  
+**Database**: Supabase (PostgreSQL + RLS)  
+**Blockchain**: Cronos zkEVM Testnet (Viem)  
+**Frontend**: React, Vite, Supabase Auth  
+**Deployment**: Vercel (Serverless)  
+
+---
+
+## 🛠️ 로컬 개발 (For Developers)
+
+프로젝트에 기여하거나 로컬에서 실행하려면:
+
+<details>
+<summary><strong>📖 개발 환경 설정 가이드 (클릭)</strong></summary>
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/JAYW0RLD/HighStation.git
+cd HighStation/highstation
 npm install
 ```
 
-## 3. 실행 방법
-
-### 단계 1: 가짜 블록체인 실행 (터미널 1)
-실제 Cronos 테스트넷을 복제한 로컬 블록체인을 실행합니다. 돈(Token)이 무제한입니다!
+### 2. Environment Setup
 ```bash
-npm run test:node
+cp .env.example .env.local
+# Edit .env.local with:
+# - SUPABASE_URL & SERVICE_ROLE_KEY
+# - RPC_URL (https://testnet.zkevm.cronos.org)
+# - Contract addresses
 ```
-*   *주의: 이 터미널은 끄지 말고 켜두세요.*
 
-### 단계 2: 게이트키퍼 서버 실행 (터미널 2)
-새로운 터미널을 열고 서버를 시작합니다.
+### 3. Database Setup
 ```bash
-npm run build && npm run start
+# Run schema.sql in Supabase SQL Editor
+# Then seed sample data:
+npx ts-node scripts/seed-dev.ts
 ```
-*   `[Server] Loaded local environment configuration` 메시지가 나오면 성공입니다.
 
-## 4. 테스트 해보기 (데모)
-
-이 시스템에는 테스트를 위해 미리 설정된 3명의 에이전트가 있습니다.
-
-| 에이전트 ID | 등급 | 특징 | 예상 결과 |
-| :--- | :--- | :--- | :--- |
-| `prime-agent` | **A** (최우수) | 외상 거래 가능 | **200 OK** (즉시 승인) |
-| `subprime-agent` | **C** (보통) | 선결제 필수 | **402 Payment Required** |
-| `risky-agent` | **F** (위험) | 접근 금지 | **403 Forbidden** |
-
-### 테스트 명령어 (터미널 2에서 입력)
-
-**1. 신용 좋은 에이전트 (A등급)**
+### 4. Start Server
 ```bash
-curl -s -H "X-Agent-ID: prime-agent" http://localhost:3000/gatekeeper/demo-service/resource
+npm run dev
+# Backend: http://localhost:3000
 ```
-> 결과: `Access Granted` (성공)
 
-**2. 신용 보통 에이전트 (C등급)**
+### 5. (Optional) Frontend
 ```bash
-curl -s -v -H "X-Agent-ID: subprime-agent" http://localhost:3000/gatekeeper/demo-service/resource
+cd dashboard
+npm install
+npm run dev
+# Frontend: http://localhost:5173
 ```
-> 결과: `402 Payment Required` (결제 필요)
 
-**3. 위험 에이전트 (F등급)**
-```bash
-curl -s -H "X-Agent-ID: risky-agent" http://localhost:3000/gatekeeper/demo-service/resource
-```
-> 결과: `403 Forbidden` (차단됨)
-
-## 5. 대시보드 확인
-웹 브라우저에서 아래 주소로 접속하면 실시간 로그를 볼 수 있습니다.
-👉 [http://localhost:3000](http://localhost:3000)
+</details>
 
 ---
-**팁:** 테스트를 초기화하고 싶다면 서버를 끄고(`Ctrl+C`), `dist/gatekeeper.db` 파일을 지운 뒤 다시 시작하세요.
+
+## 🔒 보안
+
+- ✅ Red Team 전면 감사 (v3.7)
+- ✅ 15+ 취약점 수정 (SSRF, Replay Attack, CSRF)
+- ✅ Database RLS + Nonce 기반 방어
+- ✅ Helmet.js CSP 적용
+
+**Security Score**: 10/10
+
+---
+
+## 📊 프로덕션 배포
+
+현재 **Vercel + Supabase**에 실제 배포 중:
+- Backend: Vercel Serverless Functions
+- Frontend: Vercel Static Hosting
+- Database: Supabase Production
+- Blockchain: Cronos zkEVM Testnet
+
+배포 가이드: [DEPLOYMENT_GUIDE_KR.md](./DEPLOYMENT_GUIDE_KR.md)
+
+---
+
+© 2026 HighStation Team | Built for the Agentic Future

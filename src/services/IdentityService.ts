@@ -1,5 +1,5 @@
 import { createPublicClient, http, parseAbi, Address, defineChain, verifyMessage } from 'viem';
-import { foundry } from 'viem/chains';
+import { publicClient } from '../utils/viemClient';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,18 +10,15 @@ if (fs.existsSync(localEnvPath)) {
 }
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const CONTRACT_ADDRESS = process.env.IDENTITY_CONTRACT_ADDRESS as Address;
 const CHAIN_ID = Number(process.env.CHAIN_ID) || 31337;
-const RPC_URL = process.env.RPC_URL || 'http://127.0.0.1:8545';
+
 
 // Define Cronos if needed, or use generic
-const currentChain = defineChain({
-    id: CHAIN_ID,
-    name: 'Current Chain',
-    network: 'current-chain',
-    nativeCurrency: { decimals: 18, name: 'Token', symbol: 'TOK' },
-    rpcUrls: { default: { http: [RPC_URL] }, public: { http: [RPC_URL] } }
-});
+
+
+// Removed redundant Chain Definition and RPC_URL
+// IdentityService now uses shared publicClient from utils/viemClient
+
 
 const abi = parseAbi([
     'function getReputation(uint256 agentId) external view returns (uint256)',
@@ -29,23 +26,7 @@ const abi = parseAbi([
 ]);
 
 export class IdentityService {
-    public getClient() {
-        const CHAIN_ID = Number(process.env.CHAIN_ID) || 31337;
-        const RPC_URL = process.env.RPC_URL || 'https://testnet.zkevm.cronos.org';
-
-        const currentChain = defineChain({
-            id: CHAIN_ID,
-            name: 'Current Chain',
-            network: 'current-chain',
-            nativeCurrency: { decimals: 18, name: 'Token', symbol: 'TOK' },
-            rpcUrls: { default: { http: [RPC_URL] }, public: { http: [RPC_URL] } }
-        });
-
-        return createPublicClient({
-            chain: currentChain,
-            transport: http(RPC_URL)
-        });
-    }
+    // public getClient() removed - using shared singleton
 
     async getReputation(agentId: string): Promise<number> {
         if (!agentId) throw new Error("Agent ID cannot be empty");
@@ -74,7 +55,8 @@ export class IdentityService {
         }
 
         const CHAIN_ID = Number(process.env.CHAIN_ID) || 31337;
-        const publicClient = this.getClient();
+        // Use shared client
+        // const publicClient = this.getClient(); 
 
         try {
             let score: bigint = BigInt(0);

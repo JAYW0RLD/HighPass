@@ -103,3 +103,15 @@ HighStation은 단순 API 게이트웨이를 넘어, AI를 위한 **MCP 서버**
 - **No Mindless Design**: 맥락 없는 원형 버튼(Mindless Circle Buttons)이나 부조화스러운 Chip UI를 배제하고, 기능에 맞는 형태(Form follows Function)를 추구합니다.
 - **Premium Feel**: 어두운 배경, 미세한 그라디언트, 절제된 카드 UI는 사용자에게 "신뢰할 수 있는 금융 도구"라는 인상을 줍니다.
 - **Why?**: 아름다운 도구는 개발자의 자부심을 고취시키고, 더 오래 머물게 만듭니다.
+
+---
+
+## 8. 무결성 (Integrity): 숨겨진 의존성 제거
+시스템은 예측 가능해야 하며, 모든 외부 의존성은 명시적이어야 합니다.
+
+- **Centralized Connectivity**: 
+    - `SecurityService`, `PaymentService` 등 각 모듈이 개별적으로 블록체인에 연결하면, 설정 불일치나 리소스 누수가 발생합니다.
+    - **Solution**: `viemClient`와 같은 단일 진입점(Singleton)을 통해서만 외부 세계(Blockchain, DB)와 소통합니다.
+- **Explicit Cost**:
+    - 데모 서비스조차도 "가짜 데이터"를 주지 않고, 실제 메인넷/테스트넷의 **실시간 가스비**를 조회하여 제공합니다.
+    - **Philoshopy**: "Testnet is production for developers." 개발 환경이라고 해서 거짓 정보를 주면, 실제 배포 시 반드시 깨집니다. 우리는 데모 단계부터 리얼 월드 데이터를 제공합니다.

@@ -42,20 +42,6 @@ export const creditGuard = async (req: Request, res: Response, next: NextFunctio
         return;
     }
 
-    // 1. Enforce headers (Strict Mode)
-    // Only check if NOT Owner.
-
-
-    // ...
-
-    // 3. Nonce & 4. Signature
-    // Checks are guarded by `!isOwnerBypass`.
-    // So if Owner, we skip them. Safe.
-
-    // What if `ENABLE_DEMO_AGENTS` is needed for public demo?
-    // If we want public to use `prime-agent` on `Demo Echo Service`, we need a specific exception for THAT service, not global.
-    // But for now, let's assume secure default: No public spoofing.
-
 
     // 2. Check Replay prevention (Time window)
     if (timestamp) {
@@ -89,7 +75,6 @@ export const creditGuard = async (req: Request, res: Response, next: NextFunctio
         }
     }
 
-    // 4. Verify Signature
     // 4. Verify Signature
     const isValid = await identityService.verifySignature(agentId, signature || '', timestamp || '', nonce || '');
     if (!isValid) {

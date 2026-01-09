@@ -1,13 +1,20 @@
 import { IdentityService } from '../../../src/services/IdentityService';
 
-// Mock viem
+// Mock the shared viem client
+const mockPublicClient = {
+    readContract: jest.fn().mockResolvedValue(BigInt(85)), // Mock reputation of 85
+    getTransactionReceipt: jest.fn(),
+    getGasPrice: jest.fn(),
+    getBlockNumber: jest.fn()
+};
+
+jest.mock('../../../src/utils/viemClient', () => ({
+    publicClient: mockPublicClient
+}));
+
+// Mock other viem exports if needed
 jest.mock('viem', () => ({
-    createPublicClient: jest.fn(() => ({
-        readContract: jest.fn().mockResolvedValue(BigInt(85)), // Mock reputation of 85
-    })),
-    http: jest.fn(),
-    defineChain: jest.fn((config: any) => config),
-    parseAbi: jest.fn(),
+    ...jest.requireActual('viem'),
     verifyMessage: jest.fn().mockResolvedValue(true),
 }));
 
@@ -19,20 +26,22 @@ describe('IdentityService', () => {
         process.env.IDENTITY_CONTRACT_ADDRESS = '0x1234567890123456789012345678901234567890';
         process.env.RPC_URL = 'http://test-rpc.example.com';
         process.env.CHAIN_ID = '240';
+        jest.clearAllMocks(); // clear mocks between tests
     });
 
     describe('getReputation', () => {
         it('should return reputation score as number', async () => {
+            mockPublicClient.readContract.mockResolvedValue(BigInt(85));
             const reputation = await identityService.getReputation('0x1234567890123456789012345678901234567890');
 
             expect(typeof reputation).toBe('number');
             expect(reputation).toBeGreaterThanOrEqual(0);
             expect(reputation).toBeLessThanOrEqual(100);
+            expect(mockPublicClient.readContract).toHaveBeenCalled();
         });
 
         it('should handle agent ID as string', async () => {
             const reputation = await identityService.getReputation('0x1234567890123456789012345678901234567890');
-
             expect(reputation).toBeDefined();
         });
 
@@ -47,26 +56,21 @@ describe('IdentityService', () => {
 
     describe('isTrusted', () => {
         it('should return true for high reputation agent', async () => {
+            mockPublicClient.readContract.mockResolvedValue(BigInt(85));
             const isTrusted = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 70);
 
             expect(typeof isTrusted).toBe('boolean');
-            expect(isTrusted).toBe(true); // Mock returns 85
+            expect(isTrusted).toBe(true);
         });
 
         it('should return false for low reputation agent', async () => {
-            // Mock low reputation
-            const viem = require('viem');
-            viem.createPublicClient.mockReturnValueOnce({
-                readContract: jest.fn().mockResolvedValue(BigInt(50)),
-            });
-
-            const service = new IdentityService();
-            const isTrusted = await service.isTrusted('0x1234567890123456789012345678901234567890', 70);
-
+            mockPublicClient.readContract.mockResolvedValue(BigInt(50));
+            const isTrusted = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 70);
             expect(isTrusted).toBe(false);
         });
 
         it('should handle threshold parameter correctly', async () => {
+            mockPublicClient.readContract.mockResolvedValue(BigInt(85));
             const isTrustedAt80 = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 80);
             const isTrustedAt90 = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 90);
 
@@ -77,50 +81,18 @@ describe('IdentityService', () => {
         it('should throw error for negative threshold', async () => {
             await expect(identityService.isTrusted('0x1234567890123456789012345678901234567890', -1)).rejects.toThrow();
         });
-
-        it('should use default threshold if not provided', async () => {
-            const isTrusted = await identityService.isTrusted('0x1234567890123456789012345678901234567890', 80);
-
-            expect(typeof isTrusted).toBe('boolean');
-        });
     });
 
     describe('Error handling and retries', () => {
         it('should retry on RPC failures', async () => {
-            const viem = require('viem');
-            const mockReadContract = jest
-                .fn()
+            mockPublicClient.readContract
                 .mockRejectedValueOnce(new Error('RPC Error'))
                 .mockResolvedValueOnce(BigInt(85));
 
-            viem.createPublicClient.mockReturnValueOnce({
-                readContract: mockReadContract,
-            });
-
-            const service = new IdentityService();
-
             // Should succeed after retry
-            const reputation = await service.getReputation('0x1234567890123456789012345678901234567890');
+            const reputation = await identityService.getReputation('0x1234567890123456789012345678901234567890');
             expect(reputation).toBe(85);
-            expect(mockReadContract).toHaveBeenCalledTimes(2);
-        });
-    });
-
-    describe('getClient', () => {
-        it('should create client with correct configuration', () => {
-            const client = identityService.getClient();
-
-            expect(client).toBeDefined();
-        });
-
-        it('should use environment variables for configuration', () => {
-            process.env.RPC_URL = 'http://custom-rpc.com';
-            process.env.CHAIN_ID = '999';
-
-            const service = new IdentityService();
-            const client = service.getClient();
-
-            expect(client).toBeDefined();
+            expect(mockPublicClient.readContract).toHaveBeenCalledTimes(2);
         });
     });
 });

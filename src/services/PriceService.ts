@@ -40,10 +40,7 @@ export class PriceService {
             return actualPrice;
         } catch (error) {
             console.error("[PriceService] Error fetching price:", error);
-            // Fallback for demo stability if network fails? 
-            // For a robust gateway, we might want to throw, but for a demo, 
-            // maybe return a safe default or rethrow. 
-            // Let's rethrow to ensure 402 logic handles errors gracefully or fails securely.
+            // Fail-closed: Rethrow to prevent operating with stale/invalid prices
             throw error;
         }
     }

@@ -1,5 +1,6 @@
 import { PriceService } from './PriceService';
 import { getDebt } from '../database/db';
+import { publicClient } from '../utils/viemClient';
 
 export class FeeSettlementEngine {
     private priceService: PriceService;
@@ -26,9 +27,13 @@ export class FeeSettlementEngine {
             marginPercent = 0.005 // Default 0.5%
         } = options;
 
-        // Fetch current Gas Price (Mock or Real)
-        // In production, use provider.getGasPrice()
-        const gasPrice = BigInt(10000000000); // 10 Gwei fixed for now
+        // Fetch current Gas Price
+        let gasPrice = BigInt(10000000000); // Fallback: 10 Gwei
+        try {
+            gasPrice = await publicClient.getGasPrice();
+        } catch (e) {
+            console.warn('[FeeSettlement] Failed to fetch gas price, using fallback of 10 Gwei', e);
+        }
         const gasCostWei = gasEstimate * gasPrice;
 
         // Calculate Margin

@@ -1,6 +1,6 @@
 import express from 'express';
 import { initDB } from '../database/db';
-import { isValidUpstreamUrl, isBlockedIP } from '../utils/validators';
+import { isBlockedIP } from '../utils/validators';
 import crypto from 'crypto';
 import * as dns from 'dns/promises';
 import * as net from 'net';

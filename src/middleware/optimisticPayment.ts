@@ -5,7 +5,8 @@ import { FeeSettlementEngine } from '../services/FeeSettlementEngine';
 import { getDebt, addDebt, clearDebt, isTxHashUsed, logRequest } from '../database/db';
 import { ServiceConfig } from './serviceResolver';
 import { createClient } from '@supabase/supabase-js';
-import { parseAbi, decodeEventLog, keccak256, toHex } from 'viem';
+import { parseAbi, decodeEventLog, keccak256, toHex, Log } from 'viem';
+import { publicClient } from '../utils/viemClient';
 
 export const optimisticPaymentCheck = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
@@ -234,8 +235,8 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
     try {
         console.log(`[Payment] Agent ${agentId}: Verifying payment ${token}`);
 
-        const client = identityService.getClient();
-        const receipt = await client.getTransactionReceipt({ hash: token as `0x${string}` });
+        // Use shared client
+        const receipt = await publicClient.getTransactionReceipt({ hash: token as `0x${string}` });
 
         if (!receipt) {
             res.status(403).json({ error: "Transaction not found on blockchain" });
@@ -271,7 +272,7 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         const paymentEventSignature = keccak256(toHex('PaymentMade(address,address,uint256,uint256)'));
 
         // Find PaymentMade event in transaction logs
-        const paymentLog = receipt.logs?.find(log =>
+        const paymentLog = receipt.logs?.find((log: Log) =>
             log.address?.toLowerCase() === paymentHandlerAddress &&
             log.topics?.[0] === paymentEventSignature
         );

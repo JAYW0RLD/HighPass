@@ -3,12 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-
 // Load environment variables immediately
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+import './utils/env';
 
 import { validateEnv, validateProductionEnv } from './utils/validateEnv';
 
@@ -19,6 +15,7 @@ validateProductionEnv();
 import { IdentityService } from './services/IdentityService';
 import { PriceService } from './services/PriceService';
 import { FeeSettlementEngine } from './services/FeeSettlementEngine';
+import { ProxyService } from './services/ProxyService';
 import { optimisticPaymentCheck } from './middleware/optimisticPayment';
 import { loggerMiddleware } from './middleware/logger';
 import { initDB } from './database/db';
@@ -29,17 +26,12 @@ import providerRouter from './routes/provider';
 
 // Static Files (Frontend) logic moved below declaration
 import * as fs from 'fs';
+import * as path from 'path';
 
 // Serve frontend static files in production or if build exists
 const frontendPath = path.join(__dirname, '../../dashboard/dist');
 
-const localEnvPath = path.join(__dirname, '../../.env.local');
-
-if (fs.existsSync(localEnvPath)) {
-    dotenv.config({ path: localEnvPath, override: true });
-    console.log('[Server] Loaded local environment configuration');
-}
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Local env loading is handled by src/utils/env.ts now.
 
 const app = express();
 const port = 3000;
@@ -249,20 +241,46 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Demo Service for User Testing (Placeholder)
-app.get('/api/demo/service', (req, res) => {
-    const randomWords = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
-    const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+import { publicClient } from './utils/viemClient';
+import { formatGwei } from 'viem';
 
-    res.json({
-        service: "Broadcasting Demo Service",
-        status: "alive",
-        data: {
-            type: "demo_signal",
-            payload: randomWord
-        },
-        timestamp: new Date().toISOString()
-    });
+// Demo Service for User Testing (Placeholder)
+app.get('/api/demo/service', async (req, res) => {
+    try {
+        const randomWords = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
+        const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
+
+        // Fetch real network stats
+        const gasPrice = await publicClient.getGasPrice();
+        const blockNumber = await publicClient.getBlockNumber();
+        const gasPriceGwei = parseFloat(formatGwei(gasPrice));
+
+        // Determine congestion level (Mock logic based on realistic Cronos values)
+        // Cronos zkEVM average is usually ~10 Gwei.
+        let congestion = "Low";
+        if (gasPriceGwei > 15) congestion = "Medium";
+        if (gasPriceGwei > 30) congestion = "High";
+
+        res.json({
+            service: "Broadcasting Demo Service",
+            status: "alive",
+            network_stats: {
+                chain: "Cronos zkEVM Testnet",
+                block_height: Number(blockNumber),
+                gas_price_wei: gasPrice.toString(),
+                gas_price_gwei: gasPriceGwei.toFixed(2),
+                congestion_level: congestion
+            },
+            data: {
+                type: "demo_signal",
+                payload: randomWord
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error("Demo Service Error:", error);
+        res.status(500).json({ error: "Failed to fetch network stats" });
+    }
 });
 
 import { serviceResolver } from './middleware/serviceResolver';
@@ -362,112 +380,30 @@ app.all('/gatekeeper/:serviceSlug/resource',
         }
 
         try {
-            // Forward request to upstream service
-            const upstreamUrl = config.upstream_url;
-
-            // SECURITY FIX (V-NEW-03): Strict header allowlist instead of blocklist
-            // Prevent header injection attacks on upstream services
-            const SAFE_HEADERS = new Set([
-                'accept',
-                'accept-encoding',
-                'accept-language',
-                'content-type',
-                'content-length',
-                'user-agent',
-                'cache-control'
-                // RED TEAM FIX [V-RT-02]: Strip 'authorization' header to prevent leakage of HighStation tokens
-            ]);
-
-            const forwardHeaders: Record<string, string> = {};
-            Object.keys(req.headers).forEach(key => {
-                const lowerKey = key.toLowerCase();
-
-                // BLOCK dangerous proxy-control headers that could exploit upstream
-                if (lowerKey.startsWith('x-forwarded') ||
-                    lowerKey.startsWith('x-real-ip') ||
-                    lowerKey.startsWith('x-original') ||
-                    lowerKey.startsWith('x-rewrite') ||
-                    lowerKey === 'host' ||
-                    lowerKey === 'connection') {
-                    console.warn(`[Security] Blocked dangerous header from forwarding: ${key}`);
-                    return;
-                }
-
-                // ALLOW only verified safe headers
-                if (SAFE_HEADERS.has(lowerKey)) {
-                    forwardHeaders[key] = req.headers[key] as string;
-                }
-            });
-
-            // Add gatekeeper metadata header
-            forwardHeaders['x-forwarded-by'] = 'highstation';
-            forwardHeaders['x-service-name'] = config.name;
-
-            // Start Timer (Telemetry)
-            const startTime = performance.now();
-
-            // Forward the request
-            const upstreamResponse = await fetch(upstreamUrl, {
-                method: req.method,
-                headers: forwardHeaders,
-                body: ['POST', 'PUT', 'PATCH'].includes(req.method) ? JSON.stringify(req.body) : undefined
-            });
-
-            // End Timer
-            const endTime = performance.now();
-            const latencyMs = Math.round(endTime - startTime);
-
-            const upstreamData = await upstreamResponse.json();
-
-            // Calculate Response Size (Approximate JSON string length)
-            const responseSizeBytes = JSON.stringify(upstreamData).length;
-
-            // Telemetry: Content-Type & Integrity Check
-            const contentType = upstreamResponse.headers.get('content-type') || 'unknown';
-            let integrityCheck = false;
-
-            // Integrity Check: Is it valid JSON? (Yes, because upstreamResponse.json() succeeded above)
-            // If .json() failed, it would have gone to catch block.
-            // So if we are here, it is valid JSON.
-            // However, we should also reject if it's "error" or empty if that defines "Integrity".
-            // Prompt says: "Success Integrity ... response data integrity (format match)".
-            // For now, valid JSON + 200 OK = True.
-            integrityCheck = true;
+            const result = await ProxyService.forwardRequest(req, config.upstream_url, config.name);
 
             // Store Telemetry in Locals for Logger
-            res.locals.telemetry = {
-                latencyMs,
-                responseSizeBytes,
-                contentType,
-                integrityCheck
-            };
+            res.locals.telemetry = result.telemetry;
 
             // Return upstream response with gatekeeper metadata
-            res.status(upstreamResponse.status).json({
-                ...upstreamData,
+            res.status(result.status).json({
+                ...result.data,
                 _gatekeeper: {
                     service: config.name,
                     timestamp: new Date().toISOString(),
                     optimistic: isOptimistic || false,
                     message: isOptimistic ? "Pay later! Debt recorded." : "Payment verified",
                     telemetry: {
-                        latency_ms: latencyMs,
-                        size_bytes: responseSizeBytes,
-                        content_type: contentType,
-                        integrity_hash: integrityCheck // Returning boolean as verification proof
+                        latency_ms: result.telemetry.latencyMs,
+                        size_bytes: result.telemetry.responseSizeBytes,
+                        content_type: result.telemetry.contentType,
+                        integrity_hash: result.telemetry.integrityCheck
                     }
                 }
             });
 
         } catch (error: any) {
             console.error('[Gatekeeper] Upstream proxy error:', error);
-
-            // If JSON parse failed, integrity is false. 
-            // We can't log "success" telemetry easily here because we fall to error handler.
-            // But loggerMiddleware listens to 'finish'.
-            // We should try to set partial telemetry if possible? 
-            // Difficult without complicating logic. 
-            // For now, failed request = no integrity.
 
             res.status(502).json({
                 error: 'Bad Gateway',

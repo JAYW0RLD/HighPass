@@ -1,6 +1,6 @@
 import { URL } from 'url';
 import * as net from 'net';
-import * as dns from 'dns/promises';
+
 
 /**
  * Checks if an IP address is in a blocked range
@@ -40,18 +40,18 @@ export function isBlockedIP(ip: string): boolean {
 }
 
 /**
- * Validates if a URL is safe for upstream proxying.
+ * Validates if a URL is safe for upstream proxying (Static/Syntax only).
  * Blocks:
  * - Non-HTTP/HTTPS protocols
  * - Localhost / Loopback
- * - Private IP ranges (10.x, 192.168.x, 172.16-31.x)
- * - Link-local addresses (169.254.x.x)
- * - DNS Rebinding attacks (resolves hostname and checks resolved IPs)
+ * - Private IP ranges (10.x, 192.168.x, 172.16-31.x) in hostname
+ * 
+ * NOTE: This does NOT performing DNS lookups. Use ssrfGuard for network validation.
  * 
  * @param urlString The URL to validate
- * @returns Promise<true> if safe, Promise<false> otherwise
+ * @returns boolean true if syntax/static check passes
  */
-export async function isValidUpstreamUrl(urlString: string): Promise<boolean> {
+export function isSafeUrlSyntax(urlString: string): boolean {
     try {
         const url = new URL(urlString);
 
@@ -78,35 +78,12 @@ export async function isValidUpstreamUrl(urlString: string): Promise<boolean> {
             return true;
         }
 
-        // 4. DNS RESOLUTION (SSRF Protection against DNS Rebinding)
-        // Resolve the hostname to IP addresses
-        try {
-            const addresses = await dns.resolve(hostname);
-
-            if (!addresses || addresses.length === 0) {
-                console.warn(`[SSRF Protection] DNS resolution failed for: ${hostname}`);
-                return false;
-            }
-
-            // Check all resolved IPs
-            for (const ip of addresses) {
-                if (isBlockedIP(ip)) {
-                    console.warn(`[SSRF Protection] 🚨 DNS Rebinding Detected! ${hostname} resolves to blocked IP: ${ip}`);
-                    return false;
-                }
-            }
-
-            console.log(`[SSRF Protection] ✅ DNS validated: ${hostname} -> ${addresses.join(', ')}`);
-            return true;
-
-        } catch (dnsError) {
-            // DNS lookup failed - fail closed (reject the URL)
-            console.error(`[SSRF Protection] DNS lookup error for ${hostname}:`, dnsError);
-            return false;
-        }
+        // No DNS resolution here. Pure syntax check.
+        return true;
 
     } catch (e) {
-        console.error('[SSRF Protection] URL validation error:', e);
+        console.error('[SSRF Protection] URL syntax error:', e);
         return false;
     }
 }
+
