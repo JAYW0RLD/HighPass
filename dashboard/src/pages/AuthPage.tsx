@@ -120,7 +120,8 @@ function AuthPage() {
                                 button: {
                                     fontSize: '15px',
                                     fontWeight: '600',
-                                    color: 'white'
+                                    color: '#1a1d21', // Dark text for visibility on light/white buttons
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
                                 },
                                 anchor: {
                                     color: '#9ca3af',

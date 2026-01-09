@@ -13,11 +13,17 @@ import statsRouter from './routes/stats';
 import servicesRouter from './routes/services';
 import settingsRouter from './routes/settings';
 import providerRouter from './routes/provider';
+
+// Static Files (Frontend) logic moved below declaration
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 
+// Serve frontend static files in production or if build exists
+const frontendPath = path.join(__dirname, '../../dashboard/dist');
+
 const localEnvPath = path.join(__dirname, '../../.env.local');
+
 if (fs.existsSync(localEnvPath)) {
     dotenv.config({ path: localEnvPath, override: true });
     console.log('[Server] Loaded local environment configuration');
@@ -133,6 +139,11 @@ app.get('/api/demo/echo', (req, res) => {
 import { serviceResolver } from './middleware/serviceResolver';
 import { creditGuard } from './middleware/creditGuard';
 import { accessControlEngine } from './middleware/AccessControlEngine';
+
+// STATIC FILES SERVING
+if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
+}
 
 // Service Info & Cost Discovery Endpoint
 app.get('/gatekeeper/:serviceSlug/info',
@@ -328,6 +339,11 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
         console.log(`Gatekeeper API listening at http://localhost:${port}`);
         console.log(`Health check available at http://localhost:${port}/health`);
         console.log(`[Environment] ${isProduction ? 'Production' : 'Development'} mode`);
+        if (fs.existsSync(frontendPath)) {
+            console.log(`[Frontend] Serving static files from ${frontendPath}`);
+        } else {
+            console.log(`[Frontend] No build found at ${frontendPath}. Use 'npm run build' or run separate dev server.`);
+        }
         console.log(`[Security] Rate limiting: 10 req/min per IP`);
         console.log(`[Security] Helmet.js: Enabled`);
         console.log(`[Logging] Morgan: ${isProduction ? 'Combined' : 'Dev'} format`);

@@ -83,14 +83,14 @@ function ProviderPortal() {
             setLoading(false);
 
             // Fetch provider stats
-            fetchProviderStats(user.id);
+            fetchProviderStats();
         } catch (err) {
             console.error('Error fetching services:', err);
             setLoading(false);
         }
     };
 
-    const fetchProviderStats = async (userId: string) => {
+    const fetchProviderStats = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
