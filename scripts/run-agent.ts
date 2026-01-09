@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 import { privateKeyToAccount } from 'viem/accounts';
-import { createPublicClient, http, formatEther } from 'viem';
+import { createPublicClient, http, formatEther, createWalletClient } from 'viem';
 import { cronosTestnet } from 'viem/chains';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -60,7 +60,7 @@ function parseTarget(input: string) {
 function printHeader() {
     clearScreen();
     console.log(`${CYAN}${BOLD}`);
-    console.log(`   HighStation Agent Simulator v2.6`);
+    console.log(`   HighStation Agent Simulator v2.7`);
     console.log(`${RESET}`);
     console.log(`${DIM}  Real-World Testnet Edition${RESET}\n`);
 
@@ -103,6 +103,59 @@ async function fetchBalance() {
     }
 }
 
+// Helper for Settlement
+async function settleAndRetry(account: any, to: string, value: bigint, method: string, url: string, body: any) {
+    console.log(`\n${YELLOW}⛓️  SENDING TRANSACTION...${RESET}`);
+
+    const walletClient = createWalletClient({
+        account: account,
+        chain: cronosTestnet,
+        transport: http()
+    });
+
+    try {
+        const hash = await walletClient.sendTransaction({
+            to: to as `0x${string}`,
+            value: value
+        });
+        console.log(`${GREEN}✔ Tx Sent! Hash: ${hash}${RESET}`);
+        console.log(`${DIM}Waiting for confirmation...${RESET}`);
+
+        // Wait 5s for block (Cronos is fast)
+        await new Promise(r => setTimeout(r, 5000));
+
+        console.log(`\n${YELLOW}🔄 RETRYING REQUEST WITH PAYMENT PROOF...${RESET}`);
+
+        const timestamp = Date.now().toString();
+        const nonce = Math.floor(Math.random() * 1000000).toString();
+        const message = `Identify as ${account.address} at ${timestamp} with nonce ${nonce}`;
+        const signature = await account.signMessage({ message });
+
+        const retryResponse = await axios({
+            method: method,
+            url: url,
+            data: body,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${hash}`, // PRESENTING THE PROOF
+                'x-agent-id': account.address,
+                'x-agent-signature': signature,
+                'x-auth-timestamp': timestamp,
+                'x-auth-nonce': nonce
+            }
+        });
+
+        console.log(`\n${GREEN}✅ PAYMENT ACCEPTED & ACCESS GRANTED!${RESET}`);
+        console.log(`${DIM}────────────────────────────────────────${RESET}`);
+        console.log(retryResponse.data);
+        console.log(`${DIM}────────────────────────────────────────${RESET}`);
+        console.log(`${GREEN}💰 Payment: SETTLED${RESET}`);
+
+    } catch (e: any) {
+        throw e;
+    }
+}
+
 async function sendRequest() {
     if (!targetUrl || !targetUrl.startsWith('http')) {
         console.log(`\n${RED}❌ Target URL not set! Please set it first.${RESET}`);
@@ -110,7 +163,6 @@ async function sendRequest() {
     }
 
     // 1. CONFIRM METHOD & BODY
-    // If Method is POST/PUT/PATCH, ask for Body
     let data = {};
     if (['POST', 'PUT', 'PATCH'].includes(targetMethod)) {
         console.log(`\n${CYAN}📦 REQUEST BODY for ${targetMethod}:${RESET}`);
@@ -168,25 +220,53 @@ async function sendRequest() {
         }
 
     } catch (error: any) {
-        console.log(`\n${RED}⛔ REQUEST FAILED${RESET}`);
-
+        // Update Grade even on failure
         if (error.response && error.response.headers['x-agent-grade']) {
             currentGrade = error.response.headers['x-agent-grade'];
         }
 
-        if (error.response) {
-            console.log(`${RED}[${error.response.status}]${RESET} ${JSON.stringify(error.response.data)}`);
-            if (error.response.status === 402) {
-                console.log(`${YELLOW}💡 Payment Required.${RESET}`);
-                console.log(`   Insufficient funds or credit.`);
-            } else if (error.response.status === 404) {
-                console.log(`${YELLOW}💡 Check your URL. It must be the FULL API Endpoint.${RESET}`);
+        if (error.response && error.response.status === 402) {
+            console.log(`\n${YELLOW}⛔ PAYMENT REQUIRED [402]${RESET}`);
+            console.log(`${DIM}Server Message: ${JSON.stringify(error.response.data.message)}${RESET}`);
+
+            // X402 Negotiation Logic
+            const authHeader = error.response.headers['www-authenticate'];
+            const jsonData = error.response.data;
+            const debtAmount = jsonData.debtAmount || jsonData.amount;
+
+            // Parse Receiver from Header or Default
+            let receiver = process.env.PAYMENT_HANDLER_ADDRESS;
+            if (authHeader && authHeader.includes('receiver="')) {
+                receiver = authHeader.split('receiver="')[1].split('"')[0];
             }
+
+            if (debtAmount && receiver) {
+                console.log(`\n${CYAN}💳 BILL DETECTED:${RESET}`);
+                console.log(`   Amount:   ${formatEther(BigInt(debtAmount))} CRO`);
+                console.log(`   Receiver: ${receiver}`);
+
+                const payNow = await ask(`\n${GREEN}💸 Settle this bill on-chain now? (Y/n): ${RESET}`);
+                if (payNow.toLowerCase() === 'y' || payNow === '') {
+                    try {
+                        await settleAndRetry(agentAccount, receiver, BigInt(debtAmount), targetMethod, targetUrl, data);
+                    } catch (payErr: any) {
+                        console.log(`${RED}❌ Payment Failed: ${payErr.message}${RESET}`);
+                    }
+                    return; // Exit after retry attempt
+                }
+            } else {
+                console.log(`${YELLOW}💡 Tip: Get test tokens from the Faucet if you have 0 CRO.${RESET}`);
+            }
+        } else if (error.response) {
+            console.log(`\n${RED}⛔ REQUEST FAILED [${error.response.status}]${RESET}`);
+            console.log(`${JSON.stringify(error.response.data)}`);
+            if (error.response.status === 404) console.log(`${YELLOW}💡 Check URL. It must be the FULL API Endpoint.${RESET}`);
         } else {
-            console.log(`${RED}${error.message}${RESET}`);
+            console.log(`\n${RED}⛔ ERROR: ${error.message}${RESET}`);
         }
     }
 }
+
 
 async function main() {
     await loadWallet();
