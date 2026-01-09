@@ -28,15 +28,15 @@ export default function Header({ title }: HeaderProps) {
                     <div style={{
                         width: '32px',
                         height: '32px',
-                        background: '#0f0f0f',
-                        borderRadius: 'var(--radius-pill)',
+                        background: '#000000',
+                        borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '16px'
-                    }}>X</div>
+                        fontSize: '14px'
+                    }}>H</div>
                     <h1 style={{ color: 'var(--text-primary)', fontSize: '18px', letterSpacing: '-0.5px' }}>{title || 'HighStation'}</h1>
                 </div>
             </div>
