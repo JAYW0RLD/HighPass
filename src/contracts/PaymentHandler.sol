@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title PaymentHandler
-/// @notice Production-grade payment handler with all security features
+/// @notice Production-grade payment handler with all security features and flexible parameters
 contract PaymentHandler {
     address public admin;
     
@@ -15,13 +15,15 @@ contract PaymentHandler {
     // Pausable
     bool public paused;
     
-    // Minimum payment to prevent precision loss
-    uint256 public constant MIN_PAYMENT = 10000 wei; // Ensures fee >= 5 wei
+    // Configurable Parameters
+    uint256 public minPayment = 10000 wei; // Default: 10000 wei
+    uint256 public safetyCapBps = 2000;    // Default: 20% (2000 bps)
     
     event PaymentProcessed(address indexed sender, uint256 indexed serviceId, uint256 amount, uint256 fee);
     event FeeWithdrawn(address indexed admin, uint256 amount);
     event ServiceProviderWithdrawn(uint256 amount);
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event ParamsUpdated(uint256 minPayment, uint256 safetyCapBps);
     event Paused(address indexed by);
     event Unpaused(address indexed by);
 
@@ -75,19 +77,31 @@ contract PaymentHandler {
         emit AdminChanged(previousAdmin, newAdmin);
     }
 
+    /// @notice Update contract parameters
+    /// @dev SECURITY: Hard caps applied to prevent abuse even by admin
+    function setParams(uint256 _minPayment, uint256 _safetyCapBps) external onlyAdmin {
+        require(_minPayment > 0, "Min payment must be > 0");
+        require(_safetyCapBps <= 5000, "Cap cannot exceed 50%"); // Hard limit 50%
+        
+        minPayment = _minPayment;
+        safetyCapBps = _safetyCapBps;
+        
+        emit ParamsUpdated(_minPayment, _safetyCapBps);
+    }
+
     /// @notice Pay for service with dynamic fee (gas + margin)
     /// @dev platformFee is calculated off-chain: estimatedGas + (amount * marginRate)
     /// @param serviceId Service identifier
     /// @param platformFee Expected platform fee (gas cost + margin)
     function pay(uint256 serviceId, uint256 platformFee) external payable nonReentrant whenNotPaused {
-        require(msg.value >= MIN_PAYMENT, "Payment too small (min 10000 wei)");
+        require(msg.value >= minPayment, "Payment too small");
         require(platformFee > 0, "Platform fee must be positive");
         require(platformFee < msg.value, "Fee cannot exceed payment");
         
-        // SECURITY: Enforce maximum fee cap (20% ceiling)
+        // SECURITY: Enforce maximum fee cap (configurable up to 50%)
         // Protects users from excessive fees even if backend is compromised
-        uint256 maxAllowedFee = (msg.value * 2000) / 10000; // 20%
-        require(platformFee <= maxAllowedFee, "Fee exceeds 20% safety cap");
+        uint256 maxAllowedFee = (msg.value * safetyCapBps) / 10000; 
+        require(platformFee <= maxAllowedFee, "Fee exceeds safety cap");
 
         // Effects: Update state before external calls
         totalAdminFees += platformFee;

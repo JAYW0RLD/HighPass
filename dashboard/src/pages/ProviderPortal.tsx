@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 import Header from '../components/Header';
+import { SkeletonList } from '../components/Skeleton';
+import { NoServicesState } from '../components/EmptyState';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import '../App.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -42,6 +46,21 @@ function ProviderPortal() {
     const [editingService, setEditingService] = useState<Service | null>(null);
     const [verificationData, setVerificationData] = useState<{ token: string; instructions: any } | null>(null);
     const [verifying, setVerifying] = useState(false);
+
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        action: () => Promise<void>;
+        isDangerous?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        action: async () => { },
+        isDangerous: false
+    });
 
 
 
@@ -106,8 +125,9 @@ function ProviderPortal() {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setVerificationData(data);
+            toast.success('Verification token generated');
         } catch (err: any) {
-            alert(`Error: ${err.message}`);
+            toast.error(err.message);
         }
     };
 
@@ -130,12 +150,12 @@ function ProviderPortal() {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            alert('Domain Verified Successfully!');
+            toast.success('Domain verified successfully! 🎉', { duration: 5000 });
             setEditingService(null);
             setVerificationData(null);
             fetchServices();
         } catch (err: any) {
-            alert(`Verification Failed: ${err.message}`);
+            toast.error(`Verification failed: ${err.message}`);
         } finally {
             setVerifying(false);
         }
@@ -156,11 +176,11 @@ function ProviderPortal() {
 
             if (error) throw error;
 
-            alert('Service Created!');
+            toast.success('Service created successfully! 🚀', { icon: '✨' });
             setNewService({ name: '', slug: '', upstream_url: '', price_wei: '0', min_grade: 'F', trust_seed_enabled: false, initial_debt_limit: 0.1 });
             fetchServices();
         } catch (err: any) {
-            alert(`Error: ${err.message}`);
+            toast.error(`Failed to create service: ${err.message}`);
         }
     };
 
@@ -184,77 +204,89 @@ function ProviderPortal() {
 
             if (error) throw error;
 
-            alert('Service Updated!');
+            toast.success('Service updated successfully!');
             setEditingService(null);
             fetchServices();
         } catch (err: any) {
-            alert(`Error updating service: ${err.message}`);
+            toast.error(`Failed to update service: ${err.message}`);
         }
     };
 
-    const handleDeleteService = async () => {
+    const handleDeleteService = () => {
         if (!editingService) return;
-        if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) return;
 
-        try {
-            const { error } = await supabase
-                .from('services')
-                .delete()
-                .eq('id', editingService.id);
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Service',
+            message: `Are you sure you want to delete ${editingService.name}? This action cannot be undone.`,
+            isDangerous: true,
+            action: async () => {
+                try {
+                    const { error } = await supabase
+                        .from('services')
+                        .delete()
+                        .eq('id', editingService.id);
 
-            if (error) throw error;
+                    if (error) throw error;
 
-            alert('Service Deleted!');
-            setEditingService(null);
-            fetchServices();
-        } catch (err: any) {
-            alert(`Error deleting service: ${err.message}`);
-        }
+                    toast.success('Service deleted');
+                    setEditingService(null);
+                    fetchServices();
+                } catch (err: any) {
+                    toast.error(`Failed to delete service: ${err.message}`);
+                }
+            }
+        });
     };
 
-    const createDemoService = async () => {
+    const createDemoService = () => {
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
         const demoUpstreamUrl = `${apiOrigin}/api/demo/echo`;
 
         const existingDemo = services.find(s => s.upstream_url === demoUpstreamUrl);
         if (existingDemo) {
-            alert('You already have a Demo Echo Service deployed.');
+            toast.error('You already have a Demo Echo Service deployed.');
             return;
         }
 
-        if (!confirm('Deploy a Demo Echo Service for testing?')) return;
+        setConfirmModal({
+            isOpen: true,
+            title: 'Deploy Demo Service',
+            message: 'This will deploy a Demo Echo Service to test your provider setup. Continue?',
+            action: async () => {
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) return;
 
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+                    const slug = `demo-${Math.random().toString(36).substring(7)}`;
 
-            const slug = `demo-${Math.random().toString(36).substring(7)}`;
+                    const { error } = await supabase.from('services').insert({
+                        provider_id: user.id,
+                        name: 'Demo Echo Service',
+                        slug: slug,
+                        upstream_url: demoUpstreamUrl,
+                        price_wei: '10000000000000000', // 0.01 CRO
+                        min_grade: 'F'
+                    });
 
-            const { error } = await supabase.from('services').insert({
-                provider_id: user.id,
-                name: 'Demo Echo Service',
-                slug: slug,
-                upstream_url: demoUpstreamUrl,
-                price_wei: '10000000000000000', // 0.01 CRO
-                min_grade: 'F'
-            });
-
-            if (error) throw error;
-            alert('Demo Service Deployed!');
-            fetchServices();
-        } catch (err: any) {
-            alert(`Error: ${err.message}`);
-        }
+                    if (error) throw error;
+                    toast.success('Demo service deployed! 🎉');
+                    fetchServices();
+                } catch (err: any) {
+                    toast.error(`Failed to deploy demo: ${err.message}`);
+                }
+            }
+        });
     };
 
     // --- Sub-Components ---
 
     const ServicesTab = () => (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: '2rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="data-section" style={{ padding: '1.5rem' }}>
-                    <h2 style={{ marginTop: 0, fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Register New Service</h2>
-                    <form onSubmit={handleCreateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+        <div className="grid grid-cols-3 gap-2 service-grid-layout">
+            <div className="flex flex-col gap-1">
+                <div className="card p-15">
+                    <h2 className="section-header">Register New Service</h2>
+                    <form onSubmit={handleCreateService} className="flex flex-col gap-1 mt-1">
                         <div>
                             <label className="metric-label">Service Name</label>
                             <input
@@ -369,30 +401,33 @@ function ProviderPortal() {
                 </div>
             </div>
 
-            <div className="data-section" style={{ padding: '1.5rem' }}>
-                <h2 style={{ marginTop: 0, fontSize: '1.2rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>My Services</h2>
-                {loading ? <p>Loading...</p> : (
-                    <div className="service-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+            <div className="card p-15">
+                <h2 className="section-header">My Services</h2>
+                {loading ? (
+                    <SkeletonList count={3} />
+                ) : services.length === 0 ? (
+                    <NoServicesState />
+                ) : (
+                    <div className="flex flex-col gap-1 mt-1">
                         {services.map(svc => (
-                            <div key={svc.id} className="metric-card" style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem' }}>{svc.name}</h3>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div key={svc.id} className="card card-hover card-compact">
+                                <div className="flex justify-between items-center mb-05">
+                                    <h3 className="section-title">{svc.name}</h3>
+                                    <div className="flex items-center gap-05">
                                         <span className={`status-badge ${svc.upstream_url.includes('/api/demo/echo') ? 'verified' : 'pending'}`}>
                                             {svc.upstream_url.includes('/api/demo/echo') ? 'Verified' : 'Pending Verification'}
                                         </span>
                                         <button onClick={() => setEditingService(svc)} className="btn-secondary" style={{ padding: '8px 20px', fontSize: '13px' }}>Manage</button>
                                     </div>
                                 </div>
-                                <code style={{ display: 'block', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>/gatekeeper/{svc.slug}/resource</code>
-                                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <code className="text-blue" style={{ display: 'block', marginBottom: '0.5rem' }}>/gatekeeper/{svc.slug}/resource</code>
+                                <div className="flex gap-1 text-sm text-secondary">
                                     <span>Target: {svc.upstream_url}</span>
                                     <span>•</span>
                                     <span>Price: {(Number(svc.price_wei) / 1e18).toFixed(4)} CRO</span>
                                 </div>
                             </div>
                         ))}
-                        {services.length === 0 && <p>No services registered yet.</p>}
                     </div>
                 )}
             </div>
@@ -465,38 +500,81 @@ const data = await res.json();`}
         const isDemo = editingService.upstream_url.includes('/api/demo/echo');
 
         return (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                <div className="data-section" style={{ padding: '1.5rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Manage: {editingService.name}</h2>
-                        <button onClick={() => { setEditingService(null); setVerificationData(null); }} style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'gray' }}>&times;</button>
+            <div className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+            }}>
+                <div className="card p-15" style={{ width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div className="flex justify-between items-center mb-15">
+                        <h2 className="section-title text-lg">Manage: {editingService.name}</h2>
+                        <button
+                            onClick={() => { setEditingService(null); setVerificationData(null); }}
+                            className="text-secondary hover:text-primary text-xl"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                            &times;
+                        </button>
                     </div>
                     {!isDemo && (
-                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,122,255,0.05)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                            <h3 style={{ marginTop: 0, fontSize: '0.9rem' }}>🛡️ Domain Verification</h3>
+                        <div className="mb-15 p-1 rounded bg-secondary border border-border">
+                            <h3 className="text-sm font-semibold mb-05">🛡️ Domain Verification</h3>
                             {!verificationData ? (
-                                <button onClick={handleGenerateToken} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Begin Verification</button>
+                                <button onClick={handleGenerateToken} className="btn-secondary text-sm">Begin Verification</button>
                             ) : (
-                                <div style={{ fontSize: '0.8rem' }}>
-                                    <p>Upload token to: <code>{verificationData.instructions.path}</code></p>
-                                    <code style={{ display: 'block', padding: '0.5rem', background: 'var(--bg-primary)', margin: '0.5rem 0' }}>{verificationData.token}</code>
-                                    <button onClick={handleVerifyDomain} disabled={verifying} className="btn-primary" style={{ width: '100%' }}>{verifying ? 'Verifying...' : 'Check Verification'}</button>
+                                <div className="text-sm">
+                                    <p className="mb-05">Upload token to: <code className="bg-primary px-05 py-1 rounded">{verificationData.instructions.path}</code></p>
+                                    <code className="block p-05 bg-primary rounded mb-05 break-all">{verificationData.token}</code>
+                                    <button onClick={handleVerifyDomain} disabled={verifying} className="btn-primary w-full">
+                                        {verifying ? 'Verifying...' : 'Check Verification'}
+                                    </button>
                                 </div>
                             )}
                         </div>
                     )}
-                    <form onSubmit={handleUpdateService} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} placeholder="Name" className="form-control" required />
-                        <input type="text" value={editingService.slug} onChange={e => setEditingService({ ...editingService, slug: e.target.value })} placeholder="Slug" className="form-control" required />
-                        <input type="text" value={editingService.upstream_url} onChange={e => setEditingService({ ...editingService, upstream_url: e.target.value })} placeholder="Target URL" className="form-control" required disabled={isDemo} />
-                        <input type="number" step="any" value={Number(editingService.price_wei) / 1e18} onChange={e => setEditingService({ ...editingService, price_wei: (parseFloat(e.target.value) * 1e18).toLocaleString('fullwide', { useGrouping: false }) })} placeholder="Price (CRO)" className="form-control" required />
+                    <form onSubmit={handleUpdateService} className="flex flex-col gap-1">
+                        <input
+                            type="text"
+                            value={editingService.name}
+                            onChange={e => setEditingService({ ...editingService!, name: e.target.value })}
+                            placeholder="Name"
+                            className="form-control"
+                            required
+                        />
+                        <input
+                            type="text"
+                            value={editingService.slug}
+                            onChange={e => setEditingService({ ...editingService!, slug: e.target.value })}
+                            placeholder="Slug"
+                            className="form-control"
+                            required
+                        />
+                        <input
+                            type="text"
+                            value={editingService.upstream_url}
+                            onChange={e => setEditingService({ ...editingService!, upstream_url: e.target.value })}
+                            placeholder="Target URL"
+                            className="form-control"
+                            required
+                            disabled={isDemo}
+                        />
+                        <input
+                            type="number"
+                            step="any"
+                            value={Number(editingService.price_wei) / 1e18}
+                            onChange={e => setEditingService({ ...editingService!, price_wei: (parseFloat(e.target.value) * 1e18).toLocaleString('fullwide', { useGrouping: false }) })}
+                            placeholder="Price (CRO)"
+                            className="form-control"
+                            required
+                        />
 
-                        <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                            <label className="metric-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                        <div className="bg-secondary p-1 rounded">
+                            <label className="metric-label flex items-center gap-05 cursor-pointer mb-05">
                                 <input
                                     type="checkbox"
                                     checked={(editingService as any).trust_seed_enabled || false}
-                                    onChange={e => setEditingService({ ...editingService, trust_seed_enabled: e.target.checked } as any)}
+                                    onChange={e => setEditingService({ ...editingService!, trust_seed_enabled: e.target.checked } as any)}
                                 />
                                 Enable Trust Seed
                             </label>
@@ -507,15 +585,15 @@ const data = await res.json();`}
                                         type="number"
                                         step="0.01"
                                         value={(editingService as any).initial_debt_limit || 0.1}
-                                        onChange={e => setEditingService({ ...editingService, initial_debt_limit: parseFloat(e.target.value) } as any)}
+                                        onChange={e => setEditingService({ ...editingService!, initial_debt_limit: parseFloat(e.target.value) } as any)}
                                         className="form-control"
                                     />
                                 </div>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button type="submit" className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
-                            <button type="button" onClick={handleDeleteService} className="btn-secondary" style={{ flex: 0.5, color: 'red' }}>Delete</button>
+                        <div className="flex gap-1">
+                            <button type="submit" className="btn-primary flex-1">Save Changes</button>
+                            <button type="button" onClick={handleDeleteService} className="btn-danger flex-05">Delete</button>
                         </div>
                     </form>
                 </div>
@@ -536,6 +614,17 @@ const data = await res.json();`}
             {activeTab === 'integration' && <IntegrationTab />}
             {activeTab === 'revenue' && <RevenueTab />}
             <EditModal />
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                isDangerous={confirmModal.isDangerous}
+                onConfirm={async () => {
+                    await confirmModal.action();
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+            />
             <footer className="footer" style={{ marginTop: '4rem' }}>
                 <span>Provider Portal</span>
                 <span>•</span>

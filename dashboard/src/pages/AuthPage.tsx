@@ -30,41 +30,116 @@ function AuthPage() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '40px 16px',
-            backgroundColor: 'var(--bg-secondary)'
+            background: 'radial-gradient(circle at top right, #1a1d21, #0f0f0f)',
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '24px', fontWeight: '300', letterSpacing: '-0.5px' }}>Sign in with GitHub</h1>
+            {/* Ambient Background Effects */}
+            <div style={{
+                position: 'absolute',
+                top: '-20%',
+                right: '-10%',
+                width: '600px',
+                height: '600px',
+                background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+            }} />
+            <div style={{
+                position: 'absolute',
+                bottom: '-20%',
+                left: '-10%',
+                width: '500px',
+                height: '500px',
+                background: 'radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, rgba(0, 0, 0, 0) 70%)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+            }} />
+
+            <div className="card p-2" style={{
+                width: '100%',
+                maxWidth: '420px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}>
+                <div className="text-center mb-2">
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        background: 'linear-gradient(135deg, var(--accent-blue), var(--crypto-purple))',
+                        borderRadius: '12px',
+                        margin: '0 auto 1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '24px',
+                        boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+                    }}>
+                        H
+                    </div>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>
+                        Welcome to HighStation
+                    </h1>
+                    <p style={{ color: '#9ca3af', fontSize: '14px' }}>
+                        The Agent-First Crypto API Gateway
+                    </p>
+                </div>
+
+                <div style={{ padding: '0 1rem' }}>
+                    <Auth
+                        supabaseClient={supabase}
+                        appearance={{
+                            theme: ThemeSupa,
+                            variables: {
+                                default: {
+                                    colors: {
+                                        brand: '#6366f1',
+                                        brandAccent: '#4f46e5',
+                                        inputBackground: 'rgba(0, 0, 0, 0.2)',
+                                        inputText: 'white',
+                                        inputBorder: 'rgba(255, 255, 255, 0.1)',
+                                        inputBorderFocus: '#6366f1',
+                                        inputLabelText: '#9ca3af',
+                                    },
+                                    radii: {
+                                        borderRadiusButton: '12px',
+                                        buttonBorderRadius: '12px',
+                                        inputBorderRadius: '12px',
+                                    },
+                                    space: {
+                                        inputPadding: '12px 16px',
+                                        buttonPadding: '12px 16px',
+                                    }
+                                }
+                            },
+                            style: {
+                                button: {
+                                    fontSize: '15px',
+                                    fontWeight: '600',
+                                    color: 'white'
+                                },
+                                anchor: {
+                                    color: '#9ca3af',
+                                    fontSize: '14px'
+                                },
+                                divider: {
+                                    background: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }}
+                        providers={['github']}
+                        onlyThirdPartyProviders
+                    />
+                </div>
             </div>
 
-            <div className="data-section" style={{ width: '100%', maxWidth: '340px', padding: '24px', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)', border: 'none' }}>
-                <Auth
-                    supabaseClient={supabase}
-                    appearance={{
-                        theme: ThemeSupa,
-                        variables: {
-                            default: {
-                                colors: {
-                                    brand: '#0f0f0f',
-                                    brandAccent: '#272727',
-                                    inputBackground: 'var(--bg-primary)',
-                                    inputText: 'var(--text-primary)',
-                                    inputBorder: 'var(--border)',
-                                    inputBorderFocus: '#065fd4',
-                                    inputLabelText: 'var(--text-primary)',
-                                },
-                                radii: {
-                                    borderRadiusButton: '20px',
-                                    buttonBorderRadius: '20px',
-                                    inputBorderRadius: '12px',
-                                },
-                            }
-                        }
-                    }}
-                    providers={['github']}
-                    onlyThirdPartyProviders
-                />
-            </div>
+            <p style={{ marginTop: '2rem', color: '#6b7280', fontSize: '13px' }}>
+                Powered by HighPass Protocol
+            </p>
         </div>
     );
 }

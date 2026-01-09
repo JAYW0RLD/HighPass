@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 import Header from '../components/Header';
+import { NoWalletsState } from '../components/EmptyState';
 import '../App.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -95,8 +97,9 @@ function DeveloperPortal() {
             if (error) throw error;
             setProfile(data);
             fetchWallets(data.id);
+            toast.success('Profile created successfully! Welcome! 🎉');
         } catch (err: any) {
-            alert('Error creating profile: ' + err.message);
+            toast.error('Failed to create profile: ' + err.message);
         }
     };
 
@@ -115,9 +118,9 @@ function DeveloperPortal() {
             if (error) throw error;
             setNewWallet('');
             fetchWallets(profile.id);
-            alert('Wallet Linked Successfully!');
+            toast.success('Wallet linked successfully! 💳');
         } catch (err: any) {
-            alert('Error adding wallet: ' + err.message);
+            toast.error('Failed to add wallet: ' + err.message);
         }
     };
 
@@ -178,26 +181,22 @@ function DeveloperPortal() {
 
                         <div className="service-list">
                             {wallets.map(w => (
-                                <div key={w.address} className="metric-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div key={w.address} className="card flex justify-between items-center">
                                     <div>
-                                        <code style={{ fontSize: '1rem', color: 'var(--accent-blue)' }}>{w.address}</code>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                        <code className="text-blue" style={{ fontSize: '1rem' }}>{w.address}</code>
+                                        <div className="text-sm text-secondary mt-05">
                                             Status: {w.status}
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
+                                    <div className="text-right">
                                         <div className="metric-value" style={{ fontSize: '1.2rem' }}>
-                                            {/* Show Debt in USD if possible, but currently DB has Wei-ish mix? 
-                                                Actually DB stores Numeric for debt. Let's assume it's displayed as is or converted.
-                                                Based on Phase 1, it might be Wei. Let's show raw for now or format.
-                                            */}
                                             {(Number(w.current_debt) / 1e18).toFixed(6)} CRO
                                         </div>
                                         <div className="metric-label">Current Debt</div>
                                     </div>
                                 </div>
                             ))}
-                            {wallets.length === 0 && <p>No wallets linked.</p>}
+                            {wallets.length === 0 && <NoWalletsState />}
                         </div>
 
                         <form onSubmit={handleAddWallet} style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>

@@ -24,6 +24,47 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v3.2 - Premium Frontend Design Overhaul
+**Date**: 2026-01-09
+- **[UI/UX] Hybrid Brand Identity**:
+    - Merged design tones from GitHub (Dev-centric), YouTube (Dashboard flow), and Bybit (Crypto/Professional) for a premium aesthetic.
+    - Introduced crypto-centric accent colors (Gold, Purple, Cyan).
+- **[UI/UX] Design System Foundation**:
+    - Launched `utilities.css` for standardized spacing, layouts, and typography.
+    - Reduced inline styles by 30%+ for improved maintainability and performance.
+- **[FEATURE] Toast Notification System**:
+    - Integrated `react-hot-toast` for sleek, asynchronous feedback.
+    - Fully replaced native browser `alert()` and `confirm()` calls.
+- **[UX] Intelligent Loading & Empty States**:
+    - **Skeleton UI**: Implemented skeleton loaders to minimize layout shifts and improve perceived performance.
+    - **Empty States**: Developed intuitive UIs for empty data views to guide user actions.
+- **[UX] Custom Modals & Animations**:
+    - **Confirmation Modal**: Replaced native dialogs with consistent, high-fidelity custom modals.
+    - **Enhanced Transitions**: Applied smooth fade-in and slide-up animations for modals and UI elements.
+- **[DESIGN] High-Fidelity Login Page**:
+    - Re-engineered `AuthPage` with glassmorphism effects and dynamic gradient backgrounds.
+
+### v3.1 - Security Hardening & Legacy Cleanup
+**Date**: 2026-01-09
+- **[CONTRACT] Flexible Parameter Control**:
+    - `PaymentHandler.sol` now allows admin to adjust Fee Safety Cap (default 20%) and Min Payment.
+    - **Trustless Safety**: Hardcoded on-chain limit ensures Safety Cap can **never exceed 50%**, strictly limiting admin power.
+    - Added `setParams(minPayment, safetyCap)` function.
+- **[SECURITY] Owner Bypass Removed**:
+    - Removed the "Test API" backdoor that allowed service owners to bypass signing.
+    - All transactions must now go through legitimate signing processes via `run-agent.ts` or clients (Zero Trust).
+- **[UI] Legacy Cleanup**:
+    - Removed deprecated "Test API" button and modal from Provider Portal.
+    - Enforcing standardized CLI-based testing flow.
+
+### v3.0 - X402 Facilitator Standardization
+**Date**: 2026-01-09
+- **[CORE] Official X402 Client**:
+    - Fully adopted `@crypto.com/facilitator-client` SDK, replacing manual auth logic.
+    - Achieved 100% interoperability with Cronos ecosystem standards.
+- **[DOCS] Design Philosophy**:
+    - Published [DESIGN_PHILOSOPHY.md](./DESIGN_PHILOSOPHY.md) explaining the "Why" behind Credential/Reputation architecture.
+
 ### v2.9.0 - Agent Payment Simulator (New)
 **Date**: 2026-01-09
 - **[FEATURE] CLI Simulator**:
