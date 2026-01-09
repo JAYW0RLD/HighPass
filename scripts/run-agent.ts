@@ -41,11 +41,10 @@ function clearScreen() {
 function printHeader() {
     clearScreen();
     console.log(`${CYAN}${BOLD}`);
-    console.log(`   HighStation Agent Simulator v2.4`);
+    console.log(`   HighStation Agent Simulator v2.5`);
     console.log(`${RESET}`);
-    console.log(`${DIM}  Real-World Testnet Edition${RESET}\n`);
+    console.log(`${DIM}  Generic Agent Client${RESET}\n`);
 
-    // Grade Color Logic
     let gradeColor = DIM;
     if (currentGrade === 'A') gradeColor = GREEN;
     if (currentGrade === 'B') gradeColor = YELLOW;
@@ -89,38 +88,47 @@ async function sendRequest() {
         return;
     }
 
-    if (targetUrl.includes('highstation-demo.vercel.app') || targetUrl.includes('example.com')) {
-        console.log(`\n${RED}⚠️  INVALID TARGET: This is a placeholder URL!${RESET}`);
-        console.log(`   Please set your ACTUAL deployed URL using Option [3].`);
-        return;
+    // 1. SELECT METHOD
+    console.log(`\n${CYAN}📝 HTTP METHOD:${RESET}`);
+    console.log(`  [1] GET (Default)`);
+    console.log(`  [2] POST`);
+    const methodChoice = await ask(`Select [1/2]: `);
+    const method = methodChoice.trim() === '2' ? 'POST' : 'GET';
+
+    // 2. INPUT BODY (If POST)
+    let data = {};
+    if (method === 'POST') {
+        console.log(`\n${CYAN}📦 REQUEST BODY (JSON):${RESET}`);
+        const jsonInput = await ask(`Enter JSON (Press Enter for empty {}): `);
+        try {
+            data = jsonInput.trim() ? JSON.parse(jsonInput) : {};
+        } catch (e) {
+            console.log(`${RED}❌ Invalid JSON! Sending empty body.${RESET}`);
+            data = {};
+        }
     }
 
     console.log(`\n${YELLOW}📡 INITIATING API REQUEST SEQUENCE...${RESET}`);
 
+    // Auth Headers
     const timestamp = Date.now().toString();
     const nonce = Math.floor(Math.random() * 1000000).toString();
     const message = `Identify as ${agentAccount.address} at ${timestamp} with nonce ${nonce}`;
 
-    console.log(`${DIM}   ├─ Gen Nonce:${RESET} ${nonce}`);
-    console.log(`${DIM}   ├─ Signing...${RESET}`);
+    console.log(`${DIM}   ├─ Nonce:${RESET} ${nonce}`);
+    console.log(`${DIM}   ├─ Signing Identity...${RESET}`);
     const signature = await agentAccount.signMessage({ message });
 
-    // SMART URL HANDLING
-    let endpoint = targetUrl;
-    // If the user provided a Base URL (no path), modify it.
-    // Heuristic: If it doesn't contain "/gatekeeper", assume it's a base URL and default to echo-service.
-    if (!targetUrl.includes('/gatekeeper')) {
-        const cleanBaseUrl = targetUrl.replace(/\/$/, '');
-        endpoint = `${cleanBaseUrl}/gatekeeper/echo-service/resource`;
-        console.log(`${YELLOW}ℹ️  Base URL detected. Defaulting to Echo Service.${RESET}`);
-    }
-
-    console.log(`${DIM}   └─ Sending to:${RESET} ${endpoint}`);
+    console.log(`${DIM}   └─ Calling:${RESET} ${method} ${targetUrl}`);
 
     try {
         const startTime = Date.now();
-        const response = await axios.get(endpoint, {
+        const response = await axios({
+            method: method,
+            url: targetUrl,
+            data: data,
             headers: {
+                'Content-Type': 'application/json',
                 'x-agent-id': agentAccount.address,
                 'x-agent-signature': signature,
                 'x-auth-timestamp': timestamp,
@@ -129,13 +137,15 @@ async function sendRequest() {
         });
         const latency = Date.now() - startTime;
 
-        // Update Grade from Headers
+        // Update Grade
         if (response.headers['x-agent-grade']) {
             currentGrade = response.headers['x-agent-grade'];
         }
 
         console.log(`\n${GREEN}✅ ACCESS GRANTED${RESET} ${DIM}(${latency}ms)${RESET}`);
+        console.log(`${DIM}────────────────────────────────────────${RESET}`);
         console.log(response.data);
+        console.log(`${DIM}────────────────────────────────────────${RESET}`);
 
         if (response.data._gatekeeper?.optimistic) {
             console.log(`${YELLOW}💳 Payment: POSTPAID (Optimistic Mode)${RESET}`);
@@ -146,16 +156,17 @@ async function sendRequest() {
     } catch (error: any) {
         console.log(`\n${RED}⛔ REQUEST FAILED${RESET}`);
 
-        // Update Grade even on failure if header exists
         if (error.response && error.response.headers['x-agent-grade']) {
             currentGrade = error.response.headers['x-agent-grade'];
         }
 
         if (error.response) {
-            console.log(`${RED}[${error.response.status}] ${JSON.stringify(error.response.data.error || error.response.data)}${RESET}`);
-            if (error.response.status === 404) {
-                console.log(`${YELLOW}💡 Check your URL structure.${RESET}`);
-                console.log(`   Script tried to access: ${endpoint}`);
+            console.log(`${RED}[${error.response.status}]${RESET} ${JSON.stringify(error.response.data)}`);
+            if (error.response.status === 402) {
+                console.log(`${YELLOW}💡 Payment Required.${RESET}`);
+                console.log(`   Insufficient funds or credit.`);
+            } else if (error.response.status === 404) {
+                console.log(`${YELLOW}💡 Check your URL. It must be the FULL API Endpoint.${RESET}`);
             }
         } else {
             console.log(`${RED}${error.message}${RESET}`);
@@ -169,12 +180,12 @@ async function main() {
     if (process.argv[2]) {
         targetUrl = process.argv[2];
     } else {
-        // Simple Prompt without Local option
         console.log(`\n${YELLOW}👋 Welcome to HighStation Agent Simulator!${RESET}`);
-        const input = await ask(`\n👉 Enter your Vercel URL (Base or Full Endpoint): `);
+        console.log(`To verify a service, enter the ${BOLD}FULL API Endpoint URL${RESET}.`);
+        console.log(`${DIM}(Get this from the Provider Portal -> My Services -> Endpoint)${RESET}`);
+
+        const input = await ask(`\n👉 Enter Full URL: `);
         targetUrl = input.trim();
-        // Fallback for lazy developers (hidden)
-        if (targetUrl === 'local') targetUrl = 'http://localhost:3000';
     }
 
     while (true) {
@@ -192,16 +203,13 @@ async function main() {
         switch (choice.trim()) {
             case '1': await fetchBalance(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '2': await sendRequest(); await ask(`\n${DIM}Press ENTER...${RESET}`); break;
-            case '3':
-                targetUrl = (await ask(`\nEnter new URL: `)).trim(); break;
+            case '3': targetUrl = (await ask(`\nEnter new URL: `)).trim(); break;
             case '4':
                 console.log(`\n🔗 Faucet: https://cronos.org/faucet\n🆔 Address: ${agentAccount.address}`);
-                console.log(`${DIM}* We cannot distribute Testnet Tokens directly.${RESET}`);
                 await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '5':
                 if ((await ask(`Reset Identity? (y/N): `)).toLowerCase() === 'y') {
                     fs.unlinkSync(WALLET_FILE);
-                    console.log(`Reset complete. Restart required.`);
                     process.exit(0);
                 }
                 break;
