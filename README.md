@@ -1,83 +1,192 @@
-# ⚡ HighStation
+# HighStation - AI Agent Payment Gateway 🚀
 
-**The Autonomous Payment Gateway for AI Agents**
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Production](https://img.shields.io/badge/Status-Live-success)](https://highstation-dashboard.vercel.app/)
 
-![Security Status](https://img.shields.io/badge/Security-10%2F10-brightgreen?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v3.7-blue?style=flat-square)
-![Production Ready](https://img.shields.io/badge/Production-Ready-success?style=flat-square)
+> **[한국어 문서 보기 →](./README_KR.md)**
 
-HighStation은 AI 에이전트 간의 **초고속, 무자각(Invisible) 결제**를 가능하게 하는 Layer 2 Payment Gateway입니다.
-복잡한 지갑 서명, 후불 신용 평가, 자동 정산(Auto-Settlement)을 프로토콜 레벨에서 처리하여, 에이전트가 "돈 걱정 없이" 업무에만 집중할 수 있게 합니다.
+**X402 Protocol** | **Reputation-Based Credit** | **Pay Later Model**
 
-> **🔒 Security**: Red Team 전면 감사 완료 및 [종합 보안 강화](./docs/security/SECURITY_FINAL_V2.md) 적용 (v3.7)
+An autonomous "use now, pay later" platform for AI agents. Access APIs instantly based on credit score, settle debts automatically when thresholds are reached.
 
----
-
-## 🚀 Quick Start
-
-역할에 맞는 가이드를 따라 즉시 시작해보세요.
-
-| 🏢 **For Providers** (API 공급자) | 🤖 **For Users** (에이전트 개발자) |
-| :--- | :--- |
-| **1. 대시보드 시작하기** <br> 프로바이더 포털에 가입하고 지갑을 연결합니다.<br> 👉 [**Dashboard 접속**](https://highstation-dashboard.vercel.app) | **1. 대시보드 시작하기** <br> 개발자 계정을 생성하고 API 키를 발급받습니다.<br> 👉 [**Dashboard 접속**](https://highstation-dashboard.vercel.app) |
-| **2. API 등록 (내 서비스 or 데모)** <br> 클릭 한 번으로 `Demo API`를 띄우거나 내 서버를 등록합니다.<br> 📖 [**공급자 가이드 보기**](./docs/guides/PROVIDER_GUIDE_KR.md) | **2. 테스트 대상(Target) 확보** <br> 테스트를 위해 `Demo API`를 먼저 발급받아 타겟을 확보합니다.<br> 📖 [**테스트 API 발급 가이드**](./docs/guides/PROVIDER_GUIDE_KR.md#방법-a-데모-api로-체험하기-recommended) |
-| **3. 내 API 호출 테스트** <br> 내 터미널에서 `Agent Simulator`로 내 API를 호출해 봅니다.<br> 💻 [**CLI 시뮬레이터 가이드**](./docs/guides/AGENT_CLI_GUIDE_KR.md) | **3. 에이전트 코드 설정** <br> Python/Node.js 봇에 HighStation 결제 모듈을 장착합니다.<br> 👩‍💻 [**코드 연동 가이드**](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md) |
-| **4. 수익 창출 (Enjoy!)** <br> 전 세계 에이전트들이 당신의 API를 유료로 사용합니다. 💰 | **4. 연결 및 실행 (Enjoy!)** <br> 이제 원하는 유료 API를 자유롭게 호출하세요. 알아서 결제됩니다! 🚀 |
+> � **Live Demo**: [https://highstation-dashboard.vercel.app](https://highstation-dashboard.vercel.app)
 
 ---
 
-## 🏗️ Project Architecture
+## ⚡ Quick Start (3 Minutes)
 
-### 🛡️ Gatekeeper (Middleware)
-API 요청을 가로채 **"선 사용, 후 결제(Optimistic Payment)"**를 처리하는 핵심 엔진입니다.
-- **Credit Engine**: 에이전트의 온체인 신용도(Reputation)를 분석하여 `Grade A/B/C`를 부여합니다.
-- **Smart Credit Policy**: 한도의 80% 사용 시 경고를 보내고, 100% 도달 시 정산(Settlement)을 요청합니다.
+### 1️⃣ Visit Dashboard (Live Deployment)
+👉 **[HighStation Dashboard](https://highstation-dashboard.vercel.app)**
 
-### 🔌 X402 Protocol
-HTTP `402 Payment Required` 표준을 확장한 자율 정산 프로토콜입니다.
-- 에이전트는 402 에러를 받으면 **즉시 블록체인 트랜잭션**을 생성하고, 영수증(TxHash)을 들고 **자동 재시도(Retry)**합니다.
+### 2️⃣ Key Features
+- **Provider Portal**: GitHub OAuth login → Register APIs → Track revenue
+- **Services Page**: Browse all registered services (Public/Verified)
+- **Agent Simulator**: Test payment flow in terminal
 
-### 🎮 Agent Simulator
-복잡한 코딩 없이 터미널에서 바로 결제 흐름을 체험할 수 있는 CLI 도구입니다.
+### 3️⃣ Test with Agent Simulator
+Try the payment flow locally:
 ```bash
+# 1. Clone repository
+git clone https://github.com/JAYW0RLD/HighStation.git
+cd HighStation/highstation
+
+# 2. Install dependencies
+npm install
+
+# 3. Create agent wallet (first time only)
+npx ts-node scripts/create-agent.ts
+
+# 4. Call gated API (experience credit flow)
 npx ts-node scripts/run-agent.ts
 ```
 
-## 📚 Resources
-- [**📜 설계 철학 (Why HighStation?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - *Must-read*
-- [**🏰 프로젝트 히스토리 (History)**](./docs/PROJECT_HISTORY_KR.md) - *Changelog & Roadmap*
-- [**🤖 에이전트 연동 가이드**](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md)
-- [**🚀 배포 가이드**](./DEPLOYMENT_GUIDE_KR.md) - *Production Deployment*
-- [**🔒 보안 감사 리포트**](./docs/security/SECURITY_FINAL_V2.md) - *Security Certification*
-- [**English README**](./README_EN.md) (Coming Soon)
+**Expected Output**:
+```
+✅ Service: Demo Echo API
+✅ Status: 200 OK (Optimistic Payment)
+💰 Debt: 100000000000000 wei (0.0001 CRO)
+```
+
+### 4️⃣ How It Works
+```
+AI Agent (Grade A) → API Call → ✅ 200 OK (credit approved)
+                   → Debt += 0.1 CRO
+... 50 calls later ...
+                   → Debt >= $5 → 🔔 402 Payment Required
+                   → Auto Settlement (on-chain) → Debt = 0
+```
 
 ---
 
-## 🛠️ Local Development (Open Source Mode)
+## � Core Features
 
-이 프로젝트를 로컬에서 실행하거나 기여하고 싶으신가요?
+### Reputation-Based Credit Tiers (A-F)
+Automatic tier assignment based on on-chain reputation:
 
-1. **Clone & Install**
-   ```bash
-   git clone https://github.com/your-repo/highstation.git
-   cd highstation
-   npm install
-   ```
+| Tier | Reputation | Credit Limit | Policy |
+|------|-----------|--------------|--------|
+| **A** | 90+ | $5 | Instant access, pay later |
+| **B-C** | 70-89 | $1 | Small credit allowed |
+| **D-F** | 0-69 | $0 | Prepayment required |
 
-2. **Environment Setup**
-   - `.env.example`을 `.env`로 복사하고 Supabase URL을 입력합니다.
-   ```bash
-   cp .env.example .env
-   ```
+### X402 Protocol (Autonomous Settlement)
+Leveraging HTTP `402 Payment Required` for **automatic settlement**:
 
-3. **Database Setup**
-   - Supabase 대시보드의 SQL Editor에 포함된 [`schema.sql`](./schema.sql) 내용을 복사-붙여넣기하여 실행합니다.
-   - 이 스키마는 **100% Production Ready** 상태입니다. (Trigger, RLS, Indexes 포함)
+```http
+HTTP/1.1 402 Payment Required
+WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="240"
+```
 
-4. **Run Server**
-   ```bash
-   npm run dev
-   ```
+→ Agent auto-generates transaction → retries → success ✅
+
+### Optimistic Payment
+High-credit agents can **use first → pay later**:
+- 80% threshold → warning
+- 100% threshold → forced settlement
+- Settlement complete → limit restored
 
 ---
-© 2026 HighStation Team. Built for the Agentic Future. | Secured by Red Team Audit v3.7
+
+## 📚 Documentation
+
+### Essential Reading
+- [**Design Philosophy (Why?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - Why credit-based payments?
+- [**Project History**](./docs/PROJECT_HISTORY_KR.md) - Development timeline & roadmap
+- [**Security Audit**](./docs/security/) - Red Team comprehensive audit
+
+### Integration Guides
+- [AI Agent Integration](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md) - Python/Node.js SDK
+- [Agent CLI Simulator](./docs/guides/AGENT_CLI_GUIDE_KR.md) - Terminal testing
+- [Provider Guide](./docs/guides/PROVIDER_GUIDE_KR.md) - For API providers
+- [Deployment Guide](./DEPLOYMENT_GUIDE_KR.md) - Vercel + Supabase
+
+---
+
+## 🏗️ Tech Stack
+
+**Backend**: Node.js, Express, TypeScript  
+**Database**: Supabase (PostgreSQL + RLS)  
+**Blockchain**: Cronos zkEVM Testnet (Viem)  
+**Frontend**: React, Vite, Supabase Auth (GitHub OAuth)  
+**Deployment**: Vercel (Serverless Functions)  
+
+---
+
+## 🛠️ Local Development (For Contributors)
+
+To contribute or run locally:
+
+<details>
+<summary><strong>📖 Development Setup Guide (Click to expand)</strong></summary>
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/JAYW0RLD/HighStation.git
+cd HighStation/highstation
+npm install
+```
+
+### 2. Environment Setup
+```bash
+cp .env.example .env.local
+# Edit .env.local with:
+# - SUPABASE_URL & SERVICE_ROLE_KEY
+# - RPC_URL (https://testnet.zkevm.cronos.org)
+# - PAYMENT_HANDLER_ADDRESS
+# - IDENTITY_CONTRACT_ADDRESS
+```
+
+### 3. Database Setup
+```bash
+# Run schema.sql in Supabase SQL Editor
+# Or seed locally:
+npx ts-node scripts/seed-dev.ts
+```
+
+### 4. Start Backend
+```bash
+npm run dev
+# Backend: http://localhost:3000
+```
+
+### 5. (Optional) Start Frontend
+```bash
+cd dashboard
+npm install
+npm run dev
+# Frontend: http://localhost:5173
+```
+
+</details>
+
+---
+
+## 🔒 Security
+
+- ✅ **Red Team Audit Complete** (v3.7)
+- ✅ **15+ Vulnerabilities Fixed** (SSRF, Replay Attack, CSRF, etc.)
+- ✅ **Database RLS** + Nonce-based Replay Protection
+- ✅ **Helmet.js CSP** Applied
+
+**Security Score**: 10/10
+
+---
+
+## 📊 Production Deployment
+
+Currently live on **Vercel + Supabase**:
+- **Backend API**: Vercel Serverless Functions
+- **Frontend Dashboard**: Vercel Static Hosting
+- **Database**: Supabase Production (PostgreSQL)
+- **Blockchain**: Cronos zkEVM Testnet
+
+---
+
+## 🤝 Contributing
+
+Issues and Pull Requests are welcome!
+
+---
+
+© 2026 HighStation Team | Built for the Agentic Future

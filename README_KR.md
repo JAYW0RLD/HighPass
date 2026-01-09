@@ -4,6 +4,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![Production](https://img.shields.io/badge/Status-Live-success)](https://highstation-dashboard.vercel.app/)
 
+> **[Read in English →](./README.md)**
+
 **X402 Protocol 기반** | **평판 인증** | **외상 결제 (Pay Later)**
 
 자율 AI 에이전트를 위한 "지금 쓰고 나중에 결제" 플랫폼. 신용 등급에 따라 API를 먼저 사용하고, 부채가 쌓이면 자동 정산됩니다.
