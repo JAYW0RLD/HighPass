@@ -85,6 +85,28 @@ export class IdentityService {
     }
 
     async getCreditGrade(agentId: string): Promise<string> {
+        // v1.6.0: Check internal reputation first (backward compatible)
+        try {
+            const { getInternalReputation } = await import('../database/reputation');
+            const { GRADE_THRESHOLDS } = await import('../config/reputation');
+
+            const internalScore = await getInternalReputation(agentId);
+
+            if (internalScore !== null) {
+                // Use internal score-based grading
+                if (internalScore >= GRADE_THRESHOLDS.A) return 'A';
+                if (internalScore >= GRADE_THRESHOLDS.B) return 'B';
+                if (internalScore >= GRADE_THRESHOLDS.C) return 'C';
+                if (internalScore >= GRADE_THRESHOLDS.D) return 'D';
+                if (internalScore >= GRADE_THRESHOLDS.E) return 'E';
+                return 'F';
+            }
+        } catch (error) {
+            // Fallback to on-chain if internal reputation fails
+            console.warn('[IdentityService] Internal reputation unavailable, using on-chain');
+        }
+
+        // Fallback to on-chain reputation (existing logic)
         const score = await this.getReputation(agentId);
         if (score >= 90) return 'A';
         if (score >= 80) return 'B';
@@ -98,6 +120,27 @@ export class IdentityService {
         if (threshold < 0) throw new Error("Threshold cannot be negative");
         const score = await this.getReputation(agentId);
         return score >= threshold;
+    }
+
+    async getDebtLimit(agentId: string): Promise<bigint> {
+        // v1.6.0: Use centralized config (backward compatible)
+        try {
+            const { DEBT_LIMITS } = await import('../config/reputation');
+            const grade = await this.getCreditGrade(agentId);
+            return DEBT_LIMITS[grade as keyof typeof DEBT_LIMITS] || BigInt(0);
+        } catch (error) {
+            // Fallback to hardcoded values if config unavailable
+            const grade = await this.getCreditGrade(agentId);
+            const limits: Record<string, bigint> = {
+                'A': BigInt('5000000000000000000'),
+                'B': BigInt('3000000000000000000'),
+                'C': BigInt('1000000000000000000'),
+                'D': BigInt('500000000000000000'),
+                'E': BigInt('100000000000000000'),
+                'F': BigInt('0')
+            };
+            return limits[grade] || BigInt(0);
+        }
     }
 
     async verifySignature(agentId: string, signature: string, timestamp: string, nonce: string): Promise<boolean> {
