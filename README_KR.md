@@ -18,21 +18,32 @@
 👉 **[HighStation Dashboard](https://highstation-dashboard.vercel.app)** 방문
 
 ### 2️⃣ 핵심 기능 체험
-- **Provider Portal**: GitHub 로그인 → 내 API 등록 → 실시간 수익 확인
+- **Provider Portal**: GitHub OAuth 로그인 → 내 API 등록 → 실시간 수익 확인
 - **Services 페이지**: 등록된 서비스 목록 확인 (Public/Verified)
+- **Agent Simulator**: 터미널에서 실제 결제 플로우 체험
 
 ### 3️⃣ Agent Simulator로 결제 플로우 테스트
 로컬에서 실제 결제 흐름을 체험하려면:
 ```bash
-# 1. 저장소 클론 (최초 1회)
+# 1. 저장소 클론
 git clone https://github.com/JAYW0RLD/HighStation.git
 cd HighStation/highstation
 
-# 2. Agent 생성 (최초 1회)
+# 2. 의존성 설치
+npm install
+
+# 3. Agent 생성 (최초 1회)
 npx ts-node scripts/create-agent.ts
 
-# 3. Gated API 호출 (외상 결제 체험)
+# 4. Gated API 호출 (외상 결제 체험)
 npx ts-node scripts/run-agent.ts
+```
+
+**출력 예시**:
+```
+✅ Service: Demo Echo API
+✅ Status: 200 OK (Optimistic Payment)
+💰 Debt: 100000000000000 wei (0.0001 CRO)
 ```
 
 ### 4️⃣ 작동 원리
@@ -69,8 +80,8 @@ WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="
 
 ### Optimistic Payment
 신용 좋은 에이전트는 **먼저 사용 → 나중에 정산**:
-- 80% 도달 → 경고
-- 100% 도달 → 강제 정산
+- 한도의 80% 도달 → 경고
+- 한도의 100% 도달 → 강제 정산
 - 정산 완료 → 한도 복구
 
 ---
@@ -80,12 +91,13 @@ WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="
 ### 필수 읽을거리
 - [**설계 철학 (Why?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - 왜 외상 결제인가?
 - [**프로젝트 히스토리**](./docs/PROJECT_HISTORY_KR.md) - 개발 과정 & 로드맵
-- [**보안 감사**](./docs/security/) - Red Team 전면 감사 완료
+- [**보안 감사 리포트**](./docs/security/) - Red Team 전면 감사 완료
 
-### 통합 가이드
-- [AI 에이전트 연동](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md) - Python/Node.js
+### 개발자 가이드
+- [AI 에이전트 연동](./docs/guides/AGENT_INTEGRATION_GUIDE_KR.md) - Python/Node.js SDK
 - [Agent CLI Simulator](./docs/guides/AGENT_CLI_GUIDE_KR.md) - 터미널에서 테스트
 - [Provider 가이드](./docs/guides/PROVIDER_GUIDE_KR.md) - API 공급자용
+- [배포 가이드](./DEPLOYMENT_GUIDE_KR.md) - Vercel + Supabase
 
 ---
 
@@ -94,8 +106,8 @@ WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="
 **Backend**: Node.js, Express, TypeScript  
 **Database**: Supabase (PostgreSQL + RLS)  
 **Blockchain**: Cronos zkEVM Testnet (Viem)  
-**Frontend**: React, Vite, Supabase Auth  
-**Deployment**: Vercel (Serverless)  
+**Frontend**: React, Vite, Supabase Auth (GitHub OAuth)  
+**Deployment**: Vercel (Serverless Functions)  
 
 ---
 
@@ -119,23 +131,24 @@ cp .env.example .env.local
 # Edit .env.local with:
 # - SUPABASE_URL & SERVICE_ROLE_KEY
 # - RPC_URL (https://testnet.zkevm.cronos.org)
-# - Contract addresses
+# - PAYMENT_HANDLER_ADDRESS
+# - IDENTITY_CONTRACT_ADDRESS
 ```
 
 ### 3. Database Setup
 ```bash
-# Run schema.sql in Supabase SQL Editor
-# Then seed sample data:
+# Supabase SQL Editor에서 schema.sql 실행
+# 또는 로컬에서 seed:
 npx ts-node scripts/seed-dev.ts
 ```
 
-### 4. Start Server
+### 4. Start Backend
 ```bash
 npm run dev
 # Backend: http://localhost:3000
 ```
 
-### 5. (Optional) Frontend
+### 5. (Optional) Start Frontend
 ```bash
 cd dashboard
 npm install
@@ -149,10 +162,10 @@ npm run dev
 
 ## 🔒 보안
 
-- ✅ Red Team 전면 감사 (v3.7)
-- ✅ 15+ 취약점 수정 (SSRF, Replay Attack, CSRF)
-- ✅ Database RLS + Nonce 기반 방어
-- ✅ Helmet.js CSP 적용
+- ✅ **Red Team 전면 감사 완료** (v3.7)
+- ✅ **15+ 취약점 수정** (SSRF, Replay Attack, CSRF 등)
+- ✅ **Database RLS** + Nonce 기반 Replay 방어
+- ✅ **Helmet.js CSP** 적용
 
 **Security Score**: 10/10
 
@@ -161,12 +174,16 @@ npm run dev
 ## 📊 프로덕션 배포
 
 현재 **Vercel + Supabase**에 실제 배포 중:
-- Backend: Vercel Serverless Functions
-- Frontend: Vercel Static Hosting
-- Database: Supabase Production
-- Blockchain: Cronos zkEVM Testnet
+- **Backend API**: Vercel Serverless Functions
+- **Frontend Dashboard**: Vercel Static Hosting
+- **Database**: Supabase Production (PostgreSQL)
+- **Blockchain**: Cronos zkEVM Testnet
 
-배포 가이드: [DEPLOYMENT_GUIDE_KR.md](./DEPLOYMENT_GUIDE_KR.md)
+---
+
+## 🤝 기여
+
+Issues와 Pull Requests를 환영합니다!
 
 ---
 
