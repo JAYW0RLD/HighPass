@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { initDB } from '../database/db';
-import { FeeSettlementEngine } from '../services/FeeSettlementEngine';
 
 export const accessControlEngine = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -57,29 +56,16 @@ export const accessControlEngine = async (req: Request, res: Response, next: Nex
             return next();
         }
 
-        const currentDebt = BigInt(wallet.current_debt || 0);
-        // This is in USD usually, need to align units.
-        // Assuming schemas use consistent units (e.g. USD string or same numbering).
-        // Prompt says global_debt_limit (Decimal, default: 0.1).
+        // IMPORTANT: wallets.current_debt is stored in USD (Decimal)
+        // We need to convert it to Wei for comparison with the limit
+        const currentDebtUsd = parseFloat(wallet.current_debt || '0');
 
         // Check Debt Limit
-        // Convert GLOBAL_DEBT_LIMIT (USD) to Wei using FeeSettlementEngine (with slippage protection)
-        const feeEngine = new FeeSettlementEngine();
+        // Both values should be in the same unit for comparison
         const debtLimitUsd = parseFloat(developer.global_debt_limit || '0.1');
 
-        let debtLimitWei = BigInt(0);
-        try {
-            debtLimitWei = await feeEngine.usdToWei(debtLimitUsd);
-        } catch (e) {
-            console.error("Failed to convert debt limit to Wei, falling back to safe default", e);
-            // Fallback: 0.1 USD approx 1 CRO (for testnet) 
-            // Better to fail closed or open?
-            // Fail safe: Low limit so they don't rack up debt if oracle fails.
-            debtLimitWei = BigInt(0);
-        }
-
-        if (currentDebt >= debtLimitWei) {
-            console.warn(`[AccessControl] Wallet ${agentId} verified but debt limit exceeded (${currentDebt} >= ${debtLimitWei}). Downgrading to Track 1.`);
+        if (currentDebtUsd >= debtLimitUsd) {
+            console.warn(`[AccessControl] Wallet ${agentId} verified but debt limit exceeded ($${currentDebtUsd} >= $${debtLimitUsd}). Downgrading to Track 1.`);
             // Fallback to Track 1 (Pay-as-you-go) if debt limit reached? 
             // Or deny? Prompt says "Optimistic Access ... Check limit". 
             // If fail, usually we prompt for payment (Track 1).
@@ -87,7 +73,7 @@ export const accessControlEngine = async (req: Request, res: Response, next: Nex
             res.locals.isVerified = true; // Still verified, just capped.
             res.locals.reason = 'DEBT_LIMIT_EXCEEDED';
         } else {
-            console.log(`[AccessControl] Wallet ${agentId} verified. Assigning Track 2 (Optimistic).`);
+            console.log(`[AccessControl] Wallet ${agentId} verified. Debt: $${currentDebtUsd}/$${debtLimitUsd}. Assigning Track 2 (Optimistic).`);
             res.locals.track = 'TRACK_2';
             res.locals.isVerified = true;
             res.locals.developerId = developer.id;

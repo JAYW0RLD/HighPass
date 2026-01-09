@@ -50,17 +50,19 @@ export class IdentityService {
     async getReputation(agentId: string): Promise<number> {
         if (!agentId) throw new Error("Agent ID cannot be empty");
 
-        // DEMO OVERRIDES FOR ACCESSIBILITY / SIMULATOR
-        if (agentId === 'prime-agent') return 95; // Grade A
-        if (agentId === 'trusted-agent') return 85; // Grade B
-        if (agentId === 'subprime-agent') return 75; // Grade C
-        if (agentId === 'risky-agent') return 40; // Grade F
+        // Handle Demo Agents (Non-numeric IDs)
+        // This supports the Owner Simulation feature in creditGuard
+        if (agentId === 'prime-agent') return 100;    // Grade A
+        if (agentId === 'trusted-agent') return 85;   // Grade B
+        if (agentId === 'subprime-agent') return 55;  // Grade E
+        if (agentId === 'risky-agent') return 20;     // Grade F
 
         let idVal: bigint;
         try {
             idVal = BigInt(agentId);
         } catch {
-            throw new Error("Invalid Agent ID format");
+            console.warn(`[IdentityService] Invalid non-numeric ID: ${agentId}`);
+            return 0; // Return 0 instead of throwing to prevent crashing middleware
         }
 
         const contractAddr = process.env.IDENTITY_CONTRACT_ADDRESS as Address;
@@ -114,9 +116,10 @@ export class IdentityService {
         return score >= threshold;
     }
 
-    async verifySignature(agentId: string, signature: string, timestamp: string): Promise<boolean> {
+    async verifySignature(agentId: string, signature: string, timestamp: string, nonce: string): Promise<boolean> {
         // Message format must match what the client signs
-        const message = `Identify as ${agentId} at ${timestamp}`;
+        // SECURITY: Nonce included to prevent replay attacks
+        const message = `Identify as ${agentId} at ${timestamp} with nonce ${nonce}`;
 
         try {
             // Check formatted string is correct address
@@ -127,10 +130,8 @@ export class IdentityService {
                 // If agentId is "prime-agent", we can't verify signature against a string unless we map it to an address.
                 // For the Hackathon Demo: ALLOW specific demo IDs to bypass signature check 
                 // BUT log a warning that this is unsafe.
-                if (['prime-agent', 'trusted-agent', 'subprime-agent', 'risky-agent'].includes(agentId)) {
-                    console.log(`[Identity] Demo Agent ${agentId} - Skipping signature check.`);
-                    return true;
-                }
+                // Removed insecure demo agent bypass (V-01)
+                console.warn(`[Identity] Rejected invalid Agent ID format: ${agentId}`);
                 return false;
             }
 

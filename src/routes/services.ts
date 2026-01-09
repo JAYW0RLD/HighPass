@@ -1,6 +1,10 @@
 import express from 'express';
 import { initDB } from '../database/db';
+import { isValidUpstreamUrl, isBlockedIP } from '../utils/validators';
 import crypto from 'crypto';
+import * as dns from 'dns/promises';
+import * as net from 'net';
+import { URL } from 'url';
 
 const router = express.Router();
 
@@ -94,20 +98,66 @@ router.post('/:id/verify', async (req, res) => {
         }
 
         // Verify domain ownership
-        const verificationUrl = `${service.upstream_url}/.well-known/x402-verify.txt`;
+        // SSRF PROTECTION (V-03-FIXED): Prevent TOCTOU by pinning DNS resolution
+
+        // 1. Parse URL
+        let urlObj: URL;
+        try {
+            urlObj = new URL(service.upstream_url);
+        } catch (e) {
+            return res.status(400).json({ error: 'Invalid URL format' });
+        }
+
+        const hostname = urlObj.hostname;
+
+        // 2. Resolve DNS (IPv4 first) to get specific IP "Pin"
+        let resolvedIP: string;
+        try {
+            const addresses = await dns.resolve4(hostname);
+            if (!addresses || addresses.length === 0) {
+                throw new Error('No DNS records found');
+            }
+            resolvedIP = addresses[0]; // Pick first IP
+        } catch (dnsErr) {
+            // If resolve4 fails, maybe it's an IP literal or IPv6?
+            if (net.isIP(hostname)) {
+                resolvedIP = hostname;
+            } else {
+                // Try IPv6? For now, fail safe.
+                console.error('[Verification] DNS Resolution failed:', dnsErr);
+                return res.status(400).json({ error: 'Verification failed', details: 'DNS resolution error' });
+            }
+        }
+
+        // 3. Validate the Resolved IP (Not the hostname)
+        // We need to import isBlockedIP from validators.ts
+        if (isBlockedIP(resolvedIP)) {
+            console.warn(`[Verification] Blocked unsafe IP: ${resolvedIP} (from ${hostname})`);
+            return res.status(400).json({
+                error: 'Invalid Upstream',
+                message: 'The service resolves to a restricted network address.'
+            });
+        }
+
+        // 4. Construct Safe URL using IP
+        // http://1.2.3.4:80/.well-known/x402-verify.txt
+        const verificationUrl = `${urlObj.protocol}//${resolvedIP}${urlObj.port ? ':' + urlObj.port : ''}/.well-known/x402-verify.txt`;
 
         try {
             const response = await fetch(verificationUrl, {
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'highstation-bot/1.0'
-                }
+                    'User-Agent': 'highstation-bot/1.0',
+                    'Host': hostname // CRITICAL: Preserve original Host header for virtual hosts
+                },
+                // Add explicit timeout to prevent hanging
+                signal: AbortSignal.timeout(5000)
             });
 
             if (!response.ok) {
+                // SANITIZED ERROR: Do not return status text or details
                 return res.status(400).json({
-                    error: 'Verification file not found',
-                    details: `Could not fetch ${verificationUrl}`,
+                    error: 'Verification file not found or inaccessible',
                     status: response.status
                 });
             }
@@ -118,9 +168,7 @@ router.post('/:id/verify', async (req, res) => {
             if (!tokenFound) {
                 return res.status(400).json({
                     error: 'Verification failed',
-                    details: 'Token not found in verification file',
-                    expected: service.verification_token,
-                    received: content.substring(0, 100)
+                    details: 'Token not found in verification file'
                 });
             }
 
@@ -148,10 +196,10 @@ router.post('/:id/verify', async (req, res) => {
 
         } catch (fetchError: any) {
             console.error('[Verification] Fetch error:', fetchError);
+            // SANITIZED ERROR
             return res.status(400).json({
                 error: 'Could not verify domain',
-                details: fetchError.message,
-                hint: 'Make sure the file is publicly accessible'
+                message: 'Connection failed or timeout. Please check your firewall and URL.'
             });
         }
 
@@ -171,7 +219,10 @@ router.get('/', async (req, res) => {
 
         const db = await initDB();
         if (!db) return res.status(500).json({ error: 'Database error' });
-        let query = db.from('services').select('*');
+
+
+        // SECURITY FIX (V-02): Explicitly select safe columns to prevent leaking sensitive info (upstream_url)
+        let query = db.from('services').select('id, slug, name, price_wei, min_grade, status, provider_id, created_at');
 
         if (status) {
             query = query.eq('status', status);

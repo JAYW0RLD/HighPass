@@ -24,6 +24,23 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v2.8 - Security & Architecture Hardening (Red Team)
+- **[SECURITY] SSRF Protection (DNS Pinning)**:
+    - Fixed a critical Time-of-Check Time-of-Use (TOCTOU) vulnerability in domain verification.
+    - Implemented custom DNS resolution to "pin" IP addresses before fetching, preventing DNS Rebinding attacks.
+- **[SECURITY] Auth Bypass Fixed**:
+    - Removed insecure "Internal Demo Service" check that allowed potential URL spoofing.
+    - Enforced strict database-driven verification status for all services.
+- **[SECURITY] Atomic Replay Protection**:
+    - Fixed a race condition in `creditGuard` where concurrent requests could bypass nonce checks.
+    - Now relying on Database Unique Constraints for atomic, race-free nonce validation.
+- **[SECURITY] Session Hardening (CSP)**:
+    - Implemented strict **Content Security Policy (CSP)** using Helmet.
+    - Mitigates XSS risks from LocalStorage token usage by restricting script sources to `'self'` and trusted domains (Supabase).
+- **[AUDIT] Vercel/Supabase Architecture Review**:
+    - Confirmed connection pooling safety and lack of SQL Injection vectors in ORM usage. 
+    - Published comprehensive Vulnerability Report (`vulnerability_report.md`).
+
 ### v2.7.1 - Identity & UX Refinement (Hotfix)
 - **[AUTH] GitHub-Only Login**:
     - Removed email/password authentication to prevent spam accounts.

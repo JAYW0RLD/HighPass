@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { initDB } from '../database/db';
+import { isValidUpstreamUrl } from '../utils/validators';
 
 export interface ServiceConfig {
     id: string;
@@ -23,15 +24,13 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
             return res.status(400).json({ error: 'Invalid Request', message: 'Invalid service slug format' });
         }
 
-        // Use ADMIN Privilege (Service Role) to bypass RLS and read upstream_url
-        // Standard `initDB` uses ANON key, which is now restricted by RLS (can't see upstream_url).
-        // We create a one-off admin client or check if db exports one.
-        // For simplicity:
-        const { createClient } = require('@supabase/supabase-js');
-        const adminDb = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-        );
+        // Use ADMIN Privilege (Service Role) via shared initDB
+        const adminDb = await initDB();
+
+        if (!adminDb) {
+            console.error('[ServiceResolver] Database connection failed');
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
 
         // Fetch service config from Supabase
         const { data, error } = await adminDb
@@ -55,11 +54,20 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
         }
 
         // DOMAIN VERIFICATION CHECK
-        const apiOrigin = process.env.VITE_API_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
-        const isInternalDemo = data.upstream_url.includes('/api/demo/echo');
+        if (data.status !== 'verified') {
+            // Internal Demo Exception (STRICT)
+            // Only allow if upstream URL explicitly references the internal demo handler's exact path
+            // And prevent any external manipulation
+            const internalDemoUrl = `http://localhost:${process.env.PORT || 3000}/api/demo/echo`;
+            if (data.upstream_url !== internalDemoUrl) {
+                return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
+            }
+        }
 
-        if (data.status !== 'verified' && !isInternalDemo) {
-            return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
+        // SSRF PROTECTION (Defense in Depth)
+        if (!(await isValidUpstreamUrl(data.upstream_url))) {
+            console.error(`[ServiceResolver] Blocked unsafe upstream URL: ${data.upstream_url}`);
+            return res.status(502).json({ error: 'Bad Gateway', message: 'Upstream service configuration is unsafe.' });
         }
 
         // Attach config to locals

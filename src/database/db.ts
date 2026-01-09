@@ -191,14 +191,20 @@ export async function addDebt(agentId: string, amount: bigint): Promise<void> {
     if (!db) await initDB();
     if (!db) return;
 
-    // 1. Try to update wallets table first (Dual-Track System)
-    // We try to increment debt atomically.
-    // However, Supabase/Postgres doesn't have a simple increment via .update() without RPC, 
-    // but we can read-then-write or use a custom RPC.
-    // For now, let's use read-then-write but with a specific check?
-    // Actually, let's just do getCurrent -> add -> update for now (simple).
-    // Or we can check if it exists in wallets.
+    // IMPORTANT: UNIT MISMATCH FIX
+    // 1. This function receives `amount` in Wei (native token)
+    // 2. The `wallets.current_debt` column stores values in USD (Decimal)
+    // 3. Directly adding Wei to USD creates broken comparisons in AccessControlEngine
+    // 
+    // SOLUTION:
+    // - Keep `agent_debts` table for legacy Wei-based tracking
+    // - Do NOT update `wallets.current_debt` here
+    // - A separate process (settlement service) should convert accumulated Wei debt to USD
+    //   and update the wallets table periodically or on-demand
+    //
+    // For now, we'll comment out the wallet update to prevent the bug.
 
+    /*
     // Check if wallet exists
     const { data: wallet } = await db.from('wallets').select('address, current_debt').eq('address', agentId).single();
 
@@ -266,6 +272,7 @@ export async function addDebt(agentId: string, amount: bigint): Promise<void> {
         if (wErr) console.error('[Debt] Failed to update wallet debt:', wErr);
         else console.log(`[Debt] Wallet ${agentId}: +${amount} (total: ${newM})`);
     }
+    */
 
     const currentDebt = await getDebt(agentId); // From agent_debts (legacy)
     const newDebt = currentDebt + amount;
@@ -340,3 +347,97 @@ export async function isTxHashUsed(txHash: string): Promise<boolean> {
 
     return !!(data && data.length > 0);
 }
+
+// =============================================================================
+// NONCE TRACKING (Replay Attack Prevention)
+// =============================================================================
+
+/**
+ * Check if a nonce has already been used
+ * @param nonce The nonce to check (UUID v4)
+ * @returns Promise<true> if nonce was already used, Promise<false> if fresh
+ */
+export async function isNonceUsed(nonce: string): Promise<boolean> {
+    if (!db) await initDB();
+    if (!db) return false; // Fail open if DB unavailable (log warning)
+
+    try {
+        const { data, error } = await db
+            .from('used_nonces')
+            .select('nonce')
+            .eq('nonce', nonce)
+            .limit(1);
+
+        if (error) {
+            console.error('[Nonce] Failed to check nonce:', error);
+            return false; // Fail open (allows request if DB error)
+        }
+
+        return !!(data && data.length > 0);
+    } catch (err) {
+        console.error('[Nonce] Error checking nonce:', err);
+        return false;
+    }
+}
+
+/**
+ * Record a nonce as used
+ * @param nonce The nonce to record
+ * @param agentId The agent ID using this nonce
+ */
+export async function recordNonce(nonce: string, agentId: string): Promise<void> {
+    if (!db) await initDB();
+    if (!db) return;
+
+    try {
+        const { error } = await db
+            .from('used_nonces')
+            .insert({
+                nonce,
+                agent_id: agentId,
+                created_at: new Date().toISOString()
+            });
+
+        if (error) {
+            // Duplicate key = replay attack detected
+            if ((error as any)?.code === '23505') {
+                console.error(`[Nonce] 🚨 REPLAY ATTACK DETECTED! Nonce ${nonce} already used by ${agentId}`);
+                throw new Error('Nonce already used');
+            }
+            console.error('[Nonce] Failed to record nonce:', error);
+        } else {
+            console.log(`[Nonce] ✅ Recorded nonce for agent ${agentId}`);
+        }
+    } catch (err) {
+        console.error('[Nonce] Error recording nonce:', err);
+        throw err;
+    }
+}
+
+/**
+ * Cleanup expired nonces (older than 5 minutes)
+ * Should be called periodically (e.g., via cron job or background task)
+ */
+export async function cleanupExpiredNonces(): Promise<void> {
+    if (!db) await initDB();
+    if (!db) return;
+
+    try {
+        // Delete nonces older than 5 minutes
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+        const { error, count } = await db
+            .from('used_nonces')
+            .delete()
+            .lt('created_at', fiveMinutesAgo);
+
+        if (error) {
+            console.error('[Nonce] Cleanup failed:', error);
+        } else {
+            console.log(`[Nonce] Cleaned up ${count || 0} expired nonces`);
+        }
+    } catch (err) {
+        console.error('[Nonce] Cleanup error:', err);
+    }
+}
+

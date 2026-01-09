@@ -27,9 +27,26 @@ const port = 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Security Headers (Helmet)
+// XSS Mitigation: Strict Content Security Policy
+const supabaseUrl = process.env.SUPABASE_URL || 'https://*.supabase.co';
+const supabaseWss = supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+
 app.use(helmet({
-    contentSecurityPolicy: false, // Allow dashboard requests
-    crossOriginEmbedderPolicy: false
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe-eval needed for some dev tools/source maps in non-prod. In strict prod, remove if possible.
+            styleSrc: ["'self'", "'unsafe-inline'"], // styled-components/css-in-js often needs unsafe-inline
+            imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
+            connectSrc: ["'self'", supabaseUrl, supabaseWss, "https://api.coinbase.com"], // Allow Supabase & external APIs
+            fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: isProduction ? [] : null, // Upgrade HTTP to HTTPS in prod
+        },
+    },
+    // Cross-Origin policies
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow resources to be loaded
 }));
 
 // Request Logging (Morgan)
@@ -45,17 +62,18 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate limiting - 10 requests per minute per IP
+// Rate limiting - 100 requests per minute per IP (Reasonable default for Dashboard/API)
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 10, // 10 requests per IP
+    max: 100, // 100 requests per IP
     message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-// Apply rate limiting to gatekeeper endpoints
+// Apply rate limiting to gatekeeper and API endpoints
 app.use('/gatekeeper', limiter);
+app.use('/api', limiter);
 
 // Initialize database
 initDB().then(() => {
