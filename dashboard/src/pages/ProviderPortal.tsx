@@ -439,6 +439,7 @@ function ProviderPortal() {
 
     const IntegrationTab = () => {
         const [selectedService, setSelectedService] = useState<Service | null>(services[0] || null);
+        const [selectedLang, setSelectedLang] = useState<'curl' | 'python' | 'nodejs'>('curl');
         const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000';
         const endpoint = `${apiOrigin}/gatekeeper/${selectedService?.slug || 'service-slug'}/resource`;
 
@@ -448,11 +449,105 @@ function ProviderPortal() {
             </div>
         );
 
+        const curlExample = `# Step 1: Call the gated API
+curl -X POST "${endpoint}" \\
+  -H "Content-Type: application/json" \\
+  -H "X-Agent-ID: 0xYourWalletAddress" \\
+  -d '{"prompt": "Hello"}'
+
+# If your agent has good credit → 200 OK
+# If payment required → 402 Payment Required with payment details`;
+
+        const pythonExample = `import requests
+
+# Configuration
+ENDPOINT = "${endpoint}"
+AGENT_ID = "0xYourWalletAddress"
+
+# Step 1: Call gated API
+response = requests.post(
+    ENDPOINT,
+    headers={
+        "Content-Type": "application/json",
+        "X-Agent-ID": AGENT_ID
+    },
+    json={"prompt": "Hello"}
+)
+
+# Step 2: Handle response
+if response.status_code == 200:
+    # Success - credit approved
+    print("✅ Result:", response.json())
+elif response.status_code == 402:
+    # Payment required
+    payment_info = response.json()
+    print(f"💰 Payment needed: {payment_info}")
+    # Implement on-chain payment + retry here
+else:
+    print(f"❌ Error: {response.status_code}")`;
+
+        const nodejsExample = `// Using standard fetch (Node 18+)
+const ENDPOINT = "${endpoint}";
+const AGENT_ID = "0xYourWalletAddress";
+
+async function callGatedAPI() {
+  // Step 1: Initial request
+  const response = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Agent-ID": AGENT_ID
+    },
+    body: JSON.stringify({ prompt: "Hello" })
+  });
+
+  // Step 2: Handle credit/payment
+  if (response.status === 200) {
+    const result = await response.json();
+    console.log("✅ Success:", result);
+    return result;
+  }
+
+  if (response.status === 402) {
+    const { amount, receiver, chainId } = await response.json();
+    console.log(\`💰 Payment Required: \${amount} wei to \${receiver}\`);
+    
+    // Step 3: Pay on-chain (use your wallet SDK)
+    // const txHash = await payOnChain(receiver, amount);
+    
+    // Step 4: Retry with receipt
+    // const retry = await fetch(ENDPOINT, {
+    //   headers: { "X-Tx-Hash": txHash }
+    // });
+    // return retry.json();
+  }
+
+  throw new Error(\`Failed: \${response.status}\`);
+}
+
+callGatedAPI();`;
+
+        const getCodeExample = () => {
+            switch (selectedLang) {
+                case 'curl': return curlExample;
+                case 'python': return pythonExample;
+                case 'nodejs': return nodejsExample;
+            }
+        };
+
+        const getLangLabel = () => {
+            switch (selectedLang) {
+                case 'curl': return 'BASH / CURL';
+                case 'python': return 'PYTHON';
+                case 'nodejs': return 'NODE.JS';
+            }
+        };
+
         return (
             <div className="flex flex-col gap-2">
                 <div className="card p-2" style={{ border: '1px solid var(--border)' }}>
                     <div className="flex justify-between items-center mb-1">
-                        <h2 className="section-title">Integration Guide</h2>
+                        <h2 className="section-title">Bot Integration Guide</h2>
                         <select
                             onChange={(e) => setSelectedService(services.find(s => s.id === e.target.value) || null)}
                             className="form-control"
@@ -464,35 +559,53 @@ function ProviderPortal() {
                     </div>
 
                     <p className="text-secondary mb-1">
-                        Use the standard X402 headers to request access. Verified agents (Track 2) are automatically granted credit.
+                        Your bot calls the gated endpoint with <code>X-Agent-ID</code> header. High-credit agents get instant access (200 OK), others pay on-chain then retry.
                     </p>
+
+                    {/* Language Tabs */}
+                    <div className="flex gap-1 mb-1">
+                        <button
+                            onClick={() => setSelectedLang('curl')}
+                            className={selectedLang === 'curl' ? 'btn-primary' : 'btn-secondary'}
+                            style={{ padding: '8px 16px', fontSize: '13px' }}
+                        >
+                            cURL
+                        </button>
+                        <button
+                            onClick={() => setSelectedLang('python')}
+                            className={selectedLang === 'python' ? 'btn-primary' : 'btn-secondary'}
+                            style={{ padding: '8px 16px', fontSize: '13px' }}
+                        >
+                            Python
+                        </button>
+                        <button
+                            onClick={() => setSelectedLang('nodejs')}
+                            className={selectedLang === 'nodejs' ? 'btn-primary' : 'btn-secondary'}
+                            style={{ padding: '8px 16px', fontSize: '13px' }}
+                        >
+                            Node.js
+                        </button>
+                    </div>
 
                     <div style={{ background: '#0d1117', padding: '1.5rem', borderRadius: '8px', overflowX: 'auto', border: '1px solid #30363d' }}>
                         <div className="flex justify-between text-xs text-secondary mb-05 select-none">
-                            <span>JAVASCRIPT / TYPESCRIPT</span>
-                            <span>ESM</span>
+                            <span>{getLangLabel()}</span>
+                            <span>COPY & PASTE READY</span>
                         </div>
-                        <pre style={{ margin: 0, color: '#e6edf3', fontSize: '0.9rem', fontFamily: "'JetBrains Mono', monospace", lineHeight: '1.5' }}>
-                            {`// 1. Install Client
-npm install @crypto.com/facilitator-client
-
-// 2. Call API via Gatekeeper
-const response = await fetch("${endpoint}", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-Agent-ID": "my-agent-wallet-address",
-    // Premium agents bypass payment if credit score > 70
-  },
-  body: JSON.stringify({ prompt: "Hello world" })
-});
-
-if (response.status === 402) {
-  // Handle Payment Request (X402)
-  const { amount, receiver } = await response.json();
-  console.log(\`Payment required: \${amount} wei to \${receiver}\`);
-}`}
+                        <pre style={{ margin: 0, color: '#e6edf3', fontSize: '0.85rem', fontFamily: "'JetBrains Mono', monospace", lineHeight: '1.6' }}>
+                            {getCodeExample()}
                         </pre>
+                    </div>
+
+                    <div className="card p-1 mt-1" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                        <h4 className="text-sm font-semibold mb-05">💡 How It Works</h4>
+                        <ol className="text-sm text-secondary" style={{ paddingLeft: '1.5rem', margin: 0 }}>
+                            <li>Your bot sends <code>X-Agent-ID: 0xYourAddress</code></li>
+                            <li>HighStation checks on-chain reputation score</li>
+                            <li><strong>High credit (70+)?</strong> → Instant 200 OK (pay later)</li>
+                            <li><strong>Low credit?</strong> → 402 Payment Required (pay now)</li>
+                            <li>Bot pays on-chain → retries with <code>X-Tx-Hash</code> → Success!</li>
+                        </ol>
                     </div>
                 </div>
             </div>
