@@ -57,6 +57,14 @@ async function main() {
     console.log(`\n🆔 AGENT ADDRESS: \x1b[36m${agentId}\x1b[0m`);
     console.log(`\n💰 NEXT STEP: Fund this wallet with test tokens.`);
     console.log(`   (Send CRO/ETH to this address on the testnet)`);
+
+    console.log(`\n📊 IMPORTANT: New wallets start at Grade F (0 reputation)`);
+    console.log(`   • Grade F = Pay-per-call (402 Payment Required for each API call)`);
+    console.log(`   • This means slower execution due to on-chain transactions`);
+    console.log(`\n💡 TIP: For faster testing, fund your wallet with sufficient CRO`);
+    console.log(`   → Each API call costs ~0.0001-0.1 CRO + gas fees`);
+    console.log(`   → Recommended: 1-5 CRO for smooth testing`);
+
     console.log(`\n🚀 THEN RUN: npx ts-node scripts/run-agent.ts\n`);
 
     rl.close();

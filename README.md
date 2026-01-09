@@ -37,7 +37,12 @@ npm install
 # 3. Create agent wallet (first time only)
 npx ts-node scripts/create-agent.ts
 
-# 4. Call gated API (experience credit flow)
+# 4. Fund wallet with test CRO (Cronos zkEVM Testnet)
+# → New wallets start at Grade F (pay-per-call)
+# → Recommended: 1-5 CRO for smooth testing
+# → Get testnet tokens: https://faucet.cronos.org
+
+# 5. Call gated API (experience credit flow)
 npx ts-node scripts/run-agent.ts
 ```
 
