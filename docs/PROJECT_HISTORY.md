@@ -41,6 +41,14 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
     - Confirmed connection pooling safety and lack of SQL Injection vectors in ORM usage. 
     - Published comprehensive Vulnerability Report (`vulnerability_report.md`).
 
+### v2.8.1 - Test API & Owner Bypass Fix
+- **[FIX] Test API Forbidden (403)**:
+    - Implemented secure **Owner Bypass** in `serviceResolver` middleware.
+    - Service providers can now test their own services via the dashboard even if status is "Pending Verification".
+    - Uses JWT verification (`x-provider-token`) to ensure only the true owner can bypass verification checks.
+- **[FIX] Demo Service URL**:
+    - Relaxed "Internal Demo" check to correctly recognize `VITE_API_ORIGIN` (Vercel) as a trusted internal source.
+
 ### v2.7.1 - Identity & UX Refinement (Hotfix)
 - **[AUTH] GitHub-Only Login**:
     - Removed email/password authentication to prevent spam accounts.

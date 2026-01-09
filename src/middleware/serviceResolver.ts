@@ -54,14 +54,52 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
         }
 
         // DOMAIN VERIFICATION CHECK
-        if (data.status !== 'verified') {
-            // Internal Demo Exception (STRICT)
-            // Only allow if upstream URL explicitly references the internal demo handler's exact path
-            // And prevent any external manipulation
-            const internalDemoUrl = `http://localhost:${process.env.PORT || 3000}/api/demo/echo`;
-            if (data.upstream_url !== internalDemoUrl) {
-                return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
+        // DOMAIN VERIFICATION CHECK
+        // Allow Bypass if:
+        // 1. Service is verified
+        // 2. OR Service is the "Internal Demo" (Strictly checked against API Origin)
+        // 3. OR Requester is the Service Owner (Owner Bypass for Testing/Debugging)
+
+        let isVerifiedOrBypassed = data.status === 'verified';
+
+        // Check 2: Internal Demo Exception
+        if (!isVerifiedOrBypassed) {
+            const apiOrigin = process.env.VITE_API_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
+            // Allow if path is exact match to our demo handler AND host matches our deployment
+            // We compare the full upstream_url to what we expect our demo URL to be
+            const expectedDemoUrl = `${apiOrigin}/api/demo/echo`;
+            // Also allow localhost fallback for local dev
+            const localDemoUrl = `http://localhost:${process.env.PORT || 3000}/api/demo/echo`;
+
+            if (data.upstream_url === expectedDemoUrl || data.upstream_url === localDemoUrl) {
+                isVerifiedOrBypassed = true;
             }
+        }
+
+        // Check 3: Owner Bypass (Secure)
+        if (!isVerifiedOrBypassed) {
+            const providerToken = req.headers['x-provider-token'] as string;
+            if (providerToken && data.provider_id) {
+                try {
+                    const { createClient } = require('@supabase/supabase-js');
+                    const supabase = createClient(
+                        process.env.SUPABASE_URL!,
+                        process.env.SUPABASE_SERVICE_ROLE_KEY!
+                    );
+                    const { data: { user }, error } = await supabase.auth.getUser(providerToken);
+
+                    if (!error && user && user.id === data.provider_id) {
+                        console.log(`[ServiceResolver] 🔓 Owner Bypass: Allowing unverified service access for owner ${user.id}`);
+                        isVerifiedOrBypassed = true;
+                    }
+                } catch (e) {
+                    console.error('[ServiceResolver] Owner Bypass Check Failed:', e);
+                }
+            }
+        }
+
+        if (!isVerifiedOrBypassed) {
+            return res.status(403).json({ error: 'Service Not Verified', message: `Service '${serviceSlug}' has not completed domain verification.`, status: data.status });
         }
 
         // SSRF PROTECTION (Defense in Depth)
