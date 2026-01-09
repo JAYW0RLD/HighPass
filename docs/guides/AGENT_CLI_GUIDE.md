@@ -1,45 +1,36 @@
 # 🤖 HighStation Agent Simulator (Interactive CLI)
 
 Experience **"Agentic Payment"** firsthand with this interactive console tool.
-Turn your terminal into an AI Agent's control center.
 
 ## ✨ Key Features
 - **Interactive Menu**: Control your agent using simple number keys (1, 2, 3...).
-- **Real-time Dashboard**: Monitor wallet address, balance, and target server status instantly.
+- **Global Wallet**: Wallet file is saved securely in your `Home Directory`, allowing you to use the same Identity across different folders.
 - **Remote Access**: Connect to and test any deployed server (e.g., Vercel) seamlessly.
 
 ---
 
-## 🚀 Getting Started (External Users)
+## 🚀 Quick Start
 
-This guide assumes you have downloaded the project and want to test against a **Remote Server (e.g., Vercel)**.
+Currently, you need the project folder to install security libraries (`viem`).
+(A fully standardized `npx highstation-cli` for zero-install execution is coming soon.)
 
-### Step 1: Navigate to Project Folder (Critical!)
-You MUST be inside the `highstation` directory to run the scripts.
-(Skipping this will cause `MODULE_NOT_FOUND` errors)
-
+### Step 1: Install (One Time)
 ```bash
-cd highstation
-```
-
-### Step 2: Install Dependencies
-Install the necessary tools. (First time only)
-```bash
+git clone https://github.com/JAYW0RLD/HighStation.git
+cd HighStation
 npm install
 ```
 
-### Step 3: Create Agent (Wallet)
-Generate your unique agent wallet.
+### Step 2: Create Agent
+Generate your unique agent wallet. (Saved to your Home Directory)
 ```bash
 npx ts-node scripts/create-agent.ts
 ```
 
-### Step 4: Run Simulator!
+### Step 3: Run Simulator!
 Pass the **Target Server URL** as an argument.
 
 ```bash
-# Usage: npx ts-node scripts/run-agent.ts [TARGET_URL]
-
 # Example:
 npx ts-node scripts/run-agent.ts https://highstation-demo.vercel.app
 ```
@@ -55,7 +46,7 @@ Once launched, you will see the dashboard:
 
 ⚡ AGENT PROFILE
    ID:      0xaEE2...8462
-   Balance: 0.0 CRO
+   Balance: 12.5 CRO
    Target:  https://highstation-demo.vercel.app
    Status:  ONLINE
 ----------------------------------------
@@ -74,8 +65,8 @@ COMMANDS:
 ---
 
 ## 💡 FAQ
-**Q: I get `MODULE_NOT_FOUND` error.**
-A: Make sure you followed Step 1 (`cd highstation`). You cannot run this from the root folder.
+**Q: Can I run this without downloading?**
+A: Currently, minimal setup is required for the crypto signing libraries (`viem`). Once published as an **npm package**, you will be able to run it via `npx` without downloading.
 
-**Q: Does this cost real money?**
-A: No. It runs on Cronos Testnet and defaults to 'Optimistic Mode' (Post-paid/Demo), so no funds are required.
+**Q: Where is my wallet?**
+A: It is stored in your User Home Directory (`~/.highstation-agent-wallet.json`). Your identity persists even if you delete the project folder.
