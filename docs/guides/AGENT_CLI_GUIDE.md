@@ -10,40 +10,63 @@ You can create your own agent in the terminal and experience the process of call
 
 ---
 
-## 🚀 Getting Started
+## 🚀 User Guide (3 Steps)
 
-This demo runs in your local development environment. Open your terminal and follow these steps.
+This demo works on both local development environments (`localhost`) and **remote deployed servers** (`Vercel`).
 
-### 1. Start Server (Required)
-The server with the latest code must be running.
+### Step 1: Start Server (Local Only)
+Required only if you are running the server on your own machine. Skip this if testing a generic remote server.
 ```bash
 npm run dev
 ```
 
-### 2. Create Agent (Wallet)
-Generate a new agent wallet.
+### Step 2: Create Agent (Wallet)
+Run this once to create your unique agent wallet.
 ```bash
 npx ts-node scripts/create-agent.ts
 ```
 - **Result**: A `scripts/agent-wallet.json` file is created.
-- **Check**: The `0x...` address printed in the terminal is your agent's address.
+- **Tip**: For real Mainnet testing, fund the printed address with tokens (CRO).
 
-### 3. Run Agent (Action)
-Command the agent to "Call the API!".
+### Step 3: Run Agent (Action)
+Command the agent to **call the API**.
+
+**Option A: Localhost Test (Default)**
 ```bash
 npx ts-node scripts/run-agent.ts
 ```
-- **Action**: The agent loads the wallet, generates auth headers, and calls the `Echo Service`.
-- **Success**:
-  ```
-  ✅ ACCESS GRANTED
-  Data Received: { ... }
-  💳 NOTE: Optimistic Payment Mode (Pay later!)
-  ```
+> Sends requests to `http://localhost:3000` by default.
+
+**Option B: Remote Server Test (External User / Vercel)** ⭐️
+To test against a live deployed server (e.g., Vercel), **pass the URL as an argument.**
+```bash
+npx ts-node scripts/run-agent.ts https://my-highstation-demo.vercel.app
+```
+> **External users** can use this command to instantly test deployed services without local server setup.
+
+---
+
+## ✅ Example Output
+```
+🤖 AGENT AI ACTIVATED
+===============================
+➤ Identity Loaded 0xaEE2...8462
+➤ Target Acquired https://highstation-demo.vercel.app/gatekeeper/echo-service/resource
+➤ Generating Proof Nonce: 812931
+➤ Signing Request 0xc69f...4b20...
+
+📡 Transmitting data to Gatekeeper...
+
+✅ ACCESS GRANTED (124ms)
+-------------------------------
+Data Received: { service: 'Demo Echo', ... }
+
+💳 NOTE: Optimistic Payment Mode
+   Your reputation allowed you to pay later (Debt recorded).
+```
 
 ---
 
 ## 💡 Notes
-- **Demo Mode**: The `echo-service` has a Static Fallback configuration so it works without a database connection.
 - **Security**: The generated wallet file (`agent-wallet.json`) is added to `.gitignore` and will not be uploaded to GitHub.
-- **Payment**: To connect to a real Mainnet/Testnet, this wallet needs tokens (CRO) to pay for gas and fees. (The demo assumes a free/gasless environment or optimistic mode).
+- **Demo Mode**: The `echo-service` has a Static Fallback configuration so it works without a database connection.

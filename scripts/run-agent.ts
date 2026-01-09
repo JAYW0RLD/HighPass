@@ -35,8 +35,15 @@ async function main() {
     logStep("Identity Loaded", agentId);
 
     // 2. Check Service
+    // Support custom URL from CLI: npx ts-node scripts/run-agent.ts [URL]
+    const customUrl = process.argv[2];
+    const baseUrl = customUrl || 'http://localhost:3000';
+
+    // Ensure URL doesn't end with slash
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
     const targetService = 'echo-service';
-    const endpoint = `http://localhost:3000/gatekeeper/${targetService}/resource`;
+    const endpoint = `${cleanBaseUrl}/gatekeeper/${targetService}/resource`;
 
     logStep("Target Acquired", endpoint);
 
