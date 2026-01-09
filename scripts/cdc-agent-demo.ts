@@ -227,7 +227,7 @@ async function main() {
 
             if (services.length > 0) {
                 const target = services[0];
-                const result = await tools.find(t => t.name === "call_service")!.handler({
+                const result = await (tools.find(t => t.name === "call_service")!.handler as any)({
                     serviceId: target.id,
                     endpoint: target.endpoint,
                     method: "POST",
