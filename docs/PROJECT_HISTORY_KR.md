@@ -24,7 +24,21 @@
 
 ## ⏳ 변경 기록 (Changelog)
 
+
+### v3.0 - Hackathon Edition (Official SDK & AI)
+**일자**: 2026-01-09
+- **[기능] 공식 X402 표준 통합**:
+    - **@crypto.com/facilitator-client**: 기존 수동 X402 로직을 폐기하고 크로노스 랩스의 공식 SDK로 전면 교체.
+    - **EIP-191 표준화**: 커스텀 서명 방식에서 표준 이더리움 서명 방식으로 전환하여 호환성 확보.
+- **[기능] AI 스마트 에이전트**:
+    - **@crypto.com/ai-agent-client**: 자연어 명령을 이해하고 시장을 검색/구매하는 `scripts/cdc-agent-demo.ts` 구현.
+    - **Agent Economy**: "TTS API 찾아줘" -> 검색 -> 결제 -> 실행의 전 과정을 AI가 수행하는 데모 완성.
+- **[기능] MCP (Model Context Protocol) 서버**:
+    - **src/mcp-server.ts**: Claude, Cursor 등 외부 AI가 HighStation의 API 마켓 데이터를 직접 조회할 수 있는 표준 인터페이스 제공.
+    - `services://list` 리소스 및 `search_services` 도구 노출.
+
 ### v2.9.0 - 에이전트 결제 시뮬레이터 (New)
+
 **일자**: 2026-01-09
 - **[기능] CLI 시뮬레이터**:
     - `scripts/create-agent.ts` 및 `scripts/run-agent.ts`를 구현하여 종단간(End-to-End) 에이전트 시뮬레이션 지원.

@@ -1,12 +1,13 @@
 
 import axios from 'axios';
-import { privateKeyToAccount } from 'viem/accounts';
-import { createPublicClient, http, formatEther, createWalletClient } from 'viem';
-import { cronosTestnet } from 'viem/chains';
+import { ethers } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 
+// --------------------------------------------------------------------------
+// Configuration
+// --------------------------------------------------------------------------
 const WALLET_FILE = path.join(__dirname, 'agent-wallet.json');
 
 // Colors
@@ -19,7 +20,7 @@ const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
 
 // State
-let agentAccount: any;
+let wallet: ethers.Wallet;
 let targetUrl: string = '';
 let targetMethod: string = 'GET';
 let currentBalance: string = 'Unknown';
@@ -60,7 +61,7 @@ function parseTarget(input: string) {
 function printHeader() {
     clearScreen();
     console.log(`${CYAN}${BOLD}`);
-    console.log(`   HighStation Agent Simulator v2.7`);
+    console.log(`   HighStation Agent Simulator v2.7 (Official SDK Edition)`);
     console.log(`${RESET}`);
     console.log(`${DIM}  Real-World Testnet Edition${RESET}\n`);
 
@@ -70,7 +71,7 @@ function printHeader() {
     if (currentGrade === 'C') gradeColor = RED;
 
     console.log(`${YELLOW}⚡ AGENT PROFILE${RESET}`);
-    console.log(`   ${DIM}ID:${RESET}      ${agentAccount.address}`);
+    console.log(`   ${DIM}ID:${RESET}      ${wallet ? wallet.address : 'Loading...'}`);
     console.log(`   ${DIM}Grade:${RESET}   ${gradeColor}${currentGrade}${RESET}`);
     console.log(`   ${DIM}Balance:${RESET} ${currentBalance === 'Unknown' ? DIM + currentBalance : GREEN + currentBalance + ' CRO'}${RESET}`);
 
@@ -86,77 +87,24 @@ async function loadWallet() {
         process.exit(1);
     }
     const walletData = JSON.parse(fs.readFileSync(WALLET_FILE, 'utf-8'));
-    agentAccount = privateKeyToAccount(walletData.privateKey);
+    // Cronos Testnet RPC
+    const provider = new ethers.JsonRpcProvider('https://evm-t3.cronos.org');
+    wallet = new ethers.Wallet(walletData.privateKey, provider);
 }
 
 async function fetchBalance() {
-    console.log(`\n${DIM}🔄 Fetching balance from Public Cronos zkEVM Testnet...${RESET}`);
+    console.log(`\n${DIM}🔄 Fetching balance from Public Cronos EVM Testnet...${RESET}`);
     try {
-        const client = createPublicClient({
-            chain: cronosTestnet,
-            transport: http()
-        });
-        const balanceWei = await client.getBalance({ address: agentAccount.address });
-        currentBalance = formatEther(balanceWei);
-    } catch (e) {
-        currentBalance = "Error fetching";
-    }
-}
-
-// Helper for Settlement
-async function settleAndRetry(account: any, to: string, value: bigint, method: string, url: string, body: any) {
-    console.log(`\n${YELLOW}⛓️  SENDING TRANSACTION...${RESET}`);
-
-    const walletClient = createWalletClient({
-        account: account,
-        chain: cronosTestnet,
-        transport: http()
-    });
-
-    try {
-        const hash = await walletClient.sendTransaction({
-            account: account, // FIX: Explicitly pass account
-            to: to as `0x${string}`,
-            value: value
-        });
-        console.log(`${GREEN}✔ Tx Sent! Hash: ${hash}${RESET}`);
-        console.log(`${DIM}Waiting for confirmation...${RESET}`);
-
-        // Wait 5s for block (Cronos is fast)
-        await new Promise(r => setTimeout(r, 5000));
-
-        console.log(`\n${YELLOW}🔄 RETRYING REQUEST WITH PAYMENT PROOF...${RESET}`);
-
-        const timestamp = Date.now().toString();
-        const nonce = Math.floor(Math.random() * 1000000).toString();
-        const message = `Identify as ${account.address} at ${timestamp} with nonce ${nonce}`;
-        const signature = await account.signMessage({ message });
-
-        const retryResponse = await axios({
-            method: method,
-            url: url,
-            data: body,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${hash}`, // PRESENTING THE PROOF
-                'x-agent-id': account.address,
-                'x-agent-signature': signature,
-                'x-auth-timestamp': timestamp,
-                'x-auth-nonce': nonce
-            }
-        });
-
-        console.log(`\n${GREEN}✅ PAYMENT ACCEPTED & ACCESS GRANTED!${RESET}`);
-        console.log(`${DIM}────────────────────────────────────────${RESET}`);
-        console.log(retryResponse.data);
-        console.log(`${DIM}────────────────────────────────────────${RESET}`);
-        console.log(`${GREEN}💰 Payment: SETTLED${RESET}`);
-
+        const balanceWei = await wallet.provider!.getBalance(wallet.address);
+        currentBalance = ethers.formatEther(balanceWei);
     } catch (e: any) {
-        throw e;
+        currentBalance = "Error: " + e.message;
     }
 }
 
+// --------------------------------------------------------------------------
+// Core Logic: Executing Paid Requests (Standardized X402)
+// --------------------------------------------------------------------------
 async function sendRequest() {
     if (!targetUrl || !targetUrl.startsWith('http')) {
         console.log(`\n${RED}❌ Target URL not set! Please set it first.${RESET}`);
@@ -179,15 +127,24 @@ async function sendRequest() {
 
     console.log(`\n${YELLOW}📡 INITIATING API REQUEST SEQUENCE...${RESET}`);
 
-    const timestamp = Date.now().toString();
+    // Generate EIP-191 Identity Proof
+    const timestamp = Math.floor(Date.now() / 1000).toString();
     const nonce = Math.floor(Math.random() * 1000000).toString();
-    const message = `Identify as ${agentAccount.address} at ${timestamp} with nonce ${nonce}`;
+    const message = `Identify as ${wallet.address} at ${timestamp} with nonce ${nonce}`;
 
     console.log(`${DIM}   ├─ Nonce:${RESET} ${nonce}`);
     console.log(`${DIM}   ├─ Signing Identity...${RESET}`);
-    const signature = await agentAccount.signMessage({ message });
+    const signature = await wallet.signMessage(message);
 
     console.log(`${DIM}   └─ Calling:${RESET} ${targetMethod} ${targetUrl}`);
+
+    const headers: any = {
+        'Content-Type': 'application/json',
+        'x-agent-id': wallet.address,
+        'x-agent-signature': signature,
+        'x-auth-timestamp': timestamp,
+        'x-auth-nonce': nonce
+    };
 
     try {
         const startTime = Date.now();
@@ -195,13 +152,7 @@ async function sendRequest() {
             method: targetMethod,
             url: targetUrl,
             data: data,
-            headers: {
-                'Content-Type': 'application/json',
-                'x-agent-id': agentAccount.address,
-                'x-agent-signature': signature,
-                'x-auth-timestamp': timestamp,
-                'x-auth-nonce': nonce
-            }
+            headers: headers
         });
         const latency = Date.now() - startTime;
 
@@ -216,17 +167,8 @@ async function sendRequest() {
 
         if (response.data._gatekeeper?.optimistic) {
             console.log(`${YELLOW}💳 Payment: POSTPAID (Optimistic Mode)${RESET}`);
-
-            // Credit Hints
             const usage = response.headers['x-credit-usage'];
-            const warning = response.headers['x-credit-warning'];
-            if (usage) {
-                console.log(`${DIM}   Usage:   ${usage}% of Credit Limit${RESET}`);
-            }
-            if (warning) {
-                console.log(`${RED}⚠️  WARNING: ${warning}${RESET}`);
-                console.log(`${RED}   Consider settling debt manually to prevent blocking.${RESET}`);
-            }
+            if (usage) console.log(`${DIM}   Usage:   ${usage}% of Credit Limit${RESET}`);
         } else {
             console.log(`${GREEN}💰 Payment: SETTLED${RESET}`);
         }
@@ -239,12 +181,11 @@ async function sendRequest() {
 
         if (error.response && error.response.status === 402) {
             console.log(`\n${YELLOW}⛔ PAYMENT REQUIRED [402]${RESET}`);
-            console.log(`${DIM}Server Message: ${JSON.stringify(error.response.data.message)}${RESET}`);
 
             // X402 Negotiation Logic
             const authHeader = error.response.headers['www-authenticate'];
             const jsonData = error.response.data;
-            const debtAmount = jsonData.debtAmount || jsonData.amount;
+            const debtAmountStr = jsonData.debtAmount || jsonData.amount;
 
             // Parse Receiver from Header or Default
             let receiver = process.env.PAYMENT_HANDLER_ADDRESS;
@@ -252,19 +193,43 @@ async function sendRequest() {
                 receiver = authHeader.split('receiver="')[1].split('"')[0];
             }
 
-            if (debtAmount && receiver) {
+            if (debtAmountStr && receiver) {
+                const debtAmount = BigInt(debtAmountStr);
                 console.log(`\n${CYAN}💳 BILL DETECTED:${RESET}`);
-                console.log(`   Amount:   ${formatEther(BigInt(debtAmount))} CRO`);
+                console.log(`   Amount:   ${ethers.formatEther(debtAmount)} CRO`);
                 console.log(`   Receiver: ${receiver}`);
 
                 const payNow = await ask(`\n${GREEN}💸 Settle this bill on-chain now? (Y/n): ${RESET}`);
                 if (payNow.toLowerCase() === 'y' || payNow === '') {
                     try {
-                        await settleAndRetry(agentAccount, receiver, BigInt(debtAmount), targetMethod, targetUrl, data);
+                        console.log(`\n${YELLOW}⛓️  SENDING TRANSACTION...${RESET}`);
+                        const tx = await wallet.sendTransaction({
+                            to: receiver,
+                            value: debtAmount
+                        });
+                        console.log(`${GREEN}✔ Tx Sent! Hash: ${tx.hash}${RESET}`);
+                        console.log(`${DIM}Waiting for confirmation...${RESET}`);
+                        await tx.wait(1);
+
+                        console.log(`\n${YELLOW}🔄 RETRYING REQUEST WITH PAYMENT PROOF...${RESET}`);
+                        headers['Authorization'] = `Token ${tx.hash}`;
+
+                        const retryResponse = await axios({
+                            method: targetMethod,
+                            url: targetUrl,
+                            data: data,
+                            headers: headers
+                        });
+
+                        console.log(`\n${GREEN}✅ PAYMENT ACCEPTED & ACCESS GRANTED!${RESET}`);
+                        console.log(`${DIM}────────────────────────────────────────${RESET}`);
+                        console.log(retryResponse.data);
+                        console.log(`${DIM}────────────────────────────────────────${RESET}`);
+
                     } catch (payErr: any) {
                         console.log(`${RED}❌ Payment Failed: ${payErr.message}${RESET}`);
                     }
-                    return; // Exit after retry attempt
+                    return;
                 }
             } else {
                 console.log(`${YELLOW}💡 Tip: Get test tokens from the Faucet if you have 0 CRO.${RESET}`);
@@ -272,13 +237,11 @@ async function sendRequest() {
         } else if (error.response) {
             console.log(`\n${RED}⛔ REQUEST FAILED [${error.response.status}]${RESET}`);
             console.log(`${JSON.stringify(error.response.data)}`);
-            if (error.response.status === 404) console.log(`${YELLOW}💡 Check URL. It must be the FULL API Endpoint.${RESET}`);
         } else {
             console.log(`\n${RED}⛔ ERROR: ${error.message}${RESET}`);
         }
     }
 }
-
 
 async function main() {
     await loadWallet();
@@ -288,7 +251,6 @@ async function main() {
     } else {
         console.log(`\n${YELLOW}👋 Welcome to HighStation Agent Simulator!${RESET}`);
         console.log(`Enter the ${BOLD}Method + URL${RESET} of the Service you want to test.`);
-        console.log(`${DIM}(Example: POST https://highstation-demo.vercel.app/api/resource)${RESET}`);
 
         const input = await ask(`\n👉 Enter Target: `);
         parseTarget(input);
@@ -314,7 +276,7 @@ async function main() {
                 if (input.trim()) parseTarget(input);
                 break;
             case '4':
-                console.log(`\n🔗 Faucet: https://cronos.org/faucet\n🆔 Address: ${agentAccount.address}`);
+                console.log(`\n🔗 Faucet: https://cronos.org/faucet\n🆔 Address: ${wallet ? wallet.address : 'Loading...'}`);
                 await ask(`\n${DIM}Press ENTER...${RESET}`); break;
             case '5':
                 if ((await ask(`Reset Identity? (y/N): `)).toLowerCase() === 'y') {
@@ -327,4 +289,4 @@ async function main() {
     }
 }
 
-main();
+main().catch(console.error);

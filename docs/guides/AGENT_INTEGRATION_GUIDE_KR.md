@@ -10,8 +10,30 @@
 Crypto.com AI Agent SDK를 사용하여 봇을 개발 중이신가요?
 HighStation은 CDC SDK가 사용하는 표준 EVM Wallet (`viem` 기반)과 완벽하게 호환됩니다.
 
-### ✅ Integration Demo
-저희가 제공하는 데모 스크립트를 통해 연동 과정을 미리 확인해 보세요.
+### 4. 차세대: Crypto.com AI Agent SDK 통합 (Hackathon Demo)
+
+HighStation은 단순한 스크립트 실행을 넘어, **자연어**로 서비스를 검색하고 결제할 수 있는 "Smart Agent"를 지원합니다.
+이는 `@crypto.com/ai-agent-client`를 활용하여 구현되었습니다.
+
+**데모 실행 방법:**
+
+```bash
+# 1. 의존성 설치
+npm install
+
+# 2. 에이전트 지갑 생성 (없을 경우)
+npx ts-node scripts/create-agent.ts
+
+# 3. 스마트 에이전트 데모 시작
+npx ts-node scripts/cdc-agent-demo.ts
+```
+
+**시나리오 예시:**
+1. 사용자: "텍스트 분석 API 좀 찾아줘" (Find text analysis APIs)
+2. Agent: HighStation 마켓 검색 결과 제시
+3. 사용자: "첫 번째 거 결제해서 실행해" (Buy and run the first one)
+4. Agent: **X402 프로토콜**을 통해 자동 결제 및 API 호출 수행
+을 미리 확인해 보세요.
 ```bash
 # CDC Agent SDK 스타일의 연동 데모 실행
 npx ts-node scripts/cdc-agent-demo.ts
