@@ -1,72 +1,63 @@
-# 🤖 HighStation Agent Simulator (Interactive CLI)
+# 🤖 HighStation Agent Simulator (Real-World Simulation)
 
-Experience **"Agentic Payment"** firsthand with this interactive console tool.
+This tool interacts with the **Public Cronos zkEVM Testnet**.
+It is not a "fake" simulation but a **Real-World Verification** running on an environment technologically identical to Mainnet, just with free tokens.
 
-## ✨ Key Features
-- **Interactive Menu**: Control your agent using simple number keys (1, 2, 3...).
-- **Global Wallet**: Wallet file is saved securely in your `Home Directory`, allowing you to use the same Identity across different folders.
-- **Remote Access**: Connect to and test any deployed server (e.g., Vercel) seamlessly.
+## 🌍 "Why Testnet?"
+*   **Identical Mechanics**: Block times, Gas Fees, and ECDSA Signatures work exactly like Mainnet.
+*   **Zero Risk**: Uses free Test Tokens (TCRO) instead of real money.
+*   **Production Standard**: If it works here, it works on Mainnet. This is how all professional blockchain apps are verified.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started (External Users)
 
-Currently, you need the project folder to install security libraries (`viem`).
-(A fully standardized `npx highstation-cli` for zero-install execution is coming soon.)
-
-### Step 1: Install (One Time)
+### Step 1: Navigate to Project Folder
 ```bash
-git clone https://github.com/JAYW0RLD/HighStation.git
-cd HighStation
+cd highstation
+```
+
+### Step 2: Install Dependencies
+```bash
 npm install
 ```
 
-### Step 2: Create Agent
-Generate your unique agent wallet. (Saved to your Home Directory)
+### Step 3: Create Agent
+Generate your unique wallet.
 ```bash
 npx ts-node scripts/create-agent.ts
 ```
 
-### Step 3: Run Simulator!
-Pass the **Target Server URL** as an argument.
+### Step 4: Run Simulator!
+No need to remember URLs. Just run it, and **it will ask you.**
 
 ```bash
-# Example:
-npx ts-node scripts/run-agent.ts https://highstation-demo.vercel.app
+npx ts-node scripts/run-agent.ts
 ```
 
 ---
 
-## 🎮 How to Use
+## 🎮 Interactive Mode
 
-Once launched, you will see the dashboard:
+On startup, select your target:
 
 ```text
-   HighStation Agent Simulator v2.0
+🌐 SELECT TARGET SERVER
+  [1] Localhost (http://localhost:3000) - For Developers
+  [2] Remote URL (e.g. Vercel)        - For External Testers
 
-⚡ AGENT PROFILE
-   ID:      0xaEE2...8462
-   Balance: 12.5 CRO
-   Target:  https://highstation-demo.vercel.app
-   Status:  ONLINE
-----------------------------------------
-
-COMMANDS:
-  [1] 💰 Check Wallet Balance
-  [2] 📡 Send API Request
-  [3] ⚙️  Set Target URL
-  [4] 🚪 Exit
+Select [1/2]: 2
+Enter Server URL: https://highstation-demo.vercel.app
 ```
 
-1.  Press **`[2]` (Send API Request)**.
-2.  The agent will auto-sign and connect to the server.
-3.  Look for **"✅ ACCESS GRANTED"**! (Optimistic Payment Mode)
+Press **`[2] Send API Request`**.
+Your agent will sign a transaction and authenticate with the remote server over the real internet.
 
 ---
 
 ## 💡 FAQ
-**Q: Can I run this without downloading?**
-A: Currently, minimal setup is required for the crypto signing libraries (`viem`). Once published as an **npm package**, you will be able to run it via `npx` without downloading.
+**Q: What is "Optimistic Mode"?**
+A: It's a feature where the service grants "Use now, pay later" access to new users with 0 balance. This is a real-world strategy for user acquisition.
 
-**Q: Where is my wallet?**
-A: It is stored in your User Home Directory (`~/.highstation-agent-wallet.json`). Your identity persists even if you delete the project folder.
+**Q: Can I use real money?**
+A: Yes. Simply switch the RPC endpoint to Mainnet in the code and fund your wallet with real CRO. The agent logic remains exactly the same.
