@@ -41,6 +41,13 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
     - Confirmed connection pooling safety and lack of SQL Injection vectors in ORM usage. 
     - Published comprehensive Vulnerability Report (`vulnerability_report.md`).
 
+### v2.8.2 - Robust Demo & Test API (Hotfix)
+- **[FIX] Demo Service Logic**:
+    - Enhanced "Internal Demo" check in `serviceResolver` to robustly handle `localhost`, `127.0.0.1`, and `*.vercel.app` domains.
+    - Resolves "Service Not Verified" error when deploying default demo services on Vercel.
+- **[FIX] Owner Bypass Stability**:
+    - Refactored Supabase client initialization in middleware to prevent runtime errors during token verification.
+
 ### v2.8.1 - Test API & Owner Bypass Fix
 - **[FIX] Test API Forbidden (403)**:
     - Implemented secure **Owner Bypass** in `serviceResolver` middleware.

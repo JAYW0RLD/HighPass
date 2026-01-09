@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { initDB } from '../database/db';
 import { isValidUpstreamUrl } from '../utils/validators';
+import { createClient } from '@supabase/supabase-js';
 
 export interface ServiceConfig {
     id: string;
@@ -62,26 +63,30 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
 
         let isVerifiedOrBypassed = data.status === 'verified';
 
-        // Check 2: Internal Demo Exception
+        // Check 2: Internal Demo Exception (Robust)
         if (!isVerifiedOrBypassed) {
-            const apiOrigin = process.env.VITE_API_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
-            // Allow if path is exact match to our demo handler AND host matches our deployment
-            // We compare the full upstream_url to what we expect our demo URL to be
-            const expectedDemoUrl = `${apiOrigin}/api/demo/echo`;
-            // Also allow localhost fallback for local dev
-            const localDemoUrl = `http://localhost:${process.env.PORT || 3000}/api/demo/echo`;
+            // Check if URL ends with our known demo path
+            if (data.upstream_url.endsWith('/api/demo/echo')) {
+                // Additional safety: Check if it's a known safe host
+                const urlObj = new URL(data.upstream_url);
+                const hostname = urlObj.hostname;
 
-            if (data.upstream_url === expectedDemoUrl || data.upstream_url === localDemoUrl) {
-                isVerifiedOrBypassed = true;
+                // Allow localhost, vercel.app, or configured API Origin
+                const apiOrigin = process.env.VITE_API_ORIGIN ? new URL(process.env.VITE_API_ORIGIN).hostname : 'localhost';
+
+                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app') || hostname === apiOrigin) {
+                    isVerifiedOrBypassed = true;
+                }
             }
         }
 
         // Check 3: Owner Bypass (Secure)
         if (!isVerifiedOrBypassed) {
             const providerToken = req.headers['x-provider-token'] as string;
+            // Check if token exists AND if the service has a provider_id
             if (providerToken && data.provider_id) {
                 try {
-                    const { createClient } = require('@supabase/supabase-js');
+                    // Use top-level import
                     const supabase = createClient(
                         process.env.SUPABASE_URL!,
                         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -91,6 +96,8 @@ export const serviceResolver = async (req: Request, res: Response, next: NextFun
                     if (!error && user && user.id === data.provider_id) {
                         console.log(`[ServiceResolver] 🔓 Owner Bypass: Allowing unverified service access for owner ${user.id}`);
                         isVerifiedOrBypassed = true;
+                    } else if (error) {
+                        console.warn(`[ServiceResolver] Owner Bypass Token Invalid: ${error.message}`);
                     }
                 } catch (e) {
                     console.error('[ServiceResolver] Owner Bypass Check Failed:', e);
