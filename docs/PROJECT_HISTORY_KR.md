@@ -35,6 +35,92 @@ ALLOWED_ORIGINS=https://your-app.vercel.app
 
 ---
 
+## 🎯 v1.6.0: 선예치금 & 동적 평판 시스템 (2026년 1월 10일)
+
+**배경:** Grade F 에이전트는 매 API 호출마다 온체인 결제가 필요하여 3~5초의 지연과 높은 가스비를 경험했습니다. 또한 기존 평판 시스템은 정적이어서 실시간 결제 행동을 반영하지 못했습니다.
+
+### 핵심 기능
+
+#### 1. 선예치금 시스템 (Prepaid Balance)
+에이전트가 미리 CRO를 입금하면 온체인 검증 없이 즉시 API를 호출할 수 있습니다.
+
+**구현:**
+- `POST /api/deposit`: On-chain tx → 예치금 충전
+- 3단계 결제 플로우:
+  ```
+  1. 예치금 체크 (즉시 승인)
+  2. 외상 체크 (등급별 한도)
+  3. 402 선결제 요구 (fallback)
+  ```
+- Warning 시스템: `LOW_BALANCE`, `OVER_LIMIT_DOWNGRADE`
+
+**DB 스키마:**
+```sql
+ALTER TABLE wallets ADD prepaid_balance_wei NUMERIC;
+```
+
+#### 2. 동적 평판 시스템 (Dynamic Reputation)
+결제 행동 기반으로 평판 점수가 실시간 변동됩니다.
+
+**점수 계산:**
+```
+Score(CRO) = 총입금액 + 총결제액 - 총외상액
+```
+
+**등급 기준 (CRO):**
+- A: 250+ (한도 $5)
+- B: 150+ (한도 $3)
+- C: 100+ (한도 $1)
+- D: 50+ (한도 $0.5)
+- E: 10+ (한도 $0.1)
+- F: 0~9 (선결제만)
+
+**동적 페널티:**
+- 50% 미만 이용 → -10% 점수
+- 연체 50%+ → 점수 절반
+- 등급 강등 시 즉시 외상 차단
+
+**DB 스키마:**
+```sql
+CREATE TABLE reputation_history (
+    agent_id TEXT PRIMARY KEY,
+    internal_score NUMERIC,
+    total_deposits_cro NUMERIC,
+    total_payments_cro NUMERIC
+);
+```
+
+### 보안 강화
+- ✅ RED TEAM 검증된 SQL (NUMERIC 타입, CHECK 제약조건)
+- ✅ EVM 주소 regex 검증
+- ✅ SECURITY DEFINER + search_path 보호
+- ✅ Input validation (모든 함수)
+- ✅ RLS 정책
+- ✅ Atomic operations
+
+### 설정 가능 (Easy Modification)
+모든 설정은 `src/config/reputation.ts`에서 조정:
+```typescript
+PAYMENT_FLOW_CONFIG:
+  PREPAID_FIRST: true/false
+  APPLY_LOW_UTILIZATION_PENALTY: true/false
+  BLOCK_ON_DOWNGRADE: true/false
+  INCLUDE_WARNINGS: true/false
+```
+
+### 하위 호환성
+- ✅ 기존 외상/부채 시스템 보존
+- ✅ Dual-Track 로직 유지
+- ✅ SQL migration 전에도 정상 작동 (fallback)
+
+### 마이그레이션 가이드
+```bash
+# Supabase SQL Editor에서 실행
+migrations/v1.6.0_prepayment_reputation.sql
+```
+
+---
+
 ## 🏗️ 현재 아키텍처: v3.7 (종합 보안 강화 에디션)
 **출시일:** 2026년 1월 9일
 
