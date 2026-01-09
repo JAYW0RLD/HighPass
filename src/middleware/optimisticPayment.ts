@@ -108,7 +108,56 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
             return;
         }
 
-        // Case 1: Outstanding Debt - Check Settlement Threshold
+        // ========================================================================
+        // v1.6.0: PREPAYMENT SYSTEM (Step 1 - Prepaid Balance Check)
+        // ========================================================================
+        try {
+            const { PAYMENT_FLOW_CONFIG, WARNING_THRESHOLDS } = await import('../config/reputation');
+
+            if (PAYMENT_FLOW_CONFIG.PREPAID_FIRST) {
+                const { getPrepaidBalance, deductPrepaidBalance } = await import('../database/db');
+                const { updateScoreForPayment } = await import('../database/reputation');
+
+                const prepaidBalance = await getPrepaidBalance(agentId);
+
+                if (prepaidBalance >= requiredWei) {
+                    // Sufficient prepaid balance - instant approval
+                    const success = await deductPrepaidBalance(agentId, requiredWei);
+
+                    if (success) {
+                        // Update reputation (+)
+                        await updateScoreForPayment(agentId, requiredWei, 'prepaid');
+
+                        const remaining = prepaidBalance - requiredWei;
+                        const warnings: string[] = [];
+
+                        if (PAYMENT_FLOW_CONFIG.INCLUDE_WARNINGS && remaining < WARNING_THRESHOLDS.LOW_BALANCE) {
+                            warnings.push('LOW_BALANCE');
+                        }
+
+                        console.log(`[Prepaid] Agent ${agentId}: Paid with prepaid balance. Remaining: ${remaining}`);
+
+                        res.locals.paymentAmount = requiredWei.toString();
+                        res.locals.paymentInfo = {
+                            method: 'prepaid',
+                            balance_remaining: remaining.toString(),
+                            warnings
+                        };
+
+                        next();
+                        return;
+                    }
+                }
+            }
+        } catch (error) {
+            // Fallback to credit/debt if prepaid system unavailable
+            console.log(`[Prepaid] System unavailable, falling back to credit`);
+        }
+
+        // ========================================================================
+        // EXISTING LOGIC: Debt/Credit Check (Step 2)
+        // ========================================================================
+
         // Grade-based debt aggregation for gas optimization
         const DEBT_THRESHOLDS = {
             'A': BigInt('50000000000000000000'), // $5.00 @ $0.10/CRO = 50 CRO
@@ -162,6 +211,58 @@ export const optimisticPaymentCheck = async (req: Request, res: Response, next: 
         const isOptimisticEligible = grade && grade <= minOptimisticGrade;
 
         if (isOptimisticEligible) {
+            // ================================================================
+            // v1.6.0: ADDITIONAL CREDIT CHECKS
+            // ================================================================
+            try {
+                const { PAYMENT_FLOW_CONFIG, WARNING_THRESHOLDS, REPUTATION_CONFIG } = await import('../config/reputation');
+
+                // Check 1: Grade downgrade debt limit enforcement
+                if (PAYMENT_FLOW_CONFIG.BLOCK_ON_DOWNGRADE) {
+                    const debtLimit = await identityService.getDebtLimit(agentId);
+
+                    if (currentDebt > debtLimit) {
+                        // Agent's debt exceeds new limit due to grade downgrade
+                        console.log(`[Credit Block] Agent ${agentId}: Debt ${currentDebt} exceeds limit ${debtLimit} (Grade Downgrade)`);
+
+                        res.status(402).set(
+                            'WWW-Authenticate',
+                            `Token realm=\"X402-Downgrade\", ${commonHeaders}, amount=\"${requiredWei.toString()}\", debt=\"${currentDebt.toString()}\", limit=\"${debtLimit.toString()}\"`
+                        ).json({
+                            error: "Credit Blocked - Grade Downgrade",
+                            message: "Your debt exceeds the current credit limit due to grade change. Please settle debt or use prepaid balance.",
+                            currency: "CRO",
+                            debt: currentDebt.toString(),
+                            limit: debtLimit.toString(),
+                            warnings: ['OVER_LIMIT_DOWNGRADE'],
+                            recommendation: "SETTLE_OR_PREPAY"
+                        });
+                        return;
+                    }
+                }
+
+                // Check 2: 50% utilization penalty
+                if (PAYMENT_FLOW_CONFIG.APPLY_LOW_UTILIZATION_PENALTY) {
+                    const debtLimit = await identityService.getDebtLimit(agentId);
+                    const utilization = Number(currentDebt) / Number(debtLimit);
+
+                    if (debtLimit > BigInt(0) && utilization < WARNING_THRESHOLDS.LOW_UTILIZATION_PENALTY) {
+                        const { getInternalReputation, applyLowUtilizationPenalty } = await import('../database/reputation');
+                        const score = await getInternalReputation(agentId);
+
+                        if (score !== null && score > 0) {
+                            await applyLowUtilizationPenalty(agentId);
+                            console.log(`[Penalty] Agent ${agentId}: Applied 10% penalty for low utilization (${Math.round(utilization * 100)}%)`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('[Credit] Enhanced checks unavailable, proceeding with basic credit');
+            }
+
+            // ================================================================
+            // ALLOW CREDIT (Original Logic)
+            // ================================================================
             // Allow optimistic access - accumulate debt
             console.log(`[X402] Agent ${agentId} (Grade ${grade}): Granting Optimistic Access. Debt: ${currentDebt} → ${newDebt} (Threshold: ${debtThreshold})`);
             await addDebt(agentId, requiredWei);
