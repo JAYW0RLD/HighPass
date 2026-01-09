@@ -384,3 +384,85 @@ export async function cleanupExpiredNonces(): Promise<void> {
     }
 }
 
+// ========================================
+// Prepaid Balance Management (v1.6.0)
+// ========================================
+
+/**
+ * Get prepaid balance for an agent
+ */
+export async function getPrepaidBalance(agentId: string): Promise<bigint> {
+    if (!db) await initDB();
+    if (!db) return BigInt(0);
+
+    const { data, error } = await db
+        .from('wallets')
+        .select('prepaid_balance_wei')
+        .eq('address', agentId)
+        .single();
+
+    if (error || !data) return BigInt(0);
+
+    return data.prepaid_balance_wei ? BigInt(data.prepaid_balance_wei) : BigInt(0);
+}
+
+/**
+ * Add to prepaid balance (deposit)
+ */
+export async function addPrepaidBalance(
+    agentId: string,
+    amount: bigint
+): Promise<void> {
+    if (!db) await initDB();
+    if (!db) throw new Error('Database not initialized');
+
+    const current = await getPrepaidBalance(agentId);
+    const newBalance = current + amount;
+
+    const { error } = await db
+        .from('wallets')
+        .upsert({
+            address: agentId,
+            prepaid_balance_wei: newBalance.toString()
+        }, { onConflict: 'address' });
+
+    if (error) {
+        console.error('[DB] Error adding prepaid balance:', error);
+        throw error;
+    }
+
+    console.log(`[DB] Added ${amount} wei to ${agentId} prepaid balance`);
+}
+
+/**
+ * Deduct from prepaid balance (payment)
+ */
+export async function deductPrepaidBalance(
+    agentId: string,
+    amount: bigint
+): Promise<boolean> {
+    if (!db) await initDB();
+    if (!db) return false;
+
+    const current = await getPrepaidBalance(agentId);
+
+    if (current < amount) {
+        console.warn(`[DB] Insufficient prepaid balance for ${agentId}`);
+        return false;
+    }
+
+    const newBalance = current - amount;
+
+    const { error } = await db
+        .from('wallets')
+        .update({ prepaid_balance_wei: newBalance.toString() })
+        .eq('address', agentId);
+
+    if (error) {
+        console.error('[DB] Error deducting prepaid balance:', error);
+        return false;
+    }
+
+    console.log(`[DB] Deducted ${amount} wei from ${agentId} prepaid balance`);
+    return true;
+}
