@@ -262,13 +262,24 @@ function ProviderPortal() {
         <div className="dashboard provider-portal">
             <Header title="Provider Dashboard" />
 
-            <div className="dashboard-grid mt-2">
+            <div className="grid grid-cols-12 gap-6 mt-6">
 
-                {/* 1. Top Section: Platform Summary (Left) & Pulse (Right) */}
+                {/* 1. Top Section: Pulse (Left) & Platform Summary (Right) */}
+                <div className="col-span-12 lg:col-span-4">
+                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[200px] border border-white/10 bg-[#0A0A0B]" padding={false}>
+                        <div className="p-4 pt-0 h-[200px]">
+                            <RealTimeChart
+                                data={chartData}
+                                height={200}
+                            />
+                        </div>
+                    </DashboardCard>
+                </div>
+
                 <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
-                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e] border border-white/10">
+                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e] border border-white/10 bg-[#0A0A0B]">
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6 items-start">
-                            <div className="p-4 rounded-lg bg-white/5 border border-white/5">
+                            <div className="p-4 rounded-lg bg-white/5 border border-white/10">
                                 <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-2">Net Revenue</h3>
                                 <div className="text-2xl font-bold text-white font-mono break-all">
                                     {providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000'}
@@ -304,28 +315,18 @@ function ProviderPortal() {
                     </DashboardCard>
                 </div>
 
-                <div className="col-span-12 lg:col-span-4">
-                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[200px] border border-white/10" padding={false}>
-                        <div className="p-4 pt-0 h-[200px]">
-                            <RealTimeChart
-                                data={chartData}
-                                height={200}
-                            />
-                        </div>
-                    </DashboardCard>
-                </div>
-
                 {/* 2. Middle Section: Services Management */}
                 <div className="col-span-12 mt-8">
                     {/* Premium Tabs - Segmented Control Style */}
-                    <div className="flex items-center gap-1 p-1 bg-white/5 rounded-lg border border-white/5 w-fit mb-6">
+                    {/* Premium Tabs - Black BG, White Text, Stylish Border */}
+                    <div className="flex items-center gap-2 mb-6">
                         {['services', 'integration', 'revenue'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === tab
-                                    ? 'bg-accent-green text-black shadow-lg shadow-accent-green/20'
-                                    : 'text-secondary hover:text-white hover:bg-white/5'
+                                className={`px-6 py-2.5 text-sm font-bold transition-all border ${activeTab === tab
+                                    ? 'bg-black text-white border-accent-green shadow-[0_0_10px_rgba(0,229,153,0.1)]'
+                                    : 'bg-black text-secondary border-transparent hover:text-white hover:border-white/10'
                                     }`}
                             >
                                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -334,7 +335,7 @@ function ProviderPortal() {
                     </div>
 
                     {activeTab === 'services' && (
-                        <div className="dashboard-grid">
+                        <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-12 lg:col-span-5">
                                 <DashboardCard title="Register Service" className="h-full border border-white/10 bg-[#0A0A0B]">
                                     <form onSubmit={handleCreateService} className="flex flex-col gap-6">
@@ -437,7 +438,7 @@ function ProviderPortal() {
                     )}
 
                     {activeTab === 'revenue' && (
-                        <div className="dashboard-grid">
+                        <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-6">
                                 <DashboardCard title="Net Revenue">
                                     <div className="text-3xl font-bold text-green-400">
