@@ -55,17 +55,23 @@ async function main() {
     console.log(`✅ Agent Created Successfully!`);
     console.log(`📂 Saved to: ${WALLET_FILE}`);
     console.log(`\n🆔 AGENT ADDRESS: \x1b[36m${agentId}\x1b[0m`);
-    console.log(`\n💰 NEXT STEP: Fund this wallet with test tokens.`);
-    console.log(`   (Send CRO/ETH to this address on the testnet)`);
-
-    console.log(`\n📊 IMPORTANT: New wallets start at Grade F (0 reputation)`);
-    console.log(`   • Grade F = Pay-per-call (402 Payment Required for each API call)`);
-    console.log(`   • This means slower execution due to on-chain transactions`);
-    console.log(`\n💡 TIP: For faster testing, fund your wallet with sufficient CRO`);
-    console.log(`   → Each API call costs ~0.0001-0.1 CRO + gas fees`);
-    console.log(`   → Recommended: 1-5 CRO for smooth testing`);
-
-    console.log(`\n🚀 THEN RUN: npx ts-node scripts/run-agent.ts\n`);
+    console.log('✅ Agent wallet created successfully!\n');
+    console.log('📋 Agent Details:');
+    console.log(`   Address: ${account.address}`);
+    console.log(`   Private Key: ${privateKey}\n`);
+    console.log('⚠️  IMPORTANT: This wallet is Grade F (no credit history):');
+    console.log('   - Every API call requires upfront payment (402)');
+    console.log('   - Recommended: Deposit prepaid balance for instant calls');
+    console.log('   - Command: npx ts-node scripts/deposit.ts 0.1\n');
+    console.log('💡 GitHub OAuth Account (Dashboard):');
+    console.log('   - Starts at Grade E (reputation 50)');
+    console.log('   - Initial credit limit: $0.1');
+    console.log('   - Can link multiple wallets (shared debt limit)');
+    console.log('   - All linked wallets share global_debt_limit\n');
+    console.log('🚀 Next Steps:');
+    console.log('   1. Fund with test CRO: https://cronos.org/faucet (zkEVM Testnet)');
+    console.log('   2. (Optional) Deposit for instant calls: npx ts-node scripts/deposit.ts 0.1');
+    console.log('   3. Test API call: npx ts-node scripts/run-agent.ts\n');
 
     rl.close();
 }
