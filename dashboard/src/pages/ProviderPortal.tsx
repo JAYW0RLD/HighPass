@@ -276,51 +276,40 @@ function ProviderPortal() {
                     </DashboardCard>
                 </div>
 
-                <div className="col-span-4 flex flex-col gap-4">
-                    <DashboardCard className="bg-gradient-dark">
-                        <div className="flex items-center justify-between mb-4">
+                <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
+                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e]">
+                        <div className="space-y-6 mt-2">
                             <div>
-                                <h3 className="text-secondary text-sm font-bold uppercase tracking-wider">ERC-8004 Rating</h3>
-                                <div className="text-4xl font-bold text-white mt-2 flex items-center gap-2">
-                                    S-Grade
-                                    <span className="text-xs py-1 px-2 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">Verified</span>
+                                <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Net Revenue</h3>
+                                <div className="text-3xl font-bold text-white font-mono">
+                                    {providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000'}
+                                    <span className="text-lg text-accent-green ml-2">CRO</span>
                                 </div>
                             </div>
-                            <div className="w-16 h-16 rounded-full border-4 border-blue-500 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                                <span className="text-2xl font-bold text-blue-400">S</span>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4 border-t border-white/10 pt-4">
-                            <div>
-                                <div className="text-secondary text-xs">Latency</div>
-                                <div className="text-blue-400 font-mono text-lg">35ms</div>
-                            </div>
-                            <div>
-                                <div className="text-secondary text-xs">Success Rate</div>
-                                <div className="text-green-400 font-mono text-lg">99.9%</div>
-                            </div>
-                        </div>
-                    </DashboardCard>
 
-                    <DashboardCard className="flex-1">
-                        <h3 className="text-secondary text-sm font-bold uppercase tracking-wider mb-2">Long-running Jobs</h3>
-                        <div className="space-y-3">
-                            <div>
-                                <div className="flex justify-between text-xs text-secondary mb-1">
-                                    <span>Deep Scan</span>
-                                    <span>65%</span>
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                <div>
+                                    <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Total Calls</h3>
+                                    <div className="text-xl font-bold text-white">
+                                        {providerStats?.totalCalls.toLocaleString() || '0'}
+                                    </div>
                                 </div>
-                                <div className="w-full bg-white/5 rounded-full h-1.5">
-                                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '65%' }}></div>
+                                <div>
+                                    <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Active Services</h3>
+                                    <div className="text-xl font-bold text-white">
+                                        {services.length}
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="flex justify-between text-xs text-secondary mb-1">
-                                    <span>Index Build</span>
-                                    <span>24%</span>
-                                </div>
-                                <div className="w-full bg-white/5 rounded-full h-1.5">
-                                    <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: '24%' }}></div>
+
+                            <div className="pt-4 border-t border-white/5">
+                                <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-2">System Status</h3>
+                                <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded border border-green-500/20">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    All Systems Operational
                                 </div>
                             </div>
                         </div>
