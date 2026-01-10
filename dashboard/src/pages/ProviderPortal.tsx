@@ -264,54 +264,53 @@ function ProviderPortal() {
 
             <div className="dashboard-grid mt-2">
 
-                {/* 1. Top Section: Charts & Reputation */}
-                <div className="col-span-8">
-                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[300px]" padding={false}>
-                        <div className="p-4 pt-0 h-[250px]">
-                            <RealTimeChart
-                                data={chartData}
-                                height={250}
-                            />
+                {/* 1. Top Section: Platform Summary (Left) & Pulse (Right) */}
+                <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
+                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e] border border-white/10">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6 items-start">
+                            <div className="p-4 rounded-lg bg-white/5 border border-white/5">
+                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-2">Net Revenue</h3>
+                                <div className="text-2xl font-bold text-white font-mono break-all">
+                                    {providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000'}
+                                    <span className="text-sm text-accent-green ml-1">CRO</span>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-1">Total Calls</h3>
+                                <div className="text-xl font-bold text-white">
+                                    {providerStats?.totalCalls.toLocaleString() || '0'}
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-1">Active Services</h3>
+                                <div className="text-xl font-bold text-white">
+                                    {services.length}
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-2">System Status</h3>
+                                <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 px-2 py-1.5 rounded border border-green-500/20 w-fit">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                                    </span>
+                                    Operational
+                                </div>
+                            </div>
                         </div>
                     </DashboardCard>
                 </div>
 
-                <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e]">
-                        <div className="space-y-6 mt-2">
-                            <div>
-                                <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Net Revenue</h3>
-                                <div className="text-3xl font-bold text-white font-mono">
-                                    {providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000'}
-                                    <span className="text-lg text-accent-green ml-2">CRO</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                                <div>
-                                    <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Total Calls</h3>
-                                    <div className="text-xl font-bold text-white">
-                                        {providerStats?.totalCalls.toLocaleString() || '0'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Active Services</h3>
-                                    <div className="text-xl font-bold text-white">
-                                        {services.length}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-white/5">
-                                <h3 className="text-secondary text-xs font-bold uppercase tracking-wider mb-2">System Status</h3>
-                                <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded border border-green-500/20">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                    </span>
-                                    All Systems Operational
-                                </div>
-                            </div>
+                <div className="col-span-12 lg:col-span-4">
+                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[200px] border border-white/10" padding={false}>
+                        <div className="p-4 pt-0 h-[200px]">
+                            <RealTimeChart
+                                data={chartData}
+                                height={200}
+                            />
                         </div>
                     </DashboardCard>
                 </div>
@@ -337,7 +336,7 @@ function ProviderPortal() {
                     {activeTab === 'services' && (
                         <div className="dashboard-grid">
                             <div className="col-span-12 lg:col-span-5">
-                                <DashboardCard title="Register Service" className="h-full border border-white/5 bg-[#0A0A0B]">
+                                <DashboardCard title="Register Service" className="h-full border border-white/10 bg-[#0A0A0B]">
                                     <form onSubmit={handleCreateService} className="flex flex-col gap-6">
 
                                         {/* Section: Basic Info */}
@@ -406,7 +405,7 @@ function ProviderPortal() {
                             <div className="col-span-12 lg:col-span-7">
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                     {loading ? <SkeletonList count={2} /> : services.map(svc => (
-                                        <DashboardCard key={svc.id} className="relative group">
+                                        <DashboardCard key={svc.id} className="relative group border border-white/10 bg-[#0A0A0B] hover:border-white/20 transition-all hover:shadow-lg hover:shadow-black/50">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-semibold text-white">{svc.name}</h3>
                                                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${svc.upstream_url.includes('/api/demo')
