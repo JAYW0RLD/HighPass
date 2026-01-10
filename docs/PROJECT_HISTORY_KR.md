@@ -15,12 +15,21 @@
 
 ---
 
+## 🎯 v1.8.2: Secure Provider Verification (HMAC) (2026-01-10)
+**Security Hardening**:
+- **HMAC-SHA256 Signing**: 게이트키퍼가 API 요청을 전달할 때 비밀키로 서명(`X-HighStation-Signature`)하여 전송.
+- **Provider Portal**: 서비스별 `signing_secret` 발급 및 조회 기능 추가.
+- **Verification Guide**: 단순히 헤더(`x-forwarded-by`)만 믿는 것이 아니라, 암호화된 서명을 검증하여 위조 및 재전송 공격 차단.
+
+---
+
 ## 🎯 v1.8.1: UI Polish & Domain Migration (2026-01-10)
 
-**UI/UX Overhaul**:
-- **Design System**: "Lighter.xyz" 기반 Dark/Neon 테마 완성. 
-- **Font**: Google Fonts `Inter` 적용으로 가독성 및 심미성 확보.
-- **Components**: Provider Portal의 Form, Tabs, Buttons를 전문가 수준(Premium)으로 재설계.
+**UI/UX Overhaul (Premium Polish)**:
+- **Real-time Revenue Pulse**: "Revenue Velocity" 차트 도입 및 CRO 단위 명시, 패딩 최적화로 시인성 개선.
+- **Layout Optimization**: Provider Portal의 3분할 레이아웃을 2분할(5:7 Ratio)로 변경하여 컴포넌트 균형 확보.
+- **Mock Data Removal**: 혼란을 주던 "S-Grade" 등 가짜 데이터를 삭제하고 실제 "Platform Summary" (매출/호출/서비스 수) 카드로 교체.
+- **Components**: Segmented Control 스타일의 Tabs 도입(Dark Mode 호환 강화) 및 입력 폼 가시성 개선.
 
 **Infrastructure**:
 - **DNS**: `highstation.net` 커스텀 도메인 정식 연결 및 HTTPS 강제.

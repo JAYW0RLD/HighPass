@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 import Header from '../components/Header';
 import { SkeletonList } from '../components/Skeleton';
-// import { NoServicesState } from '../components/EmptyState';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { RealTimeChart } from '../components/RealTimeChart';
 import { DashboardCard } from '../components/DashboardCard';
 import '../App.css';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
+// MOCK DATA - No Supabase dependency
 interface Service {
     id: string;
     slug: string;
@@ -20,19 +15,53 @@ interface Service {
     upstream_url: string;
     price_wei: string;
     min_grade: string;
-    signing_secret?: string; // v1.8.1
 }
 
-function ProviderPortal() {
+function UIOnlyProviderPortal() {
     const [activeTab, setActiveTab] = useState<'services' | 'integration' | 'revenue'>('services');
-    const [services, setServices] = useState<Service[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    // MOCK: Pre-filled services
+    const [services, setServices] = useState<Service[]>([
+        {
+            id: '1',
+            name: 'Weather API v1',
+            slug: 'weather-api',
+            upstream_url: 'https://api.weather.com/v1',
+            price_wei: '10000000000000000', // 0.01 CRO
+            min_grade: 'F'
+        },
+        {
+            id: '2',
+            name: 'Stock Price Feed',
+            slug: 'stock-feed',
+            upstream_url: 'https://finance.api.com',
+            price_wei: '50000000000000000', // 0.05 CRO
+            min_grade: 'A'
+        },
+        {
+            id: '3',
+            name: 'Demo Echo Service',
+            slug: 'demo-echo',
+            upstream_url: 'http://localhost:3000/api/demo/echo',
+            price_wei: '0',
+            min_grade: 'F'
+        }
+    ]);
+
+    const [loading, setLoading] = useState(false); // No loading
+
+    // MOCK: Provider Stats
     const [providerStats, setProviderStats] = useState<{
         totalCalls: number;
         totalRevenueWei: string;
         netRevenueWei: string;
         protocolFeeWei: string;
-    } | null>(null);
+    } | null>({
+        totalCalls: 12543,
+        totalRevenueWei: '58420000000000000000',
+        netRevenueWei: '55120000000000000000', // ~55.12 CRO
+        protocolFeeWei: '3300000000000000000'
+    });
 
     // Mock Realtime Data
     const [chartData, setChartData] = useState<{ time: number; value: number }[]>([]);
@@ -80,8 +109,6 @@ function ProviderPortal() {
 
     // Edit Modal State
     const [editingService, setEditingService] = useState<Service | null>(null);
-    // const [verificationData, setVerificationData] = useState<{ token: string; instructions: any } | null>(null);
-    // const [verifying, setVerifying] = useState(false);
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{
@@ -98,121 +125,17 @@ function ProviderPortal() {
         isDangerous: false
     });
 
-    useEffect(() => {
-        fetchServices();
-    }, []);
-
-    const fetchServices = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data, error } = await supabase
-                .from('services')
-                .select('*')
-                .eq('provider_id', user.id);
-
-            if (error) throw error;
-            setServices(data || []);
-            setLoading(false);
-            fetchProviderStats();
-        } catch (err) {
-            console.error('Error fetching services:', err);
-            setLoading(false);
-        }
-    };
-
-    const fetchProviderStats = async () => {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-
-            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-            const res = await fetch(`${apiOrigin}/api/provider/stats`, {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
-
-            if (!res.ok) throw new Error('Failed to fetch stats');
-            const data = await res.json();
-            setProviderStats(data);
-        } catch (err) {
-            console.error('Error fetching provider stats:', err);
-        }
-    };
-
-    // const handleGenerateToken = async () => { ... } (Commented out for now as unused in new UI)
-    /*
-    const handleGenerateToken = async () => {
-        if (!editingService) return;
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-            const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/generate-token`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            setVerificationData(data);
-            toast.success('Verification token generated');
-        } catch (err: any) { toast.error(err.message); }
-    };
-
-    const handleVerifyDomain = async () => {
-        if (!editingService) return;
-        setVerifying(true);
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-            const res = await fetch(`${apiOrigin}/api/services/${editingService.id}/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            toast.success('Domain verified successfully!');
-            setEditingService(null);
-            setVerificationData(null);
-            fetchServices();
-        } catch (err: any) { toast.error(`Verification failed: ${err.message}`); } finally { setVerifying(false); }
-    };
-    */
-
+    // MOCK ACTIONS
     const handleCreateService = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { error } = await supabase.from('services').insert({ provider_id: user.id, ...newService });
-            if (error) throw error;
-            toast.success('Service created successfully!');
-            setNewService({ name: '', slug: '', upstream_url: '', price_wei: '0', min_grade: 'F', trust_seed_enabled: false, initial_debt_limit: 0.1 });
-            fetchServices();
-        } catch (err: any) { toast.error(`Failed to create service: ${err.message}`); }
+        toast.success('(MOCK) Service created successfully!');
+        setNewService({ name: '', slug: '', upstream_url: '', price_wei: '0', min_grade: 'F', trust_seed_enabled: false, initial_debt_limit: 0.1 });
     };
 
     const handleUpdateService = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!editingService) return;
-        try {
-            const { error } = await supabase.from('services').update({
-                name: editingService.name,
-                slug: editingService.slug,
-                upstream_url: editingService.upstream_url,
-                price_wei: editingService.price_wei,
-                min_grade: editingService.min_grade,
-                trust_seed_enabled: (editingService as any).trust_seed_enabled,
-                initial_debt_limit: (editingService as any).initial_debt_limit
-            }).eq('id', editingService.id);
-            if (error) throw error;
-            toast.success('Service updated successfully!');
-            setEditingService(null);
-            fetchServices();
-        } catch (err: any) { toast.error(`Failed to update service: ${err.message}`); }
+        toast.success('(MOCK) Service updated successfully!');
+        setEditingService(null);
     };
 
     const handleDeleteService = () => {
@@ -223,45 +146,26 @@ function ProviderPortal() {
             message: `Delete ${editingService.name}?`,
             isDangerous: true,
             action: async () => {
-                try {
-                    const { error } = await supabase.from('services').delete().eq('id', editingService.id);
-                    if (error) throw error;
-                    toast.success('Service deleted');
-                    setEditingService(null);
-                    fetchServices();
-                } catch (err: any) { toast.error(`Failed to delete service: ${err.message}`); }
+                toast.success('(MOCK) Service deleted');
+                setEditingService(null);
             }
         });
     };
 
     const createDemoService = () => {
-        const apiOrigin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-        const demoUpstreamUrl = `${apiOrigin}/api/demo/echo`;
-        const existingDemo = services.find(s => s.upstream_url === demoUpstreamUrl);
-        if (existingDemo) { toast.error('Demo service already exists.'); return; }
         setConfirmModal({
             isOpen: true,
             title: 'Deploy Demo Service',
             message: 'Deploy Demo Echo Service?',
             action: async () => {
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) return;
-                    const slug = `demo-${Math.random().toString(36).substring(7)}`;
-                    const { error } = await supabase.from('services').insert({
-                        provider_id: user.id, name: 'Demo Echo Service', slug: slug, upstream_url: demoUpstreamUrl, price_wei: '10000000000000000', min_grade: 'F'
-                    });
-                    if (error) throw error;
-                    toast.success('Demo service deployed!');
-                    fetchServices();
-                } catch (err: any) { toast.error(err.message); }
+                toast.success('(MOCK) Demo service deployed!');
             }
         });
     };
 
     return (
         <div className="dashboard provider-portal">
-            <Header title="Provider Dashboard" />
+            <Header title="Provider Dashboard (UI Test Mode)" />
 
             <div className="grid grid-cols-12 gap-6 mt-6">
 
@@ -318,7 +222,6 @@ function ProviderPortal() {
 
                 {/* 2. Middle Section: Services Management */}
                 <div className="col-span-12 mt-8">
-                    {/* Premium Tabs - Segmented Control Style */}
                     {/* Premium Tabs - Black BG, White Text, Stylish Border */}
                     <div className="flex items-center gap-2 mb-6">
                         {['services', 'integration', 'revenue'].map(tab => (
@@ -465,20 +368,6 @@ function ProviderPortal() {
                     <DashboardCard title={`Manage ${editingService.name}`} className="w-full max-w-lg">
                         <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
                             <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} className="form-control bg-input border-border" />
-
-                            {/* Signing Secret Display */}
-                            <div className="space-y-1">
-                                <label className="text-[11px] text-secondary">Signing Secret (HMAC-SHA256)</label>
-                                <div className="flex gap-2">
-                                    <input type="text" readOnly value={editingService.signing_secret || 'Refresh to generate'} className="form-control bg-[#121214] border-white/10 text-xs font-mono text-accent-green" />
-                                    <button type="button" onClick={() => { navigator.clipboard.writeText(editingService.signing_secret || ''); toast.success('Secret copied'); }} className="btn btn-secondary px-3 py-2">
-                                        Copy
-                                    </button>
-                                </div>
-                                <p className="text-[10px] text-secondary mt-1">
-                                    Verify <code>x-highstation-signature</code> header using this secret.
-                                </p>
-                            </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" onClick={() => setEditingService(null)} className="btn btn-secondary">Cancel</button>
                                 <button type="submit" className="btn btn-primary">Save</button>
@@ -501,4 +390,4 @@ function ProviderPortal() {
     );
 }
 
-export default ProviderPortal;
+export default UIOnlyProviderPortal;

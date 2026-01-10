@@ -10,6 +10,7 @@ export interface ServiceConfig {
     price_wei: string;
     min_grade: string;
     provider_id: string;
+    signing_secret?: string; // v1.8.1 HMAC
 }
 
 export const serviceResolver = async (req: Request, res: Response, next: NextFunction) => {

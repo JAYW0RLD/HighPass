@@ -391,7 +391,7 @@ app.all('/gatekeeper/:serviceSlug/resource',
         }
 
         try {
-            const result = await ProxyService.forwardRequest(req, config.upstream_url, config.name);
+            const result = await ProxyService.forwardRequest(req, config.upstream_url, config.name, config.signing_secret);
 
             // Store Telemetry in Locals for Logger
             res.locals.telemetry = result.telemetry;

@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { createHmac } from 'crypto';
 
 export interface ProxyResult {
     status: number;
@@ -23,7 +24,7 @@ export class ProxyService {
         'cache-control'
     ]);
 
-    static async forwardRequest(req: Request, upstreamUrl: string, serviceName: string): Promise<ProxyResult> {
+    static async forwardRequest(req: Request, upstreamUrl: string, serviceName: string, signingSecret?: string): Promise<ProxyResult> {
         const forwardHeaders: Record<string, string> = {};
 
         // Header filtering logic
@@ -50,13 +51,30 @@ export class ProxyService {
         forwardHeaders['x-forwarded-by'] = 'highstation';
         forwardHeaders['x-service-name'] = serviceName;
 
+        // V-1.8.1: HMAC Signature for Provider Verification
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        forwardHeaders['x-highstation-time'] = timestamp;
+
+        let requestBody: string | undefined;
+        if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+            // Ensure consistent serialization for signing and sending
+            requestBody = JSON.stringify(req.body);
+        }
+
+        if (signingSecret) {
+            // Construct payload: timestamp.body (or just timestamp if no body)
+            const payload = requestBody ? `${timestamp}.${requestBody}` : timestamp;
+            const signature = createHmac('sha256', signingSecret).update(payload).digest('hex');
+            forwardHeaders['x-highstation-signature'] = `t=${timestamp},v1=${signature}`;
+        }
+
         const startTime = performance.now();
 
         try {
             const response = await fetch(upstreamUrl, {
                 method: req.method,
                 headers: forwardHeaders,
-                body: ['POST', 'PUT', 'PATCH'].includes(req.method) ? JSON.stringify(req.body) : undefined
+                body: requestBody
             });
 
             const endTime = performance.now();

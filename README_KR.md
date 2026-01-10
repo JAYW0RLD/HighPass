@@ -202,6 +202,7 @@ npm run dev
 - ✅ **Red Team 전면 감사 완료** (v3.9)
 - ✅ **Perfect SQL**: `schema_latest.sql` (SSRF, DoS, InfoLeak 차단)
 - ✅ **Database RLS** + Nonce 기반 Replay 방어
+- ✅ **HMAC Provider Verification** (v1.8.2)
 - ✅ **Helmet.js CSP** 적용
 
 **Security Score**: 10/10 (Perfect)
