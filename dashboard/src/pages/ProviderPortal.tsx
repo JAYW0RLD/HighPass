@@ -317,174 +317,173 @@ function ProviderPortal() {
                 </div>
 
                 {/* 2. Middle Section: Services Management */}
-                <div className="col-span-12 mt-6">
-                    <div className="col-span-12 mt-8">
-                        {/* Premium Tabs - Segmented Control Style */}
-                        <div className="flex items-center gap-1 p-1 bg-white/5 rounded-lg border border-white/5 w-fit mb-6">
-                            {['services', 'integration', 'revenue'].map(tab => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab as any)}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === tab
-                                        ? 'bg-accent-green text-black shadow-lg shadow-accent-green/20'
-                                        : 'text-secondary hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                                </button>
-                            ))}
+                <div className="col-span-12 mt-8">
+                    {/* Premium Tabs - Segmented Control Style */}
+                    <div className="flex items-center gap-1 p-1 bg-white/5 rounded-lg border border-white/5 w-fit mb-6">
+                        {['services', 'integration', 'revenue'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab as any)}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === tab
+                                    ? 'bg-accent-green text-black shadow-lg shadow-accent-green/20'
+                                    : 'text-secondary hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {activeTab === 'services' && (
+                        <div className="dashboard-grid">
+                            <div className="col-span-12 lg:col-span-5">
+                                <DashboardCard title="Register Service" className="h-full border border-white/5 bg-[#0A0A0B]">
+                                    <form onSubmit={handleCreateService} className="flex flex-col gap-6">
+
+                                        {/* Section: Basic Info */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-4">
+                                            <div className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Service Identity</div>
+                                            <div className="space-y-1">
+                                                <label className="text-[11px] text-secondary">Service Name</label>
+                                                <input type="text" placeholder="e.g. Weather API v1" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20"
+                                                    value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} required
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[11px] text-secondary">URL Slug</label>
+                                                <div className="flex items-center">
+                                                    <span className="p-2 bg-white/5 border border-r-0 border-white/10 rounded-l text-xs text-secondary font-mono">/gatekeeper/</span>
+                                                    <input type="text" placeholder="weather-api" className="form-control rounded-l-none bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20 font-mono text-xs"
+                                                        value={newService.slug} onChange={e => setNewService({ ...newService, slug: e.target.value })} required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Section: Pricing & Access */}
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-4">
+                                            <div className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Configuration</div>
+                                            <div className="space-y-1">
+                                                <label className="text-[11px] text-secondary">Upstream URL</label>
+                                                <input type="text" placeholder="https://api.weather.com/v1" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20 font-mono text-xs"
+                                                    value={newService.upstream_url} onChange={e => setNewService({ ...newService, upstream_url: e.target.value })} required
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[11px] text-secondary">Price (CRO)</label>
+                                                    <input type="number" placeholder="0.00" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white"
+                                                        step="any" value={newService.price_wei === '0' ? '' : Number(newService.price_wei) / 1e18}
+                                                        onChange={e => setNewService({ ...newService, price_wei: (parseFloat(e.target.value || '0') * 1e18).toLocaleString('fullwide', { useGrouping: false }) })} required
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[11px] text-secondary">Min Grade</label>
+                                                    <select className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white"
+                                                        value={newService.min_grade} onChange={e => setNewService({ ...newService, min_grade: e.target.value })}
+                                                    >
+                                                        <option value="F">Allow All (F)</option>
+                                                        <option value="C">Standard (C)</option>
+                                                        <option value="A">Verified (A)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 flex flex-col gap-3">
+                                            <button type="submit" className="btn btn-primary w-full justify-center py-3 text-sm font-bold shadow-[0_0_15px_rgba(0,229,153,0.2)] hover:shadow-[0_0_20px_rgba(0,229,153,0.4)]">
+                                                Create Service
+                                            </button>
+                                            <button type="button" onClick={createDemoService} className="w-full py-2 text-xs font-medium text-secondary hover:text-white border border-white/10 hover:border-white/30 rounded transition-all bg-white/5 hover:bg-white/10">
+                                                ⚡ Deploy Demo Echo API
+                                            </button>
+                                        </div>
+                                    </form>
+                                </DashboardCard>
+                            </div>
+
+                            <div className="col-span-12 lg:col-span-7">
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                    {loading ? <SkeletonList count={2} /> : services.map(svc => (
+                                        <DashboardCard key={svc.id} className="relative group">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-semibold text-white">{svc.name}</h3>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${svc.upstream_url.includes('/api/demo')
+                                                    ? 'border-green-500/30 text-green-400 bg-green-500/10'
+                                                    : 'border-orange-500/30 text-orange-400 bg-orange-500/10'
+                                                    }`}>
+                                                    {svc.upstream_url.includes('/api/demo') ? 'Active' : 'Pending'}
+                                                </span>
+                                            </div>
+                                            <code className="text-xs text-blue-400 bg-blue-500/5 px-2 py-1 rounded block mb-2 truncate">
+                                                /gatekeeper/{svc.slug}/...
+                                            </code>
+                                            <div className="flex justify-between items-center text-sm text-secondary mt-4">
+                                                <span>{(Number(svc.price_wei) / 1e18).toFixed(4)} CRO</span>
+                                                <button onClick={() => setEditingService(svc)} className="text-white hover:text-blue-400 transition-colors">
+                                                    Manage &rarr;
+                                                </button>
+                                            </div>
+                                        </DashboardCard>
+                                    ))}
+                                    {services.length === 0 && !loading && (
+                                        <div className="col-span-1 xl:col-span-2 text-center text-secondary py-10 border border-dashed border-border rounded-xl">
+                                            No active services
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
+                    )}
 
-                        {activeTab === 'services' && (
-                            <div className="dashboard-grid">
-                                <div className="col-span-12 lg:col-span-5">
-                                    <DashboardCard title="Register Service" className="h-full border border-white/5 bg-[#0A0A0B]">
-                                        <form onSubmit={handleCreateService} className="flex flex-col gap-6">
-
-                                            {/* Section: Basic Info */}
-                                            <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-4">
-                                                <div className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Service Identity</div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[11px] text-secondary">Service Name</label>
-                                                    <input type="text" placeholder="e.g. Weather API v1" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20"
-                                                        value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} required
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[11px] text-secondary">URL Slug</label>
-                                                    <div className="flex items-center">
-                                                        <span className="p-2 bg-white/5 border border-r-0 border-white/10 rounded-l text-xs text-secondary font-mono">/gatekeeper/</span>
-                                                        <input type="text" placeholder="weather-api" className="form-control rounded-l-none bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20 font-mono text-xs"
-                                                            value={newService.slug} onChange={e => setNewService({ ...newService, slug: e.target.value })} required
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Section: Pricing & Access */}
-                                            <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-4">
-                                                <div className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Configuration</div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[11px] text-secondary">Upstream URL</label>
-                                                    <input type="text" placeholder="https://api.weather.com/v1" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white placeholder-white/20 font-mono text-xs"
-                                                        value={newService.upstream_url} onChange={e => setNewService({ ...newService, upstream_url: e.target.value })} required
-                                                    />
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[11px] text-secondary">Price (CRO)</label>
-                                                        <input type="number" placeholder="0.00" className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white"
-                                                            step="any" value={newService.price_wei === '0' ? '' : Number(newService.price_wei) / 1e18}
-                                                            onChange={e => setNewService({ ...newService, price_wei: (parseFloat(e.target.value || '0') * 1e18).toLocaleString('fullwide', { useGrouping: false }) })} required
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <label className="text-[11px] text-secondary">Min Grade</label>
-                                                        <select className="form-control bg-[#121214] border-white/10 focus:border-accent-green/50 text-white"
-                                                            value={newService.min_grade} onChange={e => setNewService({ ...newService, min_grade: e.target.value })}
-                                                        >
-                                                            <option value="F">Allow All (F)</option>
-                                                            <option value="C">Standard (C)</option>
-                                                            <option value="A">Verified (A)</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="pt-2 flex flex-col gap-3">
-                                                <button type="submit" className="btn btn-primary w-full justify-center py-3 text-sm font-bold shadow-[0_0_15px_rgba(0,229,153,0.2)] hover:shadow-[0_0_20px_rgba(0,229,153,0.4)]">
-                                                    Create Service
-                                                </button>
-                                                <button type="button" onClick={createDemoService} className="w-full py-2 text-xs font-medium text-secondary hover:text-white border border-white/10 hover:border-white/30 rounded transition-all bg-white/5 hover:bg-white/10">
-                                                    ⚡ Deploy Demo Echo API
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </DashboardCard>
-                                </div>
-
-                                <div className="col-span-12 lg:col-span-7">
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                        {loading ? <SkeletonList count={2} /> : services.map(svc => (
-                                            <DashboardCard key={svc.id} className="relative group">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h3 className="font-semibold text-white">{svc.name}</h3>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${svc.upstream_url.includes('/api/demo')
-                                                        ? 'border-green-500/30 text-green-400 bg-green-500/10'
-                                                        : 'border-orange-500/30 text-orange-400 bg-orange-500/10'
-                                                        }`}>
-                                                        {svc.upstream_url.includes('/api/demo') ? 'Active' : 'Pending'}
-                                                    </span>
-                                                </div>
-                                                <code className="text-xs text-blue-400 bg-blue-500/5 px-2 py-1 rounded block mb-2 truncate">
-                                                    /gatekeeper/{svc.slug}/...
-                                                </code>
-                                                <div className="flex justify-between items-center text-sm text-secondary mt-4">
-                                                    <span>{(Number(svc.price_wei) / 1e18).toFixed(4)} CRO</span>
-                                                    <button onClick={() => setEditingService(svc)} className="text-white hover:text-blue-400 transition-colors">
-                                                        Manage &rarr;
-                                                    </button>
-                                                </div>
-                                            </DashboardCard>
-                                        ))}
-                                        {services.length === 0 && !loading && (
-                                            <div className="col-span-1 xl:col-span-2 text-center text-secondary py-10 border border-dashed border-border rounded-xl">
-                                                No active services
-                                            </div>
-                                        )}
+                    {activeTab === 'revenue' && (
+                        <div className="dashboard-grid">
+                            <div className="col-span-6">
+                                <DashboardCard title="Net Revenue">
+                                    <div className="text-3xl font-bold text-green-400">
+                                        {(providerStats ? Number(providerStats.netRevenueWei) / 1e18 : 0).toFixed(4)} <span className="text-lg text-secondary">CRO</span>
                                     </div>
-                                </div>
+                                </DashboardCard>
                             </div>
-                        )}
-
-                        {activeTab === 'revenue' && (
-                            <div className="dashboard-grid">
-                                <div className="col-span-6">
-                                    <DashboardCard title="Net Revenue">
-                                        <div className="text-3xl font-bold text-green-400">
-                                            {(providerStats ? Number(providerStats.netRevenueWei) / 1e18 : 0).toFixed(4)} <span className="text-lg text-secondary">CRO</span>
-                                        </div>
-                                    </DashboardCard>
-                                </div>
-                                <div className="col-span-6">
-                                    <DashboardCard title="Total Calls">
-                                        <div className="text-3xl font-bold text-white">
-                                            {providerStats?.totalCalls || 0}
-                                        </div>
-                                    </DashboardCard>
-                                </div>
+                            <div className="col-span-6">
+                                <DashboardCard title="Total Calls">
+                                    <div className="text-3xl font-bold text-white">
+                                        {providerStats?.totalCalls || 0}
+                                    </div>
+                                </DashboardCard>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                    </div>
                 </div>
-
-                {editingService && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-                        <DashboardCard title={`Manage ${editingService.name}`} className="w-full max-w-lg">
-                            <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
-                                <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} className="form-control bg-input border-border" />
-                                <div className="flex gap-2 justify-end mt-4">
-                                    <button type="button" onClick={() => setEditingService(null)} className="btn btn-secondary">Cancel</button>
-                                    <button type="submit" className="btn btn-primary">Save</button>
-                                    <button type="button" onClick={handleDeleteService} className="btn text-red-500 border border-red-500/20 hover:bg-red-500/10">Delete</button>
-                                </div>
-                            </form>
-                        </DashboardCard>
-                    </div>
-                )}
-
-                <ConfirmationModal
-                    isOpen={confirmModal.isOpen}
-                    onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-                    onConfirm={confirmModal.action}
-                    title={confirmModal.title}
-                    message={confirmModal.message}
-                    isDangerous={confirmModal.isDangerous}
-                />
             </div>
-            );
+
+            {editingService && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+                    <DashboardCard title={`Manage ${editingService.name}`} className="w-full max-w-lg">
+                        <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
+                            <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} className="form-control bg-input border-border" />
+                            <div className="flex gap-2 justify-end mt-4">
+                                <button type="button" onClick={() => setEditingService(null)} className="btn btn-secondary">Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save</button>
+                                <button type="button" onClick={handleDeleteService} className="btn text-red-500 border border-red-500/20 hover:bg-red-500/10">Delete</button>
+                            </div>
+                        </form>
+                    </DashboardCard>
+                </div>
+            )}
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmModal.action}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                isDangerous={confirmModal.isDangerous}
+            />
+        </div>
+    );
 }
 
-            export default ProviderPortal;
+export default ProviderPortal;
