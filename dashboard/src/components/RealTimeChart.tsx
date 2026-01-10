@@ -73,9 +73,9 @@ export const RealTimeChart: React.FC<RealTimeChartProps> = ({
 
         // v5 API: addSeries(AreaSeries, options)
         const newSeries = chart.addSeries(AreaSeries, {
-            lineColor,
-            topColor,
-            bottomColor,
+            lineColor: '#00ff94', // Lighter Green
+            topColor: 'rgba(0, 255, 148, 0.2)',
+            bottomColor: 'rgba(0, 255, 148, 0.0)',
             lineWidth: 2,
         });
 
