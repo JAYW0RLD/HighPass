@@ -167,12 +167,13 @@ HighStation은 단순 API 게이트웨이를 넘어, AI를 위한 **MCP 서버**
 
 ---
 
-## 7. 미학 (Aesthetics): 도구는 예뻐야 쓰고 싶다
-개발자 도구라고 해서 투박할 필요는 없습니다. 우리는 "기능"을 파는 것이 아니라 "경험"을 팝니다.
+## 7. 미학 (Aesthetics): 터미널 감성 (Technical & Professional)
+우리는 화려한 장식보다 "데이터의 밀도"와 "정확성"을 추구합니다. (Reference: Lighter.xyz)
 
-- **No Mindless Design**: 맥락 없는 원형 버튼(Mindless Circle Buttons)이나 부조화스러운 Chip UI를 배제하고, 기능에 맞는 형태(Form follows Function)를 추구합니다.
-- **Premium Feel**: 어두운 배경, 미세한 그라디언트, 절제된 카드 UI는 사용자에게 "신뢰할 수 있는 금융 도구"라는 인상을 줍니다.
-- **Why?**: 아름다운 도구는 개발자의 자부심을 고취시키고, 더 오래 머물게 만듭니다.
+- **Terminal/Technical**: 금융 전문가가 사용하는 블룸버그 터미널처럼, 어둡고(Deep Dark) 선명한(High Contrast) UI를 지향합니다.
+- **Data Density**: 불필요한 여백을 줄이고, 한 화면에 더 많은 정보를 체계적으로 보여줍니다.
+- **Neon Accents**: 중요한 상태(성공, 실패, 활성)는 네온 그린/레드 컬러로 명확하게 표시합니다.
+- **Why?**: HighStation은 단순한 결제창이 아니라, AI 에이전트 경제를 관제하는 "미션 컨트롤 센터"이기 때문입니다.
 
 ---
 

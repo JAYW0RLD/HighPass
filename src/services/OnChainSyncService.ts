@@ -67,10 +67,11 @@ export class OnChainSyncService {
             transport: http(process.env.CRONOS_RPC_URL || 'https://evm-t3.cronos.org')
         });
 
-        this.supabase = getSupabase();
-        if (!this.supabase) {
+        const supabase = getSupabase();
+        if (!supabase) {
             throw new Error('Supabase client not initialized');
         }
+        this.supabase = supabase;
     }
 
     /**
@@ -245,13 +246,14 @@ export class OnChainSyncService {
             args: [serviceName]
         });
 
+        const result = data as any;
         return {
-            avgLatencyMs: Number(data[0]),
-            successRate: Number(data[1]),
-            totalRequests: Number(data[2]),
-            totalSuccesses: Number(data[3]),
-            uniqueAgentCount: Number(data[4]),
-            lastUpdated: Number(data[5])
+            avgLatencyMs: Number(result[0]),
+            successRate: Number(result[1]),
+            totalRequests: Number(result[2]),
+            totalSuccesses: Number(result[3]),
+            uniqueAgentCount: Number(result[4]),
+            lastUpdated: Number(result[5])
         };
     }
 

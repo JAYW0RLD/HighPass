@@ -4,6 +4,22 @@
 
 ---
 
+## 💾 최신 데이터베이스 스키마 (Database Schema)
+
+**⚠️ 중요: SQL 파일 관리 정책 변경 (2026-01-10)**
+보안상의 이유로 개별 마이그레이션 파일 및 기본 스키마는 더 이상 Git에 추적되지 않습니다 (`.gitignore` 적용).
+초기 설정 및 배포 시에는 아래 **통합 스키마 파일** 하나만 사용하십시오.
+
+*   **파일 위치:** `highstation/schema_latest.sql`
+*   **포함 버전:** Base v2.0 + v1.7.0 (Performance) + v1.8.0 (Discovery) + **Red Team Security Fixes**
+*   **실행 방법:**
+    ```bash
+    psql -d highstation -f schema_latest.sql
+    # 또는 Supabase SQL Editor에 전체 복사/붙여넣기
+    ```
+
+---
+
 ## 🚀 배포 정보 (Deployment)
 
 **현재 버전:** v3.7 (종합 보안 강화 에디션)  
@@ -475,6 +491,19 @@ migrations/v1.6.0_prepayment_reputation.sql
 ---
 
 ## ⏳ 변경 기록 (Changelog)
+
+### v3.9 - 전문 트레이딩 터미널 UI (Lighter.xyz Inspired)
+**일자**: 2026-01-10
+**주요 변경 사항**: 기존의 글래스모피즘 디자인을 제거하고, 금융 전문가를 위한 **High-Contrast Terminal** 스타일로 전면 개편.
+
+- **[Design] Darker & Sharper**:
+    - 배경색을 완전한 검정(`black`)으로 변경하여 몰입감 극대화.
+    - 둥근 모서리(`12px`)를 날카로운(`4px`) 형태로 변경하여 전문성 강조.
+    - 흐릿한 유리 효과(Glassmorphism) 제거, 선명한 Border 라인 채택.
+- **[Chart] Neon Theme**:
+    - `lightweight-charts`의 테마를 네온 그린(`#00ff94`)과 레드로 변경하여 "실시간 트레이딩" 감성 구현.
+- **[SQL] 통합 스키마**:
+    - 보안 강화를 위해 개별 마이그레이션 파일을 Git에서 제거하고, 검증된 `schema_latest.sql` 단일 파일로 통합 배포 프로세스 확립.
 
 ### v3.8 - 최종 폴리싱 및 배포 준비 (Final Polish)
 **일자**: 2026-01-09

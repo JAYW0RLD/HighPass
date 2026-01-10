@@ -1,4 +1,4 @@
-import { createWalletClient, http, parseAbi } from 'viem';
+import { createPublicClient, createWalletClient, http, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { cronosTestnet } from 'viem/chains';
 import * as fs from 'fs';

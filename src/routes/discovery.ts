@@ -31,8 +31,13 @@ router.get('/search', async (req, res) => {
         const limitNum = Math.min(parseInt(limit as string) || 20, 50); // Max 50 per page
         const offset = (pageNum - 1) * limitNum;
 
+        const supabase = getSupabase();
+        if (!supabase) {
+            throw new Error('Supabase client not initialized');
+        }
+
         // Base Query
-        let query = getSupabase()
+        let query = supabase
             .from('services')
             .select(`
                 *,
@@ -165,8 +170,11 @@ router.get('/search', async (req, res) => {
  */
 router.get('/categories', async (req, res) => {
     try {
+        const supabase = getSupabase();
+        if (!supabase) throw new Error('Supabase client not initialized');
+
         // Use RPC or distinct query. Simple distinct on verified services.
-        const { data, error } = await getSupabase()
+        const { data, error } = await supabase
             .from('services')
             .select('category')
             .eq('status', 'verified')
