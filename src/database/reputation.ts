@@ -32,40 +32,101 @@ export async function getInternalReputation(
     return data?.internal_score ?? null;
 }
 
-// 결제/입금 시 평판 업데이트
+/**
+ * Update reputation score based on payment/deposit
+ * v1.6.1: Now accepts USD amount (not CRO)
+ * 
+ * @param agentId Wallet address
+ * @param amountUsd Amount in USD
+ * @param method Payment method
+ */
 export async function updateScoreForPayment(
     agentId: string,
-    amount: bigint,
+    amountUsd: number | bigint,
     method: 'prepaid' | 'credit' | 'deposit'
 ): Promise<void> {
+    const supabase = getSupabase();
     if (!supabase) {
-        console.warn('[Reputation] Supabase not initialized');
+        throw new Error('Supabase client not initialized');
+    }
+
+    // Convert to number if bigint
+    const usdAmount = typeof amountUsd === 'bigint'
+        ? Number(amountUsd) / 1e18  // Assume wei if bigint
+        : amountUsd;
+
+    try {
+        if (method === 'deposit') {
+            // Use add_deposit_score function
+            const { error } = await supabase.rpc('add_deposit_score', {
+                p_agent_id: agentId,
+                p_amount_cro: usdAmount  // Now USD, but function name kept for compatibility
+            });
+
+            if (error) {
+                console.error('[Reputation] Error adding deposit score:', error);
+                throw error;
+            }
+
+            console.log(`[Reputation] ✓ Added deposit score: ${usdAmount} USD for ${agentId}`);
+        } else if (method === 'prepaid' || method === 'credit') {
+            // Use add_reputation_score function
+            const { error } = await supabase.rpc('add_reputation_score', {
+                p_agent_id: agentId,
+                p_amount: usdAmount
+            });
+
+            if (error) {
+                console.error('[Reputation] Error adding payment score:', error);
+                throw error;
+            }
+
+            console.log(`[Reputation] ✓ Added payment score: ${usdAmount} USD for ${agentId} (${method})`);
+        }
+    } catch (error) {
+        console.error('[Reputation] Failed to update score:', error);
+        throw error;
+    }
+}
+
+/**
+ * v1.6.1: Track CRO volume for statistics (does not affect score)
+ * 
+ * @param agentId Wallet address
+ * @param croWei CRO amount in wei
+ */
+export async function trackCroVolume(
+    agentId: string,
+    croWei: bigint
+): Promise<void> {
+    const supabase = getSupabase();
+    if (!supabase) {
+        console.warn('[Reputation] Supabase not initialized, skipping CRO tracking');
         return;
     }
 
-    const amountCRO = Number(amount) / 1e18;
+    const croAmount = Number(croWei) / 1e18;
 
-    if (method === 'prepaid') {
-        // 예치금 결제: +
-        await supabase.rpc('add_reputation_score', {
-            p_agent_id: agentId,
-            p_amount: amountCRO
-        });
-    }
-    else if (method === 'deposit') {
-        // 입금: +
-        await supabase.rpc('add_deposit_score', {
-            p_agent_id: agentId,
-            p_amount_cro: amountCRO
-        });
-    }
-    else if (method === 'credit') {
-        // 외상 사용: -
-        await supabase.rpc('subtract_reputation_score', {
-            p_agent_id: agentId,
-            p_amount: amountCRO,
-            p_min_score: REPUTATION_CONFIG.MIN_SCORE
-        });
+    try {
+        // Direct SQL update (no dedicated function needed for statistics)
+        const { error } = await supabase
+            .from('reputation_history')
+            .upsert({
+                agent_id: agentId,
+                total_cro_volume: croAmount
+            }, {
+                onConflict: 'agent_id',
+                ignoreDuplicates: false
+            });
+
+        if (error) {
+            console.warn('[Reputation] Failed to track CRO volume:', error);
+            // Don't throw - this is non-critical
+        } else {
+            console.log(`[Reputation] ✓ Tracked CRO volume: ${croAmount.toFixed(4)} CRO for ${agentId}`);
+        }
+    } catch (error) {
+        console.warn('[Reputation] CRO tracking error (non-critical):', error);
     }
 }
 

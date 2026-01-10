@@ -56,4 +56,15 @@ export const PAYMENT_FLOW_CONFIG = {
     INCLUDE_WARNINGS: true
 } as const;
 
+// Platform Fee Settings (v1.6.1)
+// USD 과금 / CRO 수수료 분리
+export const FEE_CONFIG = {
+    // Platform fees (CRO-denominated)
+    PLATFORM_FEE_RATE: 0.05,        // 5%
+    MIN_PLATFORM_FEE_CRO: 0.01,     // 0.01 CRO minimum
+
+    // Settlement fees (CRO flat)
+    SETTLEMENT_FEE_CRO: 0.1,        // 0.1 CRO per settlement
+} as const;
+
 export type Grade = keyof typeof GRADE_THRESHOLDS;

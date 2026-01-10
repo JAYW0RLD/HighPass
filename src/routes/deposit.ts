@@ -118,11 +118,22 @@ export async function depositHandler(req: Request, res: Response) {
 
         const depositAmount = decoded.args.amount;
 
-        // Update prepaid balance
+        // v1.6.1: Convert CRO → USD for reputation scoring
+        const { PriceService } = await import('../services/PriceService');
+        const priceService = new PriceService();
+
+        const depositUsd = await priceService.croToUsd(depositAmount);
+        console.log(`[Deposit] ${depositAmount} wei CRO → $${depositUsd.toFixed(4)} USD`);
+
+        // Update prepaid balance (in wei)
         await addPrepaidBalance(agentId, depositAmount);
 
-        // Update reputation score (+)
-        await updateScoreForPayment(agentId, depositAmount, 'deposit');
+        // Update reputation score (in USD)
+        await updateScoreForPayment(agentId, depositUsd, 'deposit');
+
+        // Track CRO volume (statistics)
+        const { trackCroVolume } = await import('../database/reputation');
+        await trackCroVolume(agentId, depositAmount);
 
         // Log the transaction
         const { logRequest } = await import('../database/db');
@@ -134,13 +145,14 @@ export async function depositHandler(req: Request, res: Response) {
             endpoint: '/api/deposit'
         });
 
-        console.log(`[Deposit] Agent ${agentId}: Deposited ${depositAmount} wei (tx: ${txHash})`);
+        console.log(`[Deposit] ✓ Agent ${agentId}: +${depositUsd.toFixed(4)} USD reputation (${depositAmount} wei)`);
 
         return res.status(200).json({
             success: true,
             message: 'Deposit successful',
             deposit: {
-                amount: depositAmount.toString(),
+                amountCro: depositAmount.toString(),
+                amountUsd: depositUsd.toFixed(4),
                 transaction: txHash,
                 agent: agentId
             }
