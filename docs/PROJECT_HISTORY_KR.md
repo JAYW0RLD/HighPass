@@ -15,6 +15,16 @@
 
 ---
 
+## 🎯 v1.8.3: Premium UI & Codebase Refinement (2026-01-10)
+**Visual & Architecture Polish**:
+- **Professional Dashboard UI**: 기존의 단순한 디자인을 "GitHub + Bybit" 스타일의 프리미엄 UI로 전면 개편.
+    - **Layout**: 8:4 (Top), 5:7 (Middle) 비율의 비대칭 그리드 적용으로 정보 가독성 극대화.
+    - **Aesthetics**: Glassmorphism 보더(`border-white/20`)와 고대비 탭 네비게이션 적용.
+- **Environment Refactoring**: `PriceService`의 하드코딩된 설정을 환경변수(`PYTH_PRICE_FEED_ID`)로 분리하여 유지보수성 향상.
+- **Cleanup**: `UIOnlyProviderPortal.tsx` 등 더미 코드 삭제 및 코드베이스 경량화.
+
+---
+
 ## 🎯 v1.8.2: Secure Provider Verification (HMAC) (2026-01-10)
 **Security Hardening**:
 - **HMAC-SHA256 Signing**: 게이트키퍼가 API 요청을 전달할 때 비밀키로 서명(`X-HighStation-Signature`)하여 전송.
