@@ -15,6 +15,21 @@
 
 ---
 
+## 🎯 v1.8.5: Full RLS Coverage & Schema Consolidation (2026-01-10)
+**Final Security Audit & Fix**:
+- **Completeness**: `DeveloperPortal`에서 사용되는 `developers`, `wallets` 테이블의 `INSERT` 정책 누락을 식별하고 추가함. 이제 Frontend의 모든 데이터 쓰기(C/U/D) 경로가 RLS로 보호됩니다.
+- **Cleanup**: 레거시 파일 `schema.sql`을 삭제하고, 모든 보안 패치(RLS Hardening)가 포함된 `schema_latest.sql`을 배포 단일 진실 공급원(SSOT)으로 확정.
+
+---
+
+## 🎯 v1.8.4: RLS Security Hardening (Anti-Bypass) (2026-01-10)
+**Root Cause Analysis & Fix**:
+- **Issue**: 일부 테이블(`services` 등)의 RLS 정책에서 `INSERT`/`UPDATE` 시 `WITH CHECK` 구문이 누락되어, 권한 검증이 `USING` 절(기존 행 기준)에 의존하는 잠재적 취약점 발견.
+- **Fix**: 모든 `INSERT`/`UPDATE` 정책에 명시적인 `WITH CHECK` 구문을 추가하여, 신규 데이터 삽입 시에도 엄격한 소유권 검증을 강제함.
+    - 보안 강화 대상: `services`, `profiles`, `developers`, `wallets`, `provider_settings`
+
+---
+
 ## 🎯 v1.8.3: Premium UI & Codebase Refinement (2026-01-10)
 **Visual & Architecture Polish**:
 - **Professional Dashboard UI**: 기존의 단순한 디자인을 "GitHub + Bybit" 스타일의 프리미엄 UI로 전면 개편.

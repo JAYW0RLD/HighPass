@@ -615,16 +615,26 @@ CREATE POLICY "users_view_own_profile" ON profiles
     FOR SELECT TO authenticated USING (auth.uid() = id);
 
 CREATE POLICY "users_update_own_profile" ON profiles
-    FOR UPDATE TO authenticated USING (auth.uid() = id);
+    FOR UPDATE TO authenticated
+    USING (auth.uid() = id)
+    WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "providers_manage_own_services" ON services
-    FOR ALL TO authenticated USING (auth.uid() = provider_id);
+    FOR ALL TO authenticated
+    USING (auth.uid() = provider_id)
+    WITH CHECK (auth.uid() = provider_id);
 
 CREATE POLICY "users_view_own_developer" ON developers
     FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
 CREATE POLICY "users_update_own_developer" ON developers
-    FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+    FOR UPDATE TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+    
+CREATE POLICY "users_create_own_developer" ON developers
+    FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = user_id);
 
 -- Wallets: Restricted read (linked to developer), owner write
 -- RED TEAM FIX [InfoLeak]: Prevent public enumeration of agent debts
@@ -634,12 +644,24 @@ CREATE POLICY "users_view_own_wallets" ON wallets
     );
 
 CREATE POLICY "developers_update_own_wallets" ON wallets
-    FOR UPDATE TO authenticated USING (
+    FOR UPDATE TO authenticated
+    USING (
+        developer_id IN (SELECT id FROM developers WHERE user_id = auth.uid())
+    )
+    WITH CHECK (
+        developer_id IN (SELECT id FROM developers WHERE user_id = auth.uid())
+    );
+    
+CREATE POLICY "developers_add_own_wallets" ON wallets
+    FOR INSERT TO authenticated
+    WITH CHECK (
         developer_id IN (SELECT id FROM developers WHERE user_id = auth.uid())
     );
 
 CREATE POLICY "providers_manage_own_settings" ON provider_settings
-    FOR ALL TO authenticated USING (auth.uid() = provider_id);
+    FOR ALL TO authenticated
+    USING (auth.uid() = provider_id)
+    WITH CHECK (auth.uid() = provider_id);
 
 CREATE POLICY "providers_view_own_withdrawals" ON withdrawals
     FOR SELECT TO authenticated USING (auth.uid() = provider_id);

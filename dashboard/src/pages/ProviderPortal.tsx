@@ -550,6 +550,18 @@ app.use((req, res, next) => {
                 message={confirmModal.message}
                 isDangerous={confirmModal.isDangerous}
             />
+            {/* Last Updated Timestamp */}
+            <div style={{
+                position: 'fixed',
+                bottom: '1rem',
+                left: '2rem',
+                fontSize: '0.7rem',
+                color: 'rgba(255, 255, 255, 0.2)',
+                fontFamily: 'monospace',
+                pointerEvents: 'none'
+            }}>
+                Last Updated: 2026.01.10 20:10 KST
+            </div>
         </div>
     );
 }
