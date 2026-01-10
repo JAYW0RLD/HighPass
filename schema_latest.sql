@@ -132,6 +132,7 @@ CREATE TABLE services (
     verified_at TIMESTAMPTZ,
     trust_seed_enabled BOOLEAN NOT NULL DEFAULT false,
     initial_debt_limit NUMERIC NOT NULL DEFAULT 0 CHECK (initial_debt_limit >= 0),
+    signing_secret TEXT NOT NULL DEFAULT replace(cast(gen_random_uuid() as text), '-', ''), -- HMAC Secret
     
     -- Discovery Hub Features (v1.8.0)
     category TEXT CHECK (length(category) <= 50),
@@ -150,6 +151,7 @@ COMMENT ON COLUMN services.slug IS 'URL-safe service identifier (lowercase, hyph
 COMMENT ON COLUMN services.upstream_url IS 'SENSITIVE: Upstream API URL. Must be HTTPS. Validate against SSRF.';
 COMMENT ON COLUMN services.price_wei IS 'Cost per API call in Wei (NUMERIC for precision)';
 COMMENT ON COLUMN services.verification_token IS 'SENSITIVE: Domain verification token';
+COMMENT ON COLUMN services.signing_secret IS 'SENSITIVE: HMAC signing secret for provider verification';
 
 -- Comments for v1.8.0 columns
 COMMENT ON COLUMN services.category IS 'Broad categorization (e.g., DeFi, AI, Infra)';
