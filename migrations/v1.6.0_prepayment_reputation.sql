@@ -224,7 +224,109 @@ COMMENT ON FUNCTION add_deposit_score(TEXT, NUMERIC) IS
 'Adds reputation score from deposits. SECURITY: Validates inputs.';
 
 -- ----------------------------------------------------------------------------
--- 2.4 Halve Reputation (Overdue Penalty)
+-- 2.5 Get Prepaid Balance
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_prepaid_balance(
+    p_agent_id TEXT
+) RETURNS NUMERIC AS $$
+DECLARE
+    v_balance NUMERIC;
+BEGIN
+    -- Input validation
+    IF p_agent_id IS NULL THEN
+        RAISE EXCEPTION 'Invalid input: agent_id required';
+    END IF;
+
+    IF p_agent_id !~ '^0x[a-fA-F0-9]{40}$' THEN
+        RAISE EXCEPTION 'Invalid EVM address format';
+    END IF;
+
+    -- Get balance
+    SELECT COALESCE(prepaid_balance_wei, 0) INTO v_balance
+    FROM wallets
+    WHERE address = p_agent_id;
+
+    -- Return 0 if wallet not found
+    RETURN COALESCE(v_balance, 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+COMMENT ON FUNCTION get_prepaid_balance(TEXT) IS
+'Gets prepaid balance safely. Returns 0 if wallet not found.';
+
+-- ----------------------------------------------------------------------------
+-- 2.6 Deduct Prepaid Balance (Atomic)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION deduct_prepaid_balance(
+    p_agent_id TEXT,
+    p_amount NUMERIC
+) RETURNS BOOLEAN AS $$
+DECLARE
+    v_new_balance NUMERIC;
+BEGIN
+    -- Input validation
+    IF p_agent_id IS NULL OR p_amount IS NULL OR p_amount <= 0 THEN
+        RETURN false;
+    END IF;
+
+    IF p_agent_id !~ '^0x[a-fA-F0-9]{40}$' THEN
+        RETURN false;
+    END IF;
+
+    -- Atomic deduct with balance check
+    -- CRITICAL: WHERE clause ensures balance >= amount
+    UPDATE wallets
+    SET prepaid_balance_wei = prepaid_balance_wei - p_amount
+    WHERE address = p_agent_id
+      AND prepaid_balance_wei >= p_amount
+    RETURNING prepaid_balance_wei INTO v_new_balance;
+
+    -- If NOT FOUND, insufficient balance
+    IF NOT FOUND THEN
+        RETURN false;
+    END IF;
+
+    RETURN true;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+COMMENT ON FUNCTION deduct_prepaid_balance(TEXT, NUMERIC) IS
+'Atomically deducts prepaid balance. Returns false if insufficient.
+CRITICAL: Thread-safe, prevents double-spend via WHERE clause.';
+
+-- ----------------------------------------------------------------------------
+-- 2.7 Add Prepaid Balance
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION add_prepaid_balance(
+    p_agent_id TEXT,
+    p_amount NUMERIC
+) RETURNS VOID AS $$
+BEGIN
+    -- Input validation
+    IF p_agent_id IS NULL OR p_amount IS NULL OR p_amount <= 0 THEN
+        RAISE EXCEPTION 'Invalid input';
+    END IF;
+
+    IF p_agent_id !~ '^0x[a-fA-F0-9]{40}$' THEN
+        RAISE EXCEPTION 'Invalid EVM address format';
+    END IF;
+
+    -- Atomic upsert
+    INSERT INTO wallets (address, prepaid_balance_wei)
+    VALUES (p_agent_id, p_amount)
+    ON CONFLICT (address) DO UPDATE SET
+        prepaid_balance_wei = wallets.prepaid_balance_wei + p_amount;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+COMMENT ON FUNCTION add_prepaid_balance(TEXT, NUMERIC) IS
+'Adds prepaid balance. Creates wallet if not exists. SECURITY: Atomic.';
+
+-- ----------------------------------------------------------------------------
+-- 2.8 Halve Reputation (Overdue Penalty)
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION halve_reputation(
     p_agent_id TEXT
@@ -320,15 +422,18 @@ BEGIN
         'add_reputation_score', 
         'subtract_reputation_score', 
         'add_deposit_score', 
-        'halve_reputation'
+        'halve_reputation',
+        'get_prepaid_balance',
+        'deduct_prepaid_balance',
+        'add_prepaid_balance'
     );
     
     RAISE NOTICE '✓ Security functions created: %', v_function_count;
 
-    IF v_function_count = 4 THEN
-        RAISE NOTICE '✓ All reputation functions installed';
+    IF v_function_count = 7 THEN
+        RAISE NOTICE '✓ All functions installed (4 reputation + 3 prepaid)';
     ELSE
-        RAISE WARNING '✗ Missing functions (expected 4, got %)', v_function_count;
+        RAISE WARNING '✗ Missing functions (expected 7, got %)', v_function_count;
     END IF;
 
     RAISE NOTICE '========================================';
