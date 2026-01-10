@@ -170,7 +170,7 @@ function DeveloperPortal() {
                                     value={85}
                                     label="Available Credit"
                                     subLabel={`$${creditAvailable.toFixed(2)} / $0.10`}
-                                    color="#10b981"
+                                    color="#00ff94"
                                 />
                                 <div className="mt-4 text-3xl font-mono text-green-400 font-bold">
                                     ${creditAvailable}

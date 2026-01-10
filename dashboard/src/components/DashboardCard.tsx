@@ -23,7 +23,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
             {(title || headerAction) && (
                 <div className="flex justify-between items-start mb-4 px-6 pt-5">
                     <div>
-                        {title && <h3 className="text-lg font-semibold text-white tracking-tight">{title}</h3>}
+                        {title && <h3 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>{title}</h3>}
                         {subtitle && <p className="text-sm text-secondary mt-1">{subtitle}</p>}
                     </div>
                     {headerAction && <div>{headerAction}</div>}

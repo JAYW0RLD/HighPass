@@ -10,8 +10,24 @@
 보안상의 이유로 개별 마이그레이션 파일 및 기본 스키마는 더 이상 Git에 추적되지 않습니다 (`.gitignore` 적용).
 초기 설정 및 배포 시에는 아래 **통합 스키마 파일** 하나만 사용하십시오.
 
-*   **파일 위치:** `highstation/schema_latest.sql`
 *   **포함 버전:** Base v2.0 + v1.7.0 (Performance) + v1.8.0 (Discovery) + **Red Team Security Fixes**
+*   **파일 위치:** `highstation/schema_latest.sql`
+
+---
+
+## 🎯 v1.8.1: UI Polish & Domain Migration (2026-01-10)
+
+**UI/UX Overhaul**:
+- **Design System**: "Lighter.xyz" 기반 Dark/Neon 테마 완성. 
+- **Font**: Google Fonts `Inter` 적용으로 가독성 및 심미성 확보.
+- **Components**: Provider Portal의 Form, Tabs, Buttons를 전문가 수준(Premium)으로 재설계.
+
+**Infrastructure**:
+- **DNS**: `highstation.net` 커스텀 도메인 정식 연결 및 HTTPS 강제.
+- **Auth**: `window.location.origin` 기반 동적 리다이렉트로 도메인 변경 유연성 확보.
+- **CORS**: 프로덕션/개발 환경에 따른 엄격한 Origin 화이트리스트 적용.
+
+---
 *   **실행 방법:**
     ```bash
     psql -d highstation -f schema_latest.sql

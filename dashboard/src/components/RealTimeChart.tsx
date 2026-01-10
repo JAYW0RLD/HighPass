@@ -26,12 +26,19 @@ export const RealTimeChart: React.FC<RealTimeChartProps> = ({
     const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
 
     const {
-        lineColor = '#2962FF',
-        topColor = 'rgba(41, 98, 255, 0.5)',
-        bottomColor = 'rgba(41, 98, 255, 0.0)',
+        lineColor,
+        topColor,
+        bottomColor,
         textColor = '#A3A3A3',
         backgroundColor = 'transparent',
     } = colors;
+
+    // Helper to get CSS variable
+    const getThemeColor = (varName: string, fallback: string) => {
+        if (typeof window === 'undefined') return fallback;
+        const style = getComputedStyle(document.body);
+        return style.getPropertyValue(varName).trim() || fallback;
+    };
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -71,11 +78,14 @@ export const RealTimeChart: React.FC<RealTimeChartProps> = ({
             },
         });
 
+        // Resolve colors from CSS variables if not provided
+        const accentColor = lineColor || getThemeColor('--accent-green', '#00E599');
+
         // v5 API: addSeries(AreaSeries, options)
         const newSeries = chart.addSeries(AreaSeries, {
-            lineColor: '#00ff94', // Lighter Green
-            topColor: 'rgba(0, 255, 148, 0.2)',
-            bottomColor: 'rgba(0, 255, 148, 0.0)',
+            lineColor: accentColor,
+            topColor: topColor || `rgba(${parseInt(accentColor.slice(1, 3), 16)}, ${parseInt(accentColor.slice(3, 5), 16)}, ${parseInt(accentColor.slice(5, 7), 16)}, 0.2)`,
+            bottomColor: bottomColor || `rgba(${parseInt(accentColor.slice(1, 3), 16)}, ${parseInt(accentColor.slice(3, 5), 16)}, ${parseInt(accentColor.slice(5, 7), 16)}, 0.0)`,
             lineWidth: 2,
         });
 

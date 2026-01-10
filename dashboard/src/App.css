@@ -1,27 +1,36 @@
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   line-height: 1.5;
   font-weight: 400;
 
-  /* Lighter.xyz Inspired Theme */
+  /* Lighter.xyz Inspired Theme - Refined for Readability */
   --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-elevated: #111111;
-  --bg-input: #050505;
+  /* Deepest Black (Main Background) */
+  --bg-secondary: #0e0e10;
+  /* L1: Sidebar/Header (Slightly lighter) */
+  --bg-elevated: #18181b;
+  /* L2: Cards/Modals (Zinc-900 - Visible) */
+  --bg-input: #09090b;
+  /* Input Fields */
 
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --text-tertiary: #444444;
+  --text-primary: #fafafa;
+  /* Almost White */
+  --text-secondary: #a1a1aa;
+  /* Zinc-400 (Readable Gray) */
+  --text-tertiary: #52525b;
+  /* Zinc-600 (Subtle) */
 
-  --border: #222222;
-  --border-hover: #333333;
+  --border: #27272a;
+  /* Zinc-800 */
+  --border-hover: #3f3f46;
+  /* Zinc-700 */
 
-  /* Sharp Accents */
+  /* Sharp Accents (Neon & Distinct) */
   --accent-blue: #3b82f6;
-  --accent-green: #00ff94;
-  /* Lighter Green */
-  --accent-red: #ff3b3b;
-  /* Lighter Red */
+  --accent-green: #00E599;
+  /* Premium Mint Green */
+  --accent-red: #ff4545;
+  /* Red */
   --accent-orange: #ffb020;
   --accent-purple: #9d4edd;
 
@@ -30,21 +39,22 @@
   --gradient-card: none;
   --gradient-glow: none;
 
-  /* Removed Glassmorphism for Solid Terminal Look */
-  --glass-bg: #111111;
-  --glass-border: #222222;
+  /* Removed Glassmorphism for Solid Terminal Look - Performance Optimized */
+  --glass-bg: var(--bg-elevated);
+  --glass-border: var(--border);
   --glass-shadow: none;
+  /* Removed expensive backdrop-filters */
 
   /* Dimensions - Sharp & Tight */
   --radius-sm: 2px;
   --radius-md: 4px;
-  --radius-lg: 4px;
+  --radius-lg: 6px;
   --radius-xl: 8px;
   --radius-pill: 9999px;
 
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-glow: 0 0 10px rgba(0, 255, 148, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px rgba(0, 255, 148, 0.15);
 }
 
 * {
@@ -684,7 +694,8 @@ h1 {
   font-size: 14px;
   line-height: 20px;
   color: var(--text-primary);
-  background-color: var(--bg-primary);
+  background-color: #1a1a1e !important;
+  /* Lighter than #09090b for better contrast */
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   transition: all .2s cubic-bezier(.05, 0, 0, 1);

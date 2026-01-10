@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -15,6 +15,13 @@ export default function Header({ title }: HeaderProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const [showSwitcher, setShowSwitcher] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user?.email) setUserEmail(user.email);
+        });
+    }, []);
 
     const handleSwitch = (path: string) => {
         navigate(path);
@@ -42,12 +49,31 @@ export default function Header({ title }: HeaderProps) {
             </div>
 
             <div className="app-header-nav">
+                {/* User Info Badge */}
+                {userEmail && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 12px',
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 'var(--radius-pill)',
+                        border: '1px solid var(--border)',
+                        marginRight: '8px',
+                        fontSize: '13px',
+                        color: 'var(--text-secondary)'
+                    }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green)' }}></div>
+                        {userEmail}
+                    </div>
+                )}
+
                 {/* Portal Switcher (YouTube Studio Style) */}
                 <div style={{ position: 'relative' }}>
                     <button
                         onClick={() => setShowSwitcher(!showSwitcher)}
                         className="header-link"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}
                     >
                         Switch View ▾
                     </button>

@@ -17,7 +17,7 @@ An autonomous "use now, pay later" platform for AI agents. Access APIs instantly
 ## ⚡ Quick Start (3 Minutes)
 
 ### 1️⃣ Visit Dashboard (Live Deployment)
-👉 **[HighStation Dashboard](https://highstation-dashboard.vercel.app)**
+👉 **[HighStation Dashboard](https://www.highstation.net)**
 
 ### 2️⃣ Key Features
 - **Provider Portal**: GitHub OAuth login → Register APIs → Track revenue

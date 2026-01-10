@@ -105,9 +105,12 @@ if (isProduction) {
 // SECURITY FIX (V-NEW-02): Strict CORS origin validation
 const getAllowedOrigins = () => {
     if (process.env.NODE_ENV === 'production') {
-        const origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+        let origins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+
+        // Fallback for HighStation production if env var is missing
         if (!origins || origins.length === 0) {
-            throw new Error('ALLOWED_ORIGINS must be configured in production');
+            console.warn('[CORS] ALLOWED_ORIGINS not set. Using default HighStation domains.');
+            origins = ['https://www.highstation.net', 'https://highstation.net'];
         }
 
         // SECURITY: Validate each origin strictly

@@ -133,6 +133,7 @@ function AuthPage() {
                             }
                         }}
                         providers={['github']}
+                        redirectTo={window.location.origin}
                         onlyThirdPartyProviders
                     />
                 </div>
