@@ -266,45 +266,45 @@ function ProviderPortal() {
             <div className="grid grid-cols-12 gap-6 mt-6">
 
                 {/* 1. Top Section: Pulse (Left) & Platform Summary (Right) */}
-                <div className="col-span-12 lg:col-span-4">
-                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[200px] border border-white/10 bg-[#0A0A0B]" padding={false}>
-                        <div className="p-4 pt-0 h-[200px]">
+                <div className="col-span-12 lg:col-span-8">
+                    <DashboardCard title="Real-time Revenue Pulse" className="h-full min-h-[300px] border border-white/20 bg-[#0A0A0B]" padding={false}>
+                        <div className="p-4 pt-0 h-[260px]">
                             <RealTimeChart
                                 data={chartData}
-                                height={200}
+                                height={260}
                             />
                         </div>
                     </DashboardCard>
                 </div>
 
-                <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
-                    <DashboardCard title="Platform Summary" className="flex-1 bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e] border border-white/10 bg-[#0A0A0B]">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6 items-start">
-                            <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-2">Net Revenue</h3>
-                                <div className="text-2xl font-bold text-white font-mono break-all">
+                <div className="col-span-12 lg:col-span-4">
+                    <DashboardCard title="Platform Summary" className="h-full bg-gradient-to-br from-[#0A0A0B] to-[#1a1a1e] border border-white/20 bg-[#0A0A0B]">
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                            <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                <h3 className="text-secondary text-[9px] font-bold uppercase tracking-wider mb-1">Net Revenue</h3>
+                                <div className="text-lg font-bold text-white font-mono truncate">
                                     {providerStats ? (Number(providerStats.netRevenueWei) / 1e18).toFixed(4) : '0.0000'}
-                                    <span className="text-sm text-accent-green ml-1">CRO</span>
+                                    <span className="text-[10px] text-accent-green ml-1">CRO</span>
                                 </div>
                             </div>
 
-                            <div className="pt-2">
-                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-1">Total Calls</h3>
-                                <div className="text-xl font-bold text-white">
+                            <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                <h3 className="text-secondary text-[9px] font-bold uppercase tracking-wider mb-1">Total Calls</h3>
+                                <div className="text-lg font-bold text-white">
                                     {providerStats?.totalCalls.toLocaleString() || '0'}
                                 </div>
                             </div>
 
-                            <div className="pt-2">
-                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-1">Active Services</h3>
-                                <div className="text-xl font-bold text-white">
+                            <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                <h3 className="text-secondary text-[9px] font-bold uppercase tracking-wider mb-1">Active Services</h3>
+                                <div className="text-lg font-bold text-white">
                                     {services.length}
                                 </div>
                             </div>
 
-                            <div className="pt-2">
-                                <h3 className="text-secondary text-[10px] font-bold uppercase tracking-wider mb-2">System Status</h3>
-                                <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 px-2 py-1.5 rounded border border-green-500/20 w-fit">
+                            <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                <h3 className="text-secondary text-[9px] font-bold uppercase tracking-wider mb-1">System Status</h3>
+                                <div className="flex items-center gap-1.5 text-[10px] text-green-400">
                                     <span className="relative flex h-1.5 w-1.5">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
@@ -320,14 +320,14 @@ function ProviderPortal() {
                 <div className="col-span-12 mt-8">
                     {/* Premium Tabs - Segmented Control Style */}
                     {/* Premium Tabs - Black BG, White Text, Stylish Border */}
-                    <div className="flex items-center gap-2 mb-6">
+                    <div className="flex items-center gap-0 mb-6 border border-white/10 rounded-lg overflow-hidden w-fit">
                         {['services', 'integration', 'revenue'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
-                                className={`px-6 py-2.5 text-sm font-bold transition-all border ${activeTab === tab
-                                    ? 'bg-black text-white border-accent-green shadow-[0_0_10px_rgba(0,229,153,0.1)]'
-                                    : 'bg-black text-secondary border-transparent hover:text-white hover:border-white/10'
+                                className={`px-8 py-3 text-sm font-bold transition-all ${activeTab === tab
+                                    ? 'bg-white text-black'
+                                    : 'bg-black text-secondary hover:text-white'
                                     }`}
                             >
                                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -336,9 +336,9 @@ function ProviderPortal() {
                     </div>
 
                     {activeTab === 'services' && (
-                        <div className="grid grid-cols-12 gap-6">
+                        <div className="grid grid-cols-12 gap-6 items-start">
                             <div className="col-span-12 lg:col-span-5">
-                                <DashboardCard title="Register Service" className="h-full border border-white/10 bg-[#0A0A0B]">
+                                <DashboardCard title="Register Service" className="border border-white/20 bg-[#0A0A0B]">
                                     <form onSubmit={handleCreateService} className="flex flex-col gap-6">
 
                                         {/* Section: Basic Info */}
@@ -407,7 +407,7 @@ function ProviderPortal() {
                             <div className="col-span-12 lg:col-span-7">
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                     {loading ? <SkeletonList count={2} /> : services.map(svc => (
-                                        <DashboardCard key={svc.id} className="relative group border border-white/10 bg-[#0A0A0B] hover:border-white/20 transition-all hover:shadow-lg hover:shadow-black/50">
+                                        <DashboardCard key={svc.id} className="relative group border border-white/20 bg-[#0A0A0B] hover:border-white/40 transition-all hover:shadow-lg hover:shadow-black/50">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-semibold text-white">{svc.name}</h3>
                                                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${svc.upstream_url.includes('/api/demo')

@@ -4,9 +4,9 @@ import { HermesClient } from "@pythnetwork/hermes-client";
 const HERMES_URL = "https://hermes.pyth.network";
 
 // Price Feed IDs (Cronos zkEVM Testnet / General EVM)
-// CRO/USD: 0x23199c2bcb1303f667e733b9934db9eca5991e765b45f5ed18bc4b231415f2fe
+// Default: CRO/USD on Cronos zkEVM Testnet
 const PRICE_FEEDS = {
-    CRO: "0x23199c2bcb1303f667e733b9934db9eca5991e765b45f5ed18bc4b231415f2fe"
+    CRO: process.env.PYTH_PRICE_FEED_ID || "0x23199c2bcb1303f667e733b9934db9eca5991e765b45f5ed18bc4b231415f2fe"
 };
 
 export class PriceService {
