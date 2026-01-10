@@ -7,9 +7,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProviderPortal from './pages/ProviderPortal';
 import DeveloperPortal from './pages/DeveloperPortal';
 import DiscoveryHub from './pages/DiscoveryHub'; // v1.8.0
-import DiscoveryHub from './pages/DiscoveryHub'; // v1.8.0
 import SettingsPage from './pages/SettingsPage';
-import UIOnlyProviderPortal from './pages/UIOnlyProviderPortal'; // For UI verification
 import './App.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -101,7 +99,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<AuthPage />} />
         <Route path="/discovery" element={<DiscoveryHub />} />
-        <Route path="/ui-test" element={<UIOnlyProviderPortal />} />
 
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="admin">
