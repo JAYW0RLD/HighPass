@@ -1,25 +1,28 @@
+```typescript
 import { createPublicClient, http, parseGwei } from 'viem';
 import { cronoszkEVMTestnet } from 'viem/chains';
+import { GRADE_BASED_FEES, type Grade } from '../config/reputation';
 
 /**
  * FeeCalculator: Gas-Inclusive Dynamic Fee Engine
  * 
  * Mission: Guarantee platform profit regardless of gas price fluctuations
- * Formula: platformFee = estimatedGas + ((paymentAmount - estimatedGas) × marginRate)
+ * Formula: platformFee = estimatedGas + ((paymentAmount - estimatedGas) × feeRate)
  * 
- * Key Point: Margin is calculated on NET PROFIT (after deducting gas cost)
+ * v1.6.1: Uses GRADE_BASED_FEES for differential pricing
  */
 export class FeeCalculator {
     private client;
 
-    // Margin rates by credit grade (applied to NET profit)
+    // v1.6.1: Fee rates now come from config/reputation.ts
+    // A: 2%, B: 3%, C: 4%, D: 5%, E: 6%, F: 8%
     private static readonly MARGIN_RATES = {
-        'A': 20,   // 0.2% (20 basis points) - Premium agents
-        'B': 30,   // 0.3%
-        'C': 50,   // 0.5% - Standard
-        'D': 75,   // 0.75%
-        'E': 100,  // 1%
-        'F': 100   // 1% - Minimum grade
+        'A': 200,   // 2% (200 basis points) - VIP agents
+        'B': 300,   // 3%
+        'C': 400,   // 4%
+        'D': 500,   // 5% - Standard
+        'E': 600,   // 6%
+        'F': 800    // 8% - Highest
     };
 
     // Safety margin multiplier for gas estimation (prevents underestimation)
@@ -74,7 +77,7 @@ export class FeeCalculator {
         // Validation: Fee should not exceed 20% (contract safety cap)
         const maxFee = (paymentAmount * BigInt(2000)) / BigInt(10000); // 20%
         if (platformFee > maxFee) {
-            console.warn(`[FeeCalculator] Calculated fee ${platformFee} exceeds 20% cap ${maxFee}. Capping.`);
+            console.warn(`[FeeCalculator] Calculated fee ${ platformFee } exceeds 20 % cap ${ maxFee }.Capping.`);
             return {
                 platformFee: maxFee,
                 breakdown: {
@@ -119,7 +122,7 @@ export class FeeCalculator {
             // Apply safety buffer (20% extra)
             const bufferedGasCost = (gasCost * BigInt(Math.floor(FeeCalculator.GAS_SAFETY_BUFFER * 100))) / BigInt(100);
 
-            console.log(`[FeeCalculator] Gas estimation:`, {
+            console.log(`[FeeCalculator] Gas estimation: `, {
                 gasPrice: gasPrice.toString(),
                 units: estimatedGasUnits.toString(),
                 cost: gasCost.toString(),
@@ -135,11 +138,24 @@ export class FeeCalculator {
     }
 
     /**
-     * Get margin rate by credit grade
+     * Get margin rate in basis points (1 basis point = 0.01%)
+     * v1.6.1: Now uses GRADE_BASED_FEES from config
+     * 
+     * @param grade Credit grade (A-F)
+     * @returns Margin rate in basis points
      */
-    private getMarginRate(grade: string): number {
+    private getMarginRateBasisPoints(grade: string): number {
         const normalizedGrade = grade.toUpperCase();
-        return FeeCalculator.MARGIN_RATES[normalizedGrade as keyof typeof FeeCalculator.MARGIN_RATES] || 100;
+        
+        // v1.6.1: Use GRADE_BASED_FEES from config
+        // Convert percentage to basis points (e.g., 0.02 = 2% = 200 bp)
+        if (normalizedGrade in GRADE_BASED_FEES) {
+            const feePercentage = GRADE_BASED_FEES[normalizedGrade as Grade];
+            return Math.floor(feePercentage * 10000); // 0.02 * 10000 = 200 bp
+        }
+        
+        // Fallback to hardcoded for backward compatibility
+        return FeeCalculator.MARGIN_RATES[normalizedGrade as keyof typeof FeeCalculator.MARGIN_RATES] || 800;
     }
 
     /**
