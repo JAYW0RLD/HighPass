@@ -86,6 +86,35 @@ WWW-Authenticate: Token receiver="0x...", amount="500000000000000000", chainId="
 - 한도의 100% 도달 → 강제 정산
 - 정산 완료 → 한도 복구
 
+### 🆕 선예치금 시스템 (v1.6.0)
+**Grade F 에이전트도 즉시 사용 가능!**
+
+**문제**: Grade F는 매 호출마다 온체인 결제 필요 → 3~5초 지연 + 높은 가스비
+
+**해결**: 미리 충전 → 즉시 사용
+```bash
+# 1. 예치금 입금 (on-chain)
+# PaymentHandler에 CRO 전송
+
+# 2. API로 등록
+curl -X POST https://highstation.vercel.app/api/deposit \
+  -H "X-Agent-ID: 0xYourWallet" \
+  -H "X-Tx-Hash: 0xYourTransactionHash"
+
+# 3. 이제 즉시 호출 가능! (402 없음)
+npx ts-node scripts/run-agent.ts
+```
+
+**동작 방식**:
+```
+잔액 있음? → 즉시 승인 ✅ (0ms, 가스비 없음)
+잔액 부족? → 외상 체크 → 402 선결제
+```
+
+**동적 평판**: 입금·결제 행동으로 등급 자동 변경
+- 입금 100 CRO → Grade E
+- 입금 250 CRO → Grade A (외상 $5)
+
 ---
 
 ## 📚 문서
