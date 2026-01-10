@@ -467,17 +467,70 @@ function ProviderPortal() {
                             <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} className="form-control bg-input border-border" />
 
                             {/* Signing Secret Display */}
-                            <div className="space-y-1">
-                                <label className="text-[11px] text-secondary">Signing Secret (HMAC-SHA256)</label>
+                            <div className="space-y-3 p-4 border border-white/5 rounded-lg bg-black/20">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-semibold text-secondary flex items-center gap-2">
+                                        Signing Secret (HMAC-SHA256)
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/10 text-red-400 border border-red-500/20">SENSITIVE</span>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (!confirm('Regenerating the secret will break existing integrations. Continue?')) return;
+                                            const newSecret = crypto.randomUUID().replace(/-/g, '');
+                                            const { error } = await supabase.from('services').update({ signing_secret: newSecret }).eq('id', editingService.id);
+                                            if (error) { toast.error('Failed to regenerate'); return; }
+                                            setEditingService({ ...editingService, signing_secret: newSecret });
+                                            toast.success('New secret generated');
+                                        }}
+                                        className="text-[10px] text-secondary hover:text-white underline"
+                                    >
+                                        Regenerate
+                                    </button>
+                                </div>
+
                                 <div className="flex gap-2">
-                                    <input type="text" readOnly value={editingService.signing_secret || 'Refresh to generate'} className="form-control bg-[#121214] border-white/10 text-xs font-mono text-accent-green" />
+                                    <input type="text" readOnly value={editingService.signing_secret || 'Refresh to generate'} className="form-control bg-[#121214] border-white/10 text-xs font-mono text-accent-green flex-1" />
                                     <button type="button" onClick={() => { navigator.clipboard.writeText(editingService.signing_secret || ''); toast.success('Secret copied'); }} className="btn btn-secondary px-3 py-2">
                                         Copy
                                     </button>
                                 </div>
-                                <p className="text-[10px] text-secondary mt-1">
-                                    Verify <code>x-highstation-signature</code> header using this secret.
-                                </p>
+
+                                <div className="text-[11px] text-secondary/80 leading-relaxed">
+                                    <p className="mb-2">Secure your API by verifying the <code>x-highstation-signature</code> header.</p>
+
+                                    <details className="group">
+                                        <summary className="cursor-pointer hover:text-white transition-colors list-none flex items-center gap-1.5">
+                                            <span className="text-accent-blue font-mono text-[10px]">▶</span> View Node.js Integration Code
+                                        </summary>
+                                        <div className="mt-2 p-3 bg-[#0d0d0f] rounded border border-white/5 overflow-x-auto">
+                                            <pre className="text-[10px] font-mono text-gray-300">
+                                                {`const crypto = require('crypto');
+
+// 1. Get Secret from Dashboard
+const SECRET = '${editingService.signing_secret || 'YOUR_SECRET'}';
+
+app.use((req, res, next) => {
+  const signature = req.headers['x-highstation-signature'];
+  const timestamp = req.headers['x-highstation-time'];
+  if (!signature || !timestamp) return res.sendStatus(401);
+
+  // 2. Prevent Replay (5 min window)
+  if (Date.now()/1000 - timestamp > 300) return res.sendStatus(401);
+
+  // 3. Verify HMAC
+  const body = req.body ? JSON.stringify(req.body) : '';
+  const payload = body ? \`\${timestamp}.\${body}\` : timestamp;
+  const expected = crypto.createHmac('sha256', SECRET)
+    .update(payload).digest('hex');
+    
+  if (signature.split('v1=')[1] === expected) next();
+  else res.sendStatus(403);
+});`}
+                                            </pre>
+                                        </div>
+                                    </details>
+                                </div>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" onClick={() => setEditingService(null)} className="btn btn-secondary">Cancel</button>
