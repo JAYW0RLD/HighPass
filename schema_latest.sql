@@ -1239,3 +1239,37 @@ CREATE TRIGGER tsvector_update_services
 
 -- 5. Force update existing rows to populate search_vector
 UPDATE services SET id = id;
+
+-- ============================================================================
+-- FINAL VALIDATION
+-- ============================================================================
+DO $$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'FINAL SCHEMA VALIDATION';
+    RAISE NOTICE '========================================';
+    
+    -- Check provider_performance_metrics
+    SELECT COUNT(*) INTO v_count FROM information_schema.tables 
+    WHERE table_schema = 'public' AND table_name = 'provider_performance_metrics';
+    IF v_count = 0 THEN 
+        RAISE EXCEPTION '❌ provider_performance_metrics missing';
+    ELSE
+        RAISE NOTICE '✅ provider_performance_metrics exists';
+    END IF;
+
+    -- Check new columns in services (v1.8.0)
+    SELECT COUNT(*) INTO v_count FROM information_schema.columns 
+    WHERE table_name = 'services' AND column_name = 'search_vector';
+    IF v_count = 0 THEN 
+        RAISE EXCEPTION '❌ services.search_vector missing';
+    ELSE
+        RAISE NOTICE '✅ services.search_vector exists';
+    END IF;
+
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'ALL SYSTEMS GO 🚀';
+    RAISE NOTICE '========================================';
+END $$;
