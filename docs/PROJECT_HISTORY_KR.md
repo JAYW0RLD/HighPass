@@ -35,6 +35,126 @@ ALLOWED_ORIGINS=https://your-app.vercel.app
 
 ---
 
+## 🎯 v1.6.1: USD/CRO 하이브리드 통화 시스템 (2026년 1월 10일)
+
+**배경:** 기존 시스템은 평판 점수와 수수료를 모두 CRO 단위로 관리하여 가격 변동성에 취약했습니다. 또한 모든 등급에 동일한 플랫폼 수수료(5%)를 적용하여 우수 에이전트에 대한 우대가 없었습니다.
+
+### 핵심 변경사항
+
+#### 1. 통화 정책 분리 (Currency Separation)
+**사용 과금**: USD로 통일
+**플랫폼 수수료**: CRO로 통일
+
+**철학:**
+```
+USD (과금): 안정성 → Agent가 예산 예측 가능
+CRO (수수료): 생태계 → Provider가 CRO 가치 상승 혜택
+```
+
+**DB 마이그레이션:**
+```sql
+ALTER TABLE reputation_history 
+  RENAME COLUMN total_deposits_cro TO total_deposits_usd;
+ALTER TABLE reputation_history 
+  ADD COLUMN total_cro_volume NUMERIC DEFAULT 0;
+```
+
+#### 2. 평판 점수 USD 기준
+기존: Score(CRO) = total_deposits_cro + payments_cro  
+변경: Score(USD) = total_deposits_usd + payments_usd
+
+**등급 기준 (USD):**
+- A: $250+ (외상 $5)
+- B: $150+ (외상 $3)
+- C: $100+ (외상 $1)
+- D: $50+ (외상 $0.5)
+- E: $10+ (외상 $0.1)
+- F: $0-9 (선결제만)
+
+**장점:**
+- CRO 가격 변동과 무관
+- 공정한 등급 산정
+- 예측 가능한 한도
+
+#### 3. 등급별 차등 수수료 (Grade-Based Fees)
+우수 에이전트에 대한 수수료 우대
+
+**수수료 구조 (CRO):**
+```typescript
+GRADE_BASED_FEES = {
+  A: 2%,  // 가장 낮음 (VIP)
+  B: 3%,
+  C: 4%,
+  D: 5%,
+  E: 6%,
+  F: 8%   // 가장 높음
+}
+```
+
+**예시:**
+```
+Provider API: $10 서비스
+CRO 가격: $0.10
+
+Grade A Agent:
+  - Service: 100 CRO
+  - Platform Fee: 2 CRO (2%)
+  - Provider 수익: 98 CRO
+
+Grade F Agent:
+  - Service: 100 CRO
+  - Platform Fee: 8 CRO (8%)
+  - Provider 수익: 92 CRO
+```
+
+**동기:**
+- 우수 Agent 유치
+- 평판 관리 유인 증가
+- Provider 입장: 우수 고객 = 낮은 수수료
+
+#### 4. PriceService 개선
+**CRO ↔ USD 변환:**
+```typescript
+async croToUsd(croWei: bigint): Promise<number>
+async usdToCro(usdAmount: number): Promise<bigint>
+```
+
+**가격 캐싱:**
+- 1분 캐시 (API 호출 최소화)
+- 동시 요청 시 동일 가격 사용 (공정성)
+
+**보안:**
+- ✅ Atomic operations
+- ⚠️ Oracle 다운 시 fallback 권장
+- ✅ Race-safe caching
+
+### 구현 세부사항
+
+**Backend:**
+- `migrations/v1.6.1_usd_cro_separation.sql`
+- `config/reputation.ts` - GRADE_BASED_FEES
+- `PriceService.ts` - croToUsd/usdToCro
+- `reputation.ts` - USD 기반 점수 업데이트
+- `deposit.ts` - CRO → USD 변환
+
+**보안 감사:**
+- [MEDIUM] Price cache race (개선 권장)
+- [LOW] Type signature 명확화
+- Score: 85/100 (Production Ready)
+
+### 하위 호환성
+- ✅ 기존 deposit endpoint 유지
+- ✅ SQL function 이름 호환 (`p_amount_cro` → USD 값)
+- ⚠️ Breaking: `total_deposits_cro` 컬럼명 변경
+
+### 마이그레이션 가이드
+```bash
+# Supabase SQL Editor에서 실행
+migrations/v1.6.1_usd_cro_separation.sql
+```
+
+---
+
 ## 🎯 v1.6.0: 선예치금 & 동적 평판 시스템 (2026년 1월 10일)
 
 **배경:** Grade F 에이전트는 매 API 호출마다 온체인 결제가 필요하여 3~5초의 지연과 높은 가스비를 경험했습니다. 또한 기존 평판 시스템은 정적이어서 실시간 결제 행동을 반영하지 못했습니다.

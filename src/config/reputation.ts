@@ -60,11 +60,22 @@ export const PAYMENT_FLOW_CONFIG = {
 // USD 과금 / CRO 수수료 분리
 export const FEE_CONFIG = {
     // Platform fees (CRO-denominated)
-    PLATFORM_FEE_RATE: 0.05,        // 5%
+    PLATFORM_FEE_RATE: 0.05,        // 5% default
     MIN_PLATFORM_FEE_CRO: 0.01,     // 0.01 CRO minimum
 
     // Settlement fees (CRO flat)
     SETTLEMENT_FEE_CRO: 0.1,        // 0.1 CRO per settlement
+} as const;
+
+// Grade-Based Platform Fees (v1.6.1)
+// A등급 = 낮은 수수료 (우대), F등급 = 높은 수수료
+export const GRADE_BASED_FEES = {
+    A: 0.02,  // 2% (가장 낮음)
+    B: 0.03,  // 3%
+    C: 0.04,  // 4%
+    D: 0.05,  // 5%
+    E: 0.06,  // 6%
+    F: 0.08   // 8% (가장 높음)
 } as const;
 
 export type Grade = keyof typeof GRADE_THRESHOLDS;
