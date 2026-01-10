@@ -129,6 +129,14 @@ CREATE TABLE services (
     verified_at TIMESTAMPTZ,
     trust_seed_enabled BOOLEAN NOT NULL DEFAULT false,
     initial_debt_limit NUMERIC NOT NULL DEFAULT 0 CHECK (initial_debt_limit >= 0),
+    
+    -- Discovery Hub Features (v1.8.0)
+    category TEXT CHECK (length(category) <= 50),
+    tags TEXT[] DEFAULT '{}'::TEXT[],
+    description TEXT CHECK (length(description) <= 1000),
+    capabilities JSONB DEFAULT '{}'::JSONB, -- MCP Support
+    search_vector TSVECTOR,                 -- Full Text Search
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     updated_by UUID REFERENCES auth.users(id)
@@ -139,6 +147,13 @@ COMMENT ON COLUMN services.slug IS 'URL-safe service identifier (lowercase, hyph
 COMMENT ON COLUMN services.upstream_url IS 'SENSITIVE: Upstream API URL. Must be HTTPS. Validate against SSRF.';
 COMMENT ON COLUMN services.price_wei IS 'Cost per API call in Wei (NUMERIC for precision)';
 COMMENT ON COLUMN services.verification_token IS 'SENSITIVE: Domain verification token';
+
+-- Comments for v1.8.0 columns
+COMMENT ON COLUMN services.category IS 'Broad categorization (e.g., DeFi, AI, Infra)';
+COMMENT ON COLUMN services.tags IS 'Specific feature tags for filtering';
+COMMENT ON COLUMN services.description IS 'Human readable service description';
+COMMENT ON COLUMN services.capabilities IS 'Machine-readable capabilities for MCP support';
+COMMENT ON COLUMN services.search_vector IS 'Pre-computed lexemes for full-text search';
 
 CREATE TRIGGER set_services_updated_at
     BEFORE UPDATE ON services
@@ -164,10 +179,33 @@ CREATE TRIGGER on_service_url_change
     FOR EACH ROW
     EXECUTE FUNCTION auto_revoke_verification();
 
+-- Trigger for Auto-Updating Search Vector (v1.8.0)
+CREATE OR REPLACE FUNCTION services_search_vector_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector :=
+        setweight(to_tsvector('english', COALESCE(NEW.name, '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE(NEW.category, '')), 'B') ||
+        setweight(to_tsvector('english', array_to_string(NEW.tags, ' ')), 'C') ||
+        setweight(to_tsvector('english', COALESCE(NEW.description, '')), 'D');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tsvector_update_services
+    BEFORE INSERT OR UPDATE ON services
+    FOR EACH ROW
+    EXECUTE FUNCTION services_search_vector_update();
+
 -- Indexes
 CREATE INDEX idx_services_provider_id ON services(provider_id);
 CREATE INDEX idx_services_slug ON services(slug);
 CREATE INDEX idx_services_status ON services(status) WHERE status = 'verified';
+
+-- Search Indexes (v1.8.0)
+CREATE INDEX idx_services_category ON services(category);
+CREATE INDEX idx_services_tags ON services USING GIN(tags);
+CREATE INDEX idx_services_search ON services USING GIN(search_vector);
 
 -- ----------------------------------------------------------------------------
 -- 3.3 Developers (Verified Identities)
@@ -826,10 +864,302 @@ BEGIN
     
     RAISE NOTICE '✓ Audit timestamps verified';
     
+    -- Verify provider_performance_metrics table exists (v1.7.0)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'provider_performance_metrics'
+    ) THEN
+        RAISE NOTICE '✓ provider_performance_metrics table created (v1.7.0)';
+    ELSE
+        RAISE EXCEPTION 'VALIDATION FAILED: provider_performance_metrics table missing!';
+    END IF;
+    
+    -- Verify performance tracking views (v1.7.0)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.views
+        WHERE table_schema = 'public' AND table_name IN ('recent_requests_7d', 'recent_requests_1k')
+    ) THEN
+        RAISE NOTICE '✓ Performance tracking views created (v1.7.0)';
+    ELSE
+        RAISE WARNING 'Performance tracking views missing';
+    END IF;
+    
+    -- Verify performance tracking trigger (v1.7.0)
+    IF EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'on_request_update_performance'
+    ) THEN
+        RAISE NOTICE '✓ Performance tracking trigger installed (v1.7.0)';
+    ELSE
+        RAISE WARNING 'Performance tracking trigger missing';
+    END IF;
+    
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'PERFECT SCHEMA V2.0 READY! ✓';
+    RAISE NOTICE 'PERFECT SCHEMA V2.0 + v1.7.0 READY! ✓';
     RAISE NOTICE '========================================';
 END $$;
+
+-- ============================================================================
+-- SECTION 8: PROVIDER PERFORMANCE TRACKING (v1.7.0)
+-- ============================================================================
+-- On-Chain Performance Oracle Implementation
+-- Security: Sliding Window Metrics + Real-time Triggers
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 14.1 Provider Performance Metrics Table
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS provider_performance_metrics (
+    service_slug TEXT PRIMARY KEY REFERENCES services(slug) ON DELETE CASCADE,
+    
+    -- 전체 누적 지표 (Cumulative Metrics)
+    avg_latency_ms NUMERIC NOT NULL DEFAULT 0 CHECK (avg_latency_ms >= 0),
+    success_rate NUMERIC NOT NULL DEFAULT 0 CHECK (success_rate BETWEEN 0 AND 100),
+    total_requests BIGINT NOT NULL DEFAULT 0 CHECK (total_requests >= 0),
+    total_successes BIGINT NOT NULL DEFAULT 0 CHECK (total_successes >= 0),
+    
+    -- 슬라이딩 윈도우 지표 - 최근 7일 (Sliding Window - 7 Days)
+    avg_latency_ms_7d NUMERIC NOT NULL DEFAULT 0 CHECK (avg_latency_ms_7d >= 0),
+    success_rate_7d NUMERIC NOT NULL DEFAULT 0 CHECK (success_rate_7d BETWEEN 0 AND 100),
+    total_requests_7d BIGINT NOT NULL DEFAULT 0 CHECK (total_requests_7d >= 0),
+    
+    -- 슬라이딩 윈도우 지표 - 최근 1000건 (Sliding Window - 1000 Requests)
+    avg_latency_ms_1k NUMERIC NOT NULL DEFAULT 0 CHECK (avg_latency_ms_1k >= 0),
+    success_rate_1k NUMERIC NOT NULL DEFAULT 0 CHECK (success_rate_1k BETWEEN 0 AND 100),
+    
+    -- 분석용 데이터 (Analytics)
+    unique_agent_count BIGINT NOT NULL DEFAULT 0 CHECK (unique_agent_count >= 0),
+    
+    -- 온체인 동기화 메타데이터 (On-Chain Sync Metadata)
+    last_onchain_sync TIMESTAMPTZ,
+    onchain_sync_count BIGINT NOT NULL DEFAULT 0 CHECK (onchain_sync_count >= 0),
+    
+    -- 감사 추적 (Audit Trail)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE provider_performance_metrics IS 
+'Provider API performance metrics with sliding window analysis';
+
+COMMENT ON COLUMN provider_performance_metrics.avg_latency_ms IS 
+'Cumulative average response time in milliseconds';
+
+COMMENT ON COLUMN provider_performance_metrics.avg_latency_ms_7d IS 
+'Average response time for requests in the last 7 days (sliding window)';
+
+COMMENT ON COLUMN provider_performance_metrics.avg_latency_ms_1k IS 
+'Average response time for the most recent 1000 requests (sliding window)';
+
+COMMENT ON COLUMN provider_performance_metrics.unique_agent_count IS 
+'Number of unique agent wallets that have called this service (for analytics)';
+
+COMMENT ON COLUMN provider_performance_metrics.onchain_sync_count IS 
+'Number of times metrics have been synced to blockchain (for gas cost tracking)';
+
+-- Indexes for performance
+CREATE INDEX idx_perf_metrics_service ON provider_performance_metrics(service_slug);
+CREATE INDEX idx_perf_metrics_sync_pending 
+    ON provider_performance_metrics(last_onchain_sync) 
+    WHERE last_onchain_sync IS NULL OR updated_at > last_onchain_sync;
+
+-- Trigger for updated_at
+CREATE TRIGGER set_provider_performance_updated_at
+    BEFORE UPDATE ON provider_performance_metrics
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ----------------------------------------------------------------------------
+-- 14.2 Helper Views (SlConding Window Calculations)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW recent_requests_7d AS
+SELECT 
+    service_slug,
+    agent_id,
+    status,
+    latency_ms,
+    created_at
+FROM requests
+WHERE created_at >= NOW() - INTERVAL '7 days'
+  AND service_slug IS NOT NULL;
+
+COMMENT ON VIEW recent_requests_7d IS 
+'Requests from the last 7 days for sliding window calculations';
+
+CREATE OR REPLACE VIEW recent_requests_1k AS
+SELECT 
+    service_slug,
+    agent_id,
+    status,
+    latency_ms,
+    created_at,
+    ROW_NUMBER() OVER (PARTITION BY service_slug ORDER BY created_at DESC) as rn
+FROM requests
+WHERE service_slug IS NOT NULL;
+
+COMMENT ON VIEW recent_requests_1k IS 
+'Most recent 1000 requests per service for sliding window calculations';
+
+-- ----------------------------------------------------------------------------
+-- 14.3 Update Provider Performance Metrics (Real-time Trigger)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION update_provider_performance()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_unique_agents BIGINT;
+    v_avg_7d NUMERIC;
+    v_success_rate_7d NUMERIC;
+    v_total_7d BIGINT;
+    v_avg_1k NUMERIC;
+    v_success_rate_1k NUMERIC;
+BEGIN
+    IF NEW.service_slug IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Calculate unique agent count
+    SELECT COUNT(DISTINCT agent_id) INTO v_unique_agents
+    FROM requests
+    WHERE service_slug = NEW.service_slug
+      AND agent_id IS NOT NULL;
+    
+    -- Calculate 7-day sliding window metrics
+    SELECT 
+        COALESCE(AVG(latency_ms) FILTER (WHERE latency_ms IS NOT NULL), 0),
+        COALESCE(
+            COUNT(*) FILTER (WHERE status = 200) * 100.0 / NULLIF(COUNT(*), 0),
+            0
+        ),
+        COUNT(*)
+    INTO v_avg_7d, v_success_rate_7d, v_total_7d
+    FROM recent_requests_7d
+    WHERE service_slug = NEW.service_slug;
+    
+    -- Calculate 1000-request sliding window metrics
+    SELECT 
+        COALESCE(AVG(latency_ms) FILTER (WHERE latency_ms IS NOT NULL), 0),
+        COALESCE(
+            COUNT(*) FILTER (WHERE status = 200) * 100.0 / NULLIF(COUNT(*), 0),
+            0
+        )
+    INTO v_avg_1k, v_success_rate_1k
+    FROM recent_requests_1k
+    WHERE service_slug = NEW.service_slug 
+      AND rn <= 1000;
+    
+    IF (NEW.status = 200 AND NEW.latency_ms IS NOT NULL) THEN
+        INSERT INTO provider_performance_metrics (
+            service_slug,
+            avg_latency_ms,
+            success_rate,
+            total_requests,
+            total_successes,
+            avg_latency_ms_7d,
+            success_rate_7d,
+            total_requests_7d,
+            avg_latency_ms_1k,
+            success_rate_1k,
+            unique_agent_count
+        )
+        VALUES (
+            NEW.service_slug,
+            NEW.latency_ms,
+            100,
+            1,
+            1,
+            v_avg_7d,
+            v_success_rate_7d,
+            v_total_7d,
+            v_avg_1k,
+            v_success_rate_1k,
+            v_unique_agents
+        )
+        ON CONFLICT (service_slug) DO UPDATE SET
+            avg_latency_ms = (
+                (provider_performance_metrics.avg_latency_ms * provider_performance_metrics.total_requests + NEW.latency_ms)
+                / (provider_performance_metrics.total_requests + 1)
+            ),
+            total_requests = provider_performance_metrics.total_requests + 1,
+            total_successes = provider_performance_metrics.total_successes + 1,
+            success_rate = (
+                (provider_performance_metrics.total_successes + 1) * 100.0
+                / (provider_performance_metrics.total_requests + 1)
+            ),
+            avg_latency_ms_7d = v_avg_7d,
+            success_rate_7d = v_success_rate_7d,
+            total_requests_7d = v_total_7d,
+            avg_latency_ms_1k = v_avg_1k,
+            success_rate_1k = v_success_rate_1k,
+            unique_agent_count = v_unique_agents,
+            updated_at = NOW();
+    ELSE
+        INSERT INTO provider_performance_metrics (
+            service_slug,
+            total_requests,
+            avg_latency_ms_7d,
+            success_rate_7d,
+            total_requests_7d,
+            avg_latency_ms_1k,
+            success_rate_1k,
+            unique_agent_count
+        )
+        VALUES (
+            NEW.service_slug, 
+            1,
+            v_avg_7d,
+            v_success_rate_7d,
+            v_total_7d,
+            v_avg_1k,
+            v_success_rate_1k,
+            v_unique_agents
+        )
+        ON CONFLICT (service_slug) DO UPDATE SET
+            total_requests = provider_performance_metrics.total_requests + 1,
+            success_rate = (
+                provider_performance_metrics.total_successes * 100.0
+                / (provider_performance_metrics.total_requests + 1)
+            ),
+            avg_latency_ms_7d = v_avg_7d,
+            success_rate_7d = v_success_rate_7d,
+            total_requests_7d = v_total_7d,
+            avg_latency_ms_1k = v_avg_1k,
+            success_rate_1k = v_success_rate_1k,
+            unique_agent_count = v_unique_agents,
+            updated_at = NOW();
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp;
+
+COMMENT ON FUNCTION update_provider_performance() IS
+'Real-time trigger to update provider performance metrics.
+Calculates cumulative metrics + 7-day and 1000-request sliding windows.
+Tracks unique agents for analytics.';
+
+CREATE TRIGGER on_request_update_performance
+    AFTER INSERT ON requests
+    FOR EACH ROW
+    EXECUTE FUNCTION update_provider_performance();
+
+-- ----------------------------------------------------------------------------
+-- 14.4 Row Level Security
+-- ----------------------------------------------------------------------------
+ALTER TABLE provider_performance_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "service_role_all_perf_metrics" ON provider_performance_metrics
+    FOR ALL TO service_role USING (true);
+
+CREATE POLICY "public_read_perf_metrics" ON provider_performance_metrics
+    FOR SELECT USING (true);
+
+CREATE POLICY "providers_view_own_perf_metrics" ON provider_performance_metrics
+    FOR SELECT TO authenticated USING (
+        service_slug IN (
+            SELECT slug FROM services WHERE provider_id = auth.uid()
+        )
+    );
 
 COMMIT;
 

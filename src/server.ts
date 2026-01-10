@@ -23,6 +23,7 @@ import statsRouter from './routes/stats';
 import servicesRouter from './routes/services';
 import settingsRouter from './routes/settings';
 import providerRouter from './routes/provider';
+import discoveryRouter from './routes/discovery'; // v1.8.0
 
 // Static Files (Frontend) logic moved below declaration
 import * as fs from 'fs';
@@ -206,6 +207,7 @@ import { authMiddleware } from './middleware/authMiddleware';
 // Install Logger & Stats
 app.use(loggerMiddleware);
 app.use('/api', statsRouter); // Public stats
+app.use('/api/discovery', discoveryRouter); // v1.8.0 Public Discovery Hub
 
 // Protected Routes
 app.use('/api/settings', authMiddleware, settingsRouter);

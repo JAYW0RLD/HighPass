@@ -127,6 +127,7 @@ npx ts-node scripts/run-agent.ts
 ### 필수 읽을거리
 - [**설계 철학 (Why?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - 왜 외상 결제인가?
 - [**프로젝트 히스토리**](./docs/PROJECT_HISTORY_KR.md) - 개발 과정 & 로드맵
+- [**인프라 비전 (10k TPS)**](./docs/INFRASTRUCTURE_VISION_KR.md) - 미래 아키텍처 & Go 이전 계획
 - [**보안 감사 리포트**](./docs/security/) - Red Team 전면 감사 완료
 
 ### 개발자 가이드

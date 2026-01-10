@@ -1,45 +1,55 @@
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  /* GitHub x YouTube Blend Theme Variables */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  /* Slightly softer gray */
-  --bg-elevated: #ffffff;
-  --text-primary: #0f0f0f;
-  /* YouTube's intense dark */
-  --text-secondary: #606060;
-  /* YouTube's gray text */
-  --text-tertiary: #909090;
-  --border: #e5e5e5;
-  /* Softer border */
-  --border-secondary: #f2f2f2;
+  /* Premium Dark Theme Core */
+  --bg-primary: #0a0b0d;
+  /* Ultra dark, almost black */
+  --bg-secondary: #0f1114;
+  /* Slightly lighter for sections */
+  --bg-elevated: #16181d;
+  /* Cards / Panels */
+  --bg-input: #1c1e26;
 
-  --accent-blue: #065fd4;
-  /* YouTube Blue */
-  --accent-green: #2da44e;
-  --accent-orange: #f57c00;
-  --accent-red: #cc0000;
-  /* YouTube Red */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-tertiary: #656575;
 
-  /* Bybit-inspired Crypto Colors */
-  --crypto-gold: #f7931a;
-  --crypto-gold-dark: #c97517;
-  --crypto-purple: #6366f1;
-  --crypto-cyan: #06b6d4;
-  --border-hover: #d0d7de;
+  --border: #2a2d36;
+  --border-hover: #3a3d4a;
 
-  --radius-sm: 8px;
+  /* Accents */
+  --accent-blue: #3b82f6;
+  --accent-blue-glow: rgba(59, 130, 246, 0.4);
+
+  --accent-green: #10b981;
+  --accent-green-glow: rgba(16, 185, 129, 0.4);
+
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+
+  /* Premium Gradients */
+  --gradient-primary: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%);
+  --gradient-glow: radial-gradient(circle at top center, rgba(56, 189, 248, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(22, 24, 29, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+  /* Dimensions */
+  --radius-sm: 6px;
   --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-pill: 50px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.15);
 }
 
 * {
@@ -779,7 +789,85 @@ h1 {
   background-color: #e5e5e5;
 }
 
-.chip.active {
-  background-color: #0f0f0f;
-  color: #ffffff;
+
+/* === Premium / Glassmorphism Utilities === */
+
+.card-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-xl);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s linear;
+}
+
+.card-glass:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-blue {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-dark {
+  background: var(--gradient-primary);
+}
+
+/* === Layout Overrides for Premium Feel === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.col-span-12 {
+  grid-column: span 12;
+}
+
+.col-span-8 {
+  grid-column: span 8;
+}
+
+.col-span-6 {
+  grid-column: span 6;
+}
+
+.col-span-4 {
+  grid-column: span 4;
+}
+
+.col-span-3 {
+  grid-column: span 3;
+}
+
+@media (max-width: 1024px) {
+
+  .col-span-8,
+  .col-span-4,
+  .col-span-3,
+  .col-span-6 {
+    grid-column: span 12;
+  }
+}
+
+/* === Chart Containers === */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background: transparent;
 }

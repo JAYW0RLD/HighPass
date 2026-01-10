@@ -35,7 +35,25 @@ ALLOWED_ORIGINS=https://your-app.vercel.app
 
 ---
 
-## 🎯 v1.6.1: USD/CRO 하이브리드 통화 시스템 (2026년 1월 10일)
+## 🎯 v1.8.0: Discovery Hub & Search (2026년 1월 10일)
+
+**배경:** 에이전트가 우수한 API 서비스를 "발견"하고 "검색"할 수 있는 기능이 부재했습니다. 사용자 비전에 따라 "AI가 쇼핑하는 마트"를 구현하기 위해 검색 및 필터링 시스템을 도입했습니다.
+
+### 핵심 변경사항
+
+#### 1. Discovery Hub UI & Backend
+- **Discovery Hub**: 사용자 친화적인 검색 인터페이스 (검색어, 카테고리, 태그, 정렬).
+- **Search API**: Full-text Search (FTS) 및 GIN 인덱스 기반 고성능 검색 (`/api/discovery/search`).
+- **메타데이터 확장**: `services` 테이블에 `category`, `tags`, `description`, `capabilities` 추가.
+
+#### 2. 기술적 특징
+- **PostgreSQL FTS**: 별도의 검색 엔진 없이 DB 내장 기능을 활용하여 효율적인 검색 구현.
+- **Debounced Search**: 프론트엔드 최적화를 통해 불필요한 API 호출 최소화.
+- **Cyberpunk UI**: 프로젝트 테마에 맞춘 네온/다크 모드 디자인 적용.
+
+---
+
+## 🎯 v1.7.0: API Performance Oracle (2026년 1월 10일)
 
 **배경:** 기존 시스템은 평판 점수와 수수료를 모두 CRO 단위로 관리하여 가격 변동성에 취약했습니다. 또한 모든 등급에 동일한 플랫폼 수수료(5%)를 적용하여 우수 에이전트에 대한 우대가 없었습니다.
 
@@ -152,6 +170,203 @@ async usdToCro(usdAmount: number): Promise<bigint>
 # Supabase SQL Editor에서 실행
 migrations/v1.6.1_usd_cro_separation.sql
 ```
+
+---
+
+## 🎯 v1.7.0: 온체인 성능 오라클 (On-Chain Performance Oracle) (2026년 1월 10일)
+
+**배경:** HighStation의 핵심 가치인 "API 성능 오라클"을 실현하기 위해, 공급자의 API 응답 메타데이터를 온체인에 기록하는 시스템을 구축했습니다. 에이전트가 조작 불가능한 성능 데이터를 기반으로 API를 선택할 수 있게 합니다.
+
+### 핵심 변경사항
+
+#### 1. 하이브리드 데이터 아키텍처
+**개별 요청**: PostgreSQL에 기록 (실시간, 저비용)  
+**집계 성능 지표**: 주기적으로 온체인에 동기화 (신뢰성, 조작 불가)
+
+**철학:**
+```
+PostgreSQL (상세): 모든 API 호출 기록 → 통계 분석
+Blockchain (요약): 집계된 성능 지표 → 신뢰 증명
+```
+
+**장점:**
+- 가스비 최적화: 개별 트랜잭션 대신 집계 데이터만 온체인 기록
+- 실시간 분석: DB에서 즉시 조회 가능
+- 검증 가능성: 주요 지표는 블록체인에서 투명하게 확인
+
+####2. 슬라이딩 윈도우 성능 지표
+기존 누적 평균의 한계를 극복하기 위해 시간/수량 기반 슬라이딩 윈도우 방식 도입.
+
+**측정 지표:**
+- 전체 누적: `avg_latency_ms`, `success_rate`, `total_requests`
+- 최근 7일: `avg_latency_ms_7d`, `success_rate_7d` (현재 상태 반영)
+- 최근 1000건: `avg_latency_ms_1k`, `success_rate_1k` (트렌드 파악)
+
+**예시:**
+```
+서비스 A: 1년 전 10ms 응답 (우수) → 최근 1주일 500ms (악화)
+- 누적 평균: 50ms (천천히 반영)  ❌
+- 7일 평균: 500ms (현재 문제 즉시 반영) ✅
+```
+
+**동기화 우선순위:** 온체인에는 7일 평균 우선 사용 (더 정확한 현재 상태)
+
+#### 3. 자전거래 허용 정책
+공급자가 자기 API를 직접 호출하는 것을 허용하여 테스트 및 성능 개선 활동을 지원합니다.
+
+**비즈니스 로직:**
+- ✅ 공급자의 테스트 및 burn-in 활동 지원
+- ✅ 실제 비용(가스비 + API 요금)이 자연스러운 제약으로 작용
+- ✅ 실제 사용자 증가 시 자전거래 영향이 희석됨
+
+**데이터 수집:**
+- `unique_agent_count`: 고유 에이전트 수 추적 (분석 목적)
+- 최소 에이전트 수 요구사항 없음 (필터링 없음)
+
+#### 4. 가스비 최적화 (임계값 기반 동기화)
+무분별한 온체인 업데이트를 방지하기 위해 스마트한 동기화 전략 도입.
+
+**동기화 조건:**
+```typescript
+// 5% 이상 변경 시에만 동기화
+const latencyChange = Math.abs(current - last) / last;
+const successRateChange = Math.abs(current - last);
+
+if (latencyChange > 0.05 || successRateChange > 5) {
+    syncToBlockchain(); // 온체인 기록
+}
+```
+
+**예상 효과:**
+- 변화 없는 서비스: 동기화 스킵 → 가스비 0
+- 안정적인 서비스: 월 1-2회 동기화 → 가스비 90% 절감
+- 불안정한 서비스: 빈번한 동기화 → 투명한 품질 저하 기록
+
+### 스마트 컨트랙트: ProviderPerformanceRegistry.sol
+
+**주요 기능:**
+```solidity
+struct PerformanceMetrics {
+    uint64 avgLatencyMs;        // 평균 응답 시간 (ms)
+    uint32 successRate;         // 성공률 (0-10000 = 0.00%-100.00%)
+    uint64 totalRequests;       // 총 요청 수
+    uint64 totalSuccesses;      // 성공한 요청 수
+    uint32 uniqueAgentCount;    // 고유 에이전트 수 (분석용)
+    uint64 lastUpdated;         // 마지막 업데이트 시각
+}
+```
+
+**보안 특징:**
+- `onlyOwner` 제한: HighStation 백엔드만 업데이트 가능
+- 확장성: `maxServiceNameLength` 등 설정 가능한 파라미터
+- Input validation: 범위 체크 및 형식 검증
+- Event 발생: 모든 변경사항 추적 가능
+
+**공개 조회:**
+```solidity
+function getPerformanceMetrics(string serviceName) 
+    external view returns (PerformanceMetrics);
+```
+→ 에이전트가 온체인 데이터를 직접 조회하여 API 선택 가능
+
+### 데이터베이스 스키마: provider_performance_metrics
+
+**테이블 구조:**
+```sql
+CREATE TABLE provider_performance_metrics (
+    service_slug TEXT PRIMARY KEY,
+    
+    -- 전체 누적
+    avg_latency_ms NUMERIC,
+    success_rate NUMERIC,
+    total_requests BIGINT,
+    total_successes BIGINT,
+    
+    -- 슬라이딩 윈도우 (7일)
+    avg_latency_ms_7d NUMERIC,
+    success_rate_7d NUMERIC,
+    total_requests_7d BIGINT,
+    
+    -- 슬라이딩 윈도우 (1000건)
+    avg_latency_ms_1k NUMERIC,
+    success_rate_1k NUMERIC,
+    
+    -- Sybil Attack 방지 (분석용)
+    unique_agent_count BIGINT,
+    
+    -- 동기화 메타데이터
+    last_onchain_sync TIMESTAMPTZ,
+    onchain_sync_count BIGINT
+);
+```
+
+**자동 업데이트 트리거:**
+- `requests` 테이블에 INSERT 발생 시 자동으로 성능 지표 계산
+- 실시간으로 모든 윈도우 지표 업데이트
+- 고유 에이전트 수 자동 카운트
+
+### 온체인 동기화 서비스
+
+**구현:**
+- `src/services/OnChainSyncService.ts`: DB → 블록체인 동기화
+- `src/cron/syncPerformance.ts`: Cron job (매시간 실행)
+
+**동작 프로세스:**
+1. Provider Performance Metrics 테이블에서 데이터 조회
+2. 임계값 검증 (5% 변화 확인)
+3. 변경된 서비스만 선별
+4. 7일 평균 지표 우선 사용
+5. 스마트 컨트랙트 `updatePerformanceMetrics()` 호출
+6. 동기화 메타데이터 업데이트 (`last_onchain_sync`, `onchain_sync_count`)
+
+**환경 변수:**
+```bash
+PERFORMANCE_REGISTRY_ADDRESS=0x...  # 배포된 컨트랙트 주소
+CRONOS_RPC_URL=https://evm-t3.cronos.org
+DEPLOYER_PRIVATE_KEY=0x...  # Owner 지갑 (동기화용)
+```
+
+### 구현 세부사항
+
+**스마트 컨트랙트:**
+- `src/contracts/ProviderPerformanceRegistry.sol` - 온체인 성능 레지스트리
+- `test/ProviderPerformanceRegistry.t.sol` - Foundry 테스트
+
+**백엔드:**
+- `migrations/v1.7.0_provider_performance.sql` - DB 마이그레이션
+- `src/services/OnChainSyncService.ts` - 동기화 서비스
+- `src/cron/syncPerformance.ts` - Cron job
+
+**설정:**
+- 하드코딩 제거: 모든 파라미터 설정 가능
+- 임계값 조정: `SYNC_THRESHOLD_PERCENT = 5` (config)
+- 동기화 주기: Cron 표현식으로 조정 가능
+
+### 하위 호환성
+- ✅ 기존 requests 테이블 구조 유지
+- ✅ 기존 API 엔드포인트 영향 없음
+- ✅ Optional 기능: 마이그레이션 전에도 정상 작동
+
+### 마이그레이션 가이드
+```bash
+# 1. 스마트 컨트랙트 배포
+npm run deploy:performance-registry
+
+# 2. DB 마이그레이션 실행
+psql $DATABASE_URL -f migrations/v1.7.0_provider_performance.sql
+
+# 3. 환경 변수 설정
+PERFORMANCE_REGISTRY_ADDRESS=0x...
+
+# 4. Cron job 시작
+npm run start:cron
+```
+
+### 향후 계획 (Phase 2)
+- [ ] API 엔드포인트: `/api/services/:slug/performance`
+- [ ] Discovery Hub UI: 성능 리더보드
+- [ ] Provider Portal: 성능 대시보드
+- [ ] E2E 테스트: 전체 플로우 검증
 
 ---
 

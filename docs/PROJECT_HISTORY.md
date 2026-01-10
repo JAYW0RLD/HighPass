@@ -24,6 +24,24 @@ The project has evolved from a single-tenant gatekeeper into a **Multi-Provider 
 
 ## ⏳ Changelog
 
+### v3.4 - Discovery Hub & Search
+**Date**: 2026-01-10
+- **[FEATURE] Discovery Hub**: 
+    - Launched "Amazon for APIs" UI allowing Agents to search and filter services.
+    - Implemented full-text search with debounce in React frontend and Cyberpunk aesthetic.
+- **[BACKEND] Search Metadata**: 
+    - Extended database with `category`, `tags`, `capabilities` for rich service discovery.
+    - Optimized Postgres FTS (Full-Text Search) with GIN indexing for sub-millisecond query performance.
+
+### v3.3 - Performance Oracle & Dynamic Grading
+**Date**: 2026-01-10
+- **[CONTRACT] On-Chain Performance Metric**:
+    - Deployed `ProviderPerformanceRegistry` on Cronos zkEVM to record real-time latency and reliability.
+    - Enables fully decentralized reputation scoring based on actual service quality.
+- **[FEATURE] Dynamic Provider Grading**:
+    - Automated grading system (A-F) based on 7-day sliding window of performance data.
+    - Higher grades earned by consistent uptime and low latency.
+
 ### v3.2 - Premium Frontend Design Overhaul
 **Date**: 2026-01-09
 - **[UI/UX] Hybrid Brand Identity**:

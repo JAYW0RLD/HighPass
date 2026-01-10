@@ -96,8 +96,9 @@ High-credit agents can **use first → pay later**:
 ## 📚 Documentation
 
 ### Essential Reading
-- [**Design Philosophy (Why?)**](./docs/DESIGN_PHILOSOPHY_KR.md) - Why credit-based payments?
-- [**Project History**](./docs/PROJECT_HISTORY_KR.md) - Development timeline & roadmap
+- [**Design Philosophy (Why?)**](./docs/DESIGN_PHILOSOPHY.md) - Why credit-based payments?
+- [**Project History**](./docs/PROJECT_HISTORY.md) - Development timeline & roadmap
+- [**Infrastructure Vision (10k TPS)**](./docs/INFRASTRUCTURE_VISION.md) - Future Architecture & Go Migration
 - [**Security Audit**](./docs/security/) - Red Team comprehensive audit
 
 ### Integration Guides

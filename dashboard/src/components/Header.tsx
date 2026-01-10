@@ -118,6 +118,26 @@ export default function Header({ title }: HeaderProps) {
                                 <span>Developer Portal</span>
                                 {location.pathname.includes('/developer') && <span style={{ color: 'var(--accent-blue)' }}>●</span>}
                             </button>
+                            <button
+                                onClick={() => handleSwitch('/discovery')}
+                                style={{
+                                    textAlign: 'left',
+                                    padding: '0.75rem',
+                                    background: location.pathname.includes('/discovery') ? 'var(--bg-secondary)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    fontWeight: location.pathname.includes('/discovery') ? 600 : 400,
+                                    color: 'var(--text-primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                <span>Discovery Hub</span>
+                                {location.pathname.includes('/discovery') && <span style={{ color: 'var(--accent-blue)' }}>●</span>}
+                            </button>
                         </div>
                     )}
                 </div>

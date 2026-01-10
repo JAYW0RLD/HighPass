@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProviderPortal from './pages/ProviderPortal';
 import DeveloperPortal from './pages/DeveloperPortal';
+import DiscoveryHub from './pages/DiscoveryHub'; // v1.8.0
 import SettingsPage from './pages/SettingsPage';
 import './App.css';
 
@@ -97,6 +98,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/discovery" element={<DiscoveryHub />} />
 
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="admin">
