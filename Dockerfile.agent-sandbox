@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+# Create non-root user
+RUN addgroup -g 1001 agent && \
+    adduser -D -u 1001 -G agent agent
+
+# Set working directory
+WORKDIR /home/agent
+
+# Copy easy-ai-agent
+COPY --chown=agent:agent ./easy-ai-agent ./easy-ai-agent
+
+# Install dependencies
+WORKDIR /home/agent/easy-ai-agent
+RUN npm install
+
+# Switch to non-root user
+USER agent
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]

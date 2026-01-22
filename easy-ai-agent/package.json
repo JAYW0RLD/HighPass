@@ -1,0 +1,29 @@
+{
+  "name": "easy-ai-agent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@crypto.com/facilitator-client": "^1.0.4",
+    "@types/axios": "^0.9.36",
+    "axios": "^1.13.2",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.2.3",
+    "enquirer": "^2.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "viem": "^2.44.4"
+  },
+  "devDependencies": {
+    "@types/chalk": "^0.4.31",
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^25.0.9"
+  }
+}

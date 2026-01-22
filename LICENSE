@@ -1,0 +1,25 @@
+HighStation Dual License
+
+Copyright (c) 2026 HighStation Team
+
+1. Public Interface License (Apache 2.0)
+---------------------------------------
+The files in this repository (excluding those listed in the Proprietary section below) 
+are licensed under the Apache License, Version 2.0 (the "License").
+You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0
+
+2. Proprietary Core License
+--------------------------
+The core business logic, including but not limited to the trust scoring algorithms, 
+fee settlement engines, and ZK verification logic (located in src/services/, 
+src/database/, and src/config/), are PROPRIETARY software.
+
+Permission to use, copy, modify, or distribute the proprietary components is 
+strictly prohibited without prior written consent from the HighStation Team.
+
+3. Commercial Use
+----------------
+If you intend to operate HighStation as a commercial service, you MUST obtain 
+a separate commercial license.
+
+Contact: team@highstation.net

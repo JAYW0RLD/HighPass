@@ -1,0 +1,6 @@
+{
+    "API_BASE_URL": "https://api.highstation.net",
+    "DEFAULT_CHAIN_ID": 338,
+    "AGENT_PRIVATE_KEY": "0x279695923156478465781afff0324d798596ee23f1c9161d7f0d36d3eeefd7dc",
+    "NOTE": "Agent Address: 0x77e94273aD743b9629D895A5Af4E331D4A9254D0"
+}

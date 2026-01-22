@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "buildCommand": "npm run build",
+    "devCommand": "npm run start",
+    "installCommand": "npm install --include=dev",
+    "framework": "vite",
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}

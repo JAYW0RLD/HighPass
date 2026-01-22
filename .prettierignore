@@ -1,0 +1,9 @@
+node_modules
+dist
+out
+cache
+coverage
+*.log
+.env
+package-lock.json
+dashboard

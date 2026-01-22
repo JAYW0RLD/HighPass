@@ -1,0 +1,31 @@
+# Init
+.git
+.gitignore
+.dockerignore
+.env
+.env.*
+! .env.example
+
+# Dependencies (Install inside Docker)
+node_modules
+dashboard/node_modules
+easy-ai-agent/node_modules
+
+# Build Artifacts
+dist
+# dashboard/dist # Keep this if you want to copy pre-built frontend, BUT usually better to build inside or keep cleanly. 
+# For now, let's exclude dashboard/dist and assume backend-only serving or hybrid.
+# Actually, the server serves `dashboard/dist`. If we exclude it, the container won't have frontend.
+# But 690MB is definitely node_modules. Let's keep dashboard/dist commented out (included) if it exists, but exclude node_modules.
+
+# Logs
+logs
+*.log
+npm-debug.log
+
+# Misc
+.DS_Store
+.vscode
+.idea
+circom
+circuits
